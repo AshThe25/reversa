@@ -69,6 +69,18 @@ CONTACT_ACTIONS: frozenset[str] = frozenset({
 # the wind tunnel can show how much of a strategy is waste.
 WASTE_THRESHOLD = 0.70
 
+# Minimum expected incremental value before an intervention is worth placing,
+# in paise. Rs 50.
+#
+# Free actions have no monetary cost, so a naive expected-value rule takes every
+# one with uplift above zero - and it did: 332 of 711 chosen actions carried an
+# expected value under Rs 50 and contributed 9% of the plan's total value. They
+# are not free in any sense that matters. They consume gateway capacity, they
+# spend a little customer patience, and statistically they are worse than
+# useless: padding the treatment arm with near-zero-effect units dilutes the
+# measured lift toward noise and costs the experiment its power.
+MIN_EXPECTED_INCREMENTAL_PAISE = 5_000
+
 
 @dataclass(slots=True)
 class Candidate:
@@ -199,6 +211,9 @@ def _variables(
                 # how recovery programmes burn budget and goodwill at once
                 if not c.uplift_credible.get(a, False):
                     continue
+            gross = c.amount_paise * c.uplift.get(a, 0.0)
+            if gross < MIN_EXPECTED_INCREMENTAL_PAISE:
+                continue
             value = c.value_of(a)
             if value <= 0:
                 continue
@@ -348,7 +363,11 @@ def solve_fixed_action(
     # the action to HURT - re-presenting a card the estimator thinks will harden
     # the decline is not a strategy, and including them let this scenario report
     # negative incremental recovery.
-    pool = [c for c in eligible if c.value_of(action) > 0]
+    pool = [
+        c for c in eligible
+        if c.value_of(action) > 0
+        and c.amount_paise * c.uplift.get(action, 0.0) >= MIN_EXPECTED_INCREMENTAL_PAISE
+    ]
     skipped_negative = len(eligible) - len(pool)
     pool.sort(key=lambda c: -(c.amount_paise * c.uplift.get(action, 0.0)))
 

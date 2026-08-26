@@ -61,13 +61,14 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, Sequence
 
 from scipy import stats
-from sqlalchemy import func, select
+from sqlalchemy import Integer, case, func, select
 from sqlalchemy.orm import Session
 
+from reversa.config import IST
 from reversa.models import (
     Customer, DowntimeRecord, Payment, PaymentEvent, PaymentStatus, RunEra,
 )
@@ -116,7 +117,16 @@ class Features:
     method: str
     amount_paise: int
     tier: str
-    in_downtime: bool
+    in_incident: bool
+    """Did this payment fail while its rail was degraded?
+
+    NOT taken from the downtime feed. Razorpay publishes downtime 4-11 minutes
+    after onset and not for every event, so most incident-window payments have
+    no downtime record at all - the first version used the feed and the feature
+    was mostly false exactly when it mattered. Derived instead from the same
+    rule the detector uses: the slice's own success rate in that time bucket
+    against its baseline. Computed identically at fit time and predict time.
+    """
     prior_recovery_rate: float = 0.42
     prior_failures: int = 0
 
@@ -128,7 +138,7 @@ class Features:
     def natural_keys(self) -> tuple[str, ...]:
         """Finest first."""
         return (
-            f"{self.failure_class}|{self.method}|{self.bucket}|{self.tier}|{int(self.in_downtime)}",
+            f"{self.failure_class}|{self.method}|{self.bucket}|{self.tier}|{int(self.in_incident)}",
             f"{self.failure_class}|{self.method}|{self.bucket}",
             f"{self.failure_class}",
         )
@@ -140,15 +150,29 @@ class Features:
         MUST come from the same level of this hierarchy or the "uplift" is just
         a difference in population mix - see `_estimate_uplift`.
         """
+        d = int(self.in_incident)
         return (
-            f"{self.failure_class}|{self.bucket}",
+            f"{self.failure_class}|{self.bucket}|{d}",
+            f"{self.failure_class}|{d}",
             f"{self.failure_class}",
             "_",
         )
 
     def uplift_keys(self, action: str) -> tuple[str, ...]:
+        """Action-response cells, finest first.
+
+        `in_incident` is in here, and leaving it out was a real error. Without
+        it the estimator cannot distinguish re-presenting a payment that failed
+        while the rail was degraded from re-presenting an ordinary failure -
+        and those have opposite signs. The evaluation caught it: retry_now was
+        chosen 321 times, 90% of them with negative true uplift, 282 of those on
+        payments that failed inside the outage window. The model had no feature
+        that could see the difference.
+        """
+        d = int(self.in_incident)
         return (
-            f"{action}|{self.failure_class}|{self.bucket}",
+            f"{action}|{self.failure_class}|{self.bucket}|{d}",
+            f"{action}|{self.failure_class}|{d}",
             f"{action}|{self.failure_class}",
             f"{action}",
         )
@@ -300,7 +324,7 @@ class CounterfactualModel:
             pid: payload.get("action") for pid, payload in action_rows if payload
         }
 
-        downtimes = session.execute(select(DowntimeRecord)).scalars().all()
+        degraded = degraded_buckets(session, until=until)
 
         rows = session.execute(
             select(
@@ -323,10 +347,10 @@ class CounterfactualModel:
             if not fclass:
                 continue
             recovered = status == PaymentStatus.RECOVERED
-            in_dt = _covered_by_downtime(downtimes, created, method, instrument)
+            in_incident = any(k in degraded for k in bucket_keys(method, instrument, created))
             feats = Features(
                 failure_class=fclass, method=method, amount_paise=amount,
-                tier=tier or "casual", in_downtime=in_dt,
+                tier=tier or "casual", in_incident=in_incident,
             )
             action = actions.get(pid)
             model.fit_rows += 1
@@ -475,6 +499,87 @@ class CounterfactualModel:
         }
 
 
+DEGRADED_MIN_VOLUME = 25
+DEGRADED_ABSOLUTE_DROP = 0.12
+DEGRADED_RELATIVE_DROP = 0.20
+BUCKET_MINUTES = 30
+
+
+def degraded_buckets(session: Session, *, until: datetime) -> set[str]:
+    """Time buckets where a slice's success rate was materially below its own norm.
+
+    The same question the detector asks, answered cheaply enough to run over
+    every historical payment: one grouped query by (method, instrument,
+    15-minute bucket), compared against that slice's overall rate.
+
+    This is deliberately not the detector itself. The detector is a live scan
+    with a scan statistic and FDR control and costs seconds; this needs to label
+    ~7,000 training failures during a model fit. It only has to be a consistent
+    label, and being computed the same way at fit and predict time matters far
+    more than being the identical statistic.
+    """
+    bucket = func.strftime(
+        "%Y-%m-%dT%H:", func.datetime(Payment.created_at, "+330 minutes")
+    )
+    minute_group = func.cast(
+        func.strftime("%M", func.datetime(Payment.created_at, "+330 minutes")),
+        Integer,
+    ) / BUCKET_MINUTES
+
+    rows = session.execute(
+        select(
+            Payment.method, Payment.instrument, bucket, minute_group,
+            func.count(),
+            func.sum(case((Payment.status == PaymentStatus.CAPTURED, 1), else_=0)),
+        )
+        .where(Payment.created_at < until)
+        .group_by(Payment.method, Payment.instrument, bucket, minute_group)
+    ).all()
+
+    # Aggregate at two levels. An instrument-specific fault (one bank's
+    # netbanking) only shows at the slice level; a PSP-wide one is clearest at
+    # the method level, where there is also far more volume to see it with.
+    # A payment counts as in-incident if either level says its rail was degraded.
+    slice_buckets: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+    method_buckets: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+    slice_totals: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+    method_totals: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
+
+    for method, instrument, b, m, n, ok in rows:
+        n, ok = float(n), float(ok or 0)
+        stamp = f"{b}{int(m)}"
+        for key, buckets, totals in (
+            (f"{method}/{instrument}", slice_buckets, slice_totals),
+            (f"{method}/*", method_buckets, method_totals),
+        ):
+            buckets[f"{key}|{stamp}"][0] += n
+            buckets[f"{key}|{stamp}"][1] += ok
+            totals[key][0] += n
+            totals[key][1] += ok
+
+    degraded: set[str] = set()
+    for buckets, totals in ((slice_buckets, slice_totals), (method_buckets, method_totals)):
+        for bucket_key_, (n, ok) in buckets.items():
+            if n < DEGRADED_MIN_VOLUME:
+                continue
+            key = bucket_key_.split("|", 1)[0]
+            total_n, total_ok = totals[key]
+            baseline = (total_ok / total_n) if total_n else 0.9
+            observed = ok / n
+            if (baseline - observed) >= DEGRADED_ABSOLUTE_DROP and observed <= baseline * (
+                1 - DEGRADED_RELATIVE_DROP
+            ):
+                degraded.add(bucket_key_)
+    return degraded
+
+
+def bucket_keys(method: str, instrument: str, when: datetime) -> tuple[str, str]:
+    """The slice-level and method-level bucket labels for one payment."""
+    ist = when.astimezone(IST) if when.tzinfo else when.replace(tzinfo=timezone.utc).astimezone(IST)
+    stamp = f"{ist:%Y-%m-%dT%H:}{ist.minute // BUCKET_MINUTES}"
+    return f"{method}/{instrument}|{stamp}", f"{method}/*|{stamp}"
+
+
 def _covered_by_downtime(
     downtimes: Sequence[DowntimeRecord], when: datetime, method: str, instrument: str
 ) -> bool:
@@ -489,13 +594,13 @@ def _covered_by_downtime(
     return False
 
 
-def features_for(payment: Payment, customer: Customer, *, in_downtime: bool) -> Features:
+def features_for(payment: Payment, customer: Customer, *, in_incident: bool) -> Features:
     return Features(
         failure_class=payment.failure_class or "unknown",
         method=payment.method,
         amount_paise=payment.amount_paise,
         tier=customer.tier,
-        in_downtime=in_downtime,
+        in_incident=in_incident,
         prior_recovery_rate=customer.prior_recovery_rate,
         prior_failures=customer.prior_failures,
     )

@@ -38,7 +38,7 @@ def _f(cls, **kw):
     return Features(
         failure_class=cls, method=kw.pop("method", "upi"),
         amount_paise=kw.pop("amount_paise", 3_00_000),
-        tier=kw.pop("tier", "regular"), in_downtime=kw.pop("in_downtime", False), **kw,
+        tier=kw.pop("tier", "regular"), in_incident=kw.pop("in_incident", False), **kw,
     )
 
 
@@ -154,8 +154,20 @@ def test_well_evidenced_arms_can_be_credible(fitted):
         if u.credible
     ]
     assert credible, "no action reached credibility anywhere in the corpus"
-    # and whatever cleared the bar did so on real evidence, not a lucky 12
-    assert all(n >= 100 for _, _, n in credible)
+
+    # Whatever cleared the bar did so on real evidence. Not a fixed sample-size
+    # threshold, because that is not the invariant: a 27-point effect
+    # (switch_method on a dead instrument) is legitimately resolvable with far
+    # fewer observations than a 3-point one. The invariant is that credibility
+    # required clearing the minimum evidence floor and that the interval
+    # genuinely excludes zero.
+    for cls, action, n in credible:
+        assert n >= MIN_TREATED_FOR_UPLIFT, f"{cls}/{action} credible on n={n}"
+    for cls in ("infra_transient", "auth_friction", "instrument_invalid",
+                "liquidity", "intent_absent"):
+        for u in model.estimate(_f(cls)).uplift.values():
+            if u.credible:
+                assert u.lo > 0, f"{cls}/{u.action} marked credible with lo={u.lo}"
 
 
 def test_treated_and_control_are_drawn_from_the_same_stratum(fitted):

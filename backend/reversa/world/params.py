@@ -39,12 +39,18 @@ SCALE_PRESETS: dict[str, dict] = {
     # real live day.
     "test_live": {"customers": 4_000, "training_days": 20, "live_orders": 55_000},
     "small":  {"customers": 1_200, "training_days": 14, "live_orders": 6_000},
-    "demo":   {"customers": 6_000, "training_days": 28, "live_orders": 120_000},
-    "large":  {"customers": 12_000, "training_days": 28, "live_orders": 260_000},
+    "demo":   {"customers": 6_000, "training_days": 21, "live_orders": 120_000},
+    "large":  {"customers": 12_000, "training_days": 21, "live_orders": 260_000},
 }
 DEFAULT_SCALE = "demo"
 
-TRAINING_ORDERS_PER_DAY_PER_1K_CUSTOMERS = 340
+# History volume per 1,000 customers per day. The live day is a festival sale
+# running roughly 2.5x this, which is a plausible spike. The first version had
+# history at 340/day against a 120,000-order live day - a 60x jump no real
+# merchant makes, and it left every 15-minute per-slice bucket holding 2-9
+# payments, far too thin to label an incident from. That silently made the
+# in_incident feature unlearnable.
+TRAINING_ORDERS_PER_DAY_PER_1K_CUSTOMERS = 1_350
 
 
 # ===========================================================================
@@ -330,8 +336,10 @@ ACTIONS_WITH_UPLIFT: tuple[str, ...] = tuple(UPLIFT_BASE.keys())
 # what makes "spray the whole cohort" lose to a targeted plan.
 UPLIFT_DAMPING_GAMMA = 1.35
 
-# Re-presenting into a rail that is still degraded is worse than waiting.
-INCIDENT_RETRY_PENALTY = -0.18
+# Re-presenting into a rail that is still degraded is worse than waiting. Set
+# high because that is what it is: an immediate retry into an ongoing outage
+# mostly burns the attempt, and issuers score repeated declines.
+INCIDENT_RETRY_PENALTY = -0.32
 
 # Payment links and nudges decay in effectiveness with hours since failure.
 CONTACT_DECAY_TAU_HOURS: dict[str, float] = {
@@ -408,6 +416,13 @@ LEGACY_EXPLORATION_EPSILON = 0.15
 LEGACY_LINK_THRESHOLD_PAISE = 2_00_000
 LEGACY_COVERAGE = 0.72   # share of failures the legacy policy touched at all
 
+# Most merchants already run some form of scheduled retry on failures that look
+# infrastructural - it is the oldest trick in dunning. Modelling the legacy
+# policy as retry-everything-immediately left the historical log with almost no
+# delayed retries, so the estimator had nothing to learn the delayed arm from
+# and scored it as worthless.
+LEGACY_DELAYED_SOURCES = ("bank", "gateway", "network", "issuer")
+
 
 # ===========================================================================
 # incidents
@@ -478,7 +493,15 @@ INCIDENT_TEMPLATES: dict[str, dict] = {
 
 # Training-era incidents, so the detector has history to calibrate against and
 # the evaluation harness has more than one positive to score.
-TRAINING_INCIDENT_COUNT = 11
+# Degradations are not rare. NPCI logged downtime for 11 separate banks in a
+# single month, and a merchant spanning four rails sees partial degradation
+# most days. 11 over three weeks left the in-incident cells with ~50
+# observations - far too thin to learn anything from.
+# Roughly one a day. Enough that the in-incident cells carry real weight, not
+# so many that they drag the baseline down with them - at 48 the historical
+# success rate fell from 91% to 83% and every live incident looked mild by
+# comparison, because the baseline had absorbed the degradation.
+TRAINING_INCIDENT_COUNT = 24
 TRAINING_INCIDENT_DURATION_RANGE_MIN = (8, 46)
 
 

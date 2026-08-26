@@ -207,8 +207,10 @@ def build_cohort(
     build.rail_down_now = rail_down_now
 
     for payment, customer in rows:
-        failed_during_downtime = _in_downtime(downtimes, payment)
-        feats = features_for(payment, customer, in_downtime=failed_during_downtime)
+        # every cohort member failed inside a slice the detector flagged - that
+        # IS the in_incident feature, and it is the same label the estimator was
+        # fitted on
+        feats = features_for(payment, customer, in_incident=True)
         est = model.estimate(feats, actions=CONSIDERED_ACTIONS)
 
         subject = G.GateSubject(
@@ -221,6 +223,7 @@ def build_cohort(
             instrument=payment.instrument,
             failed_at=payment.created_at,
             deadline_at=payment.created_at + timedelta(days=settings.case_ttl_days),
+            incident_ended_at=window_end,
             credit_linked=False,
         )
         ctx = G.GateContext(
@@ -344,7 +347,7 @@ def _rail_down_at(
     return False
 
 
-def _in_downtime(downtimes: Sequence[DowntimeRecord], payment: Payment) -> bool:
+def _in_incident(downtimes: Sequence[DowntimeRecord], payment: Payment) -> bool:
     for d in downtimes:
         if d.method not in (payment.method, "*"):
             continue

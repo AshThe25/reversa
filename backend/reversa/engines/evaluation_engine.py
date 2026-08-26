@@ -117,7 +117,11 @@ class DecisionScore:
     chose_true_best: int
     chose_positive_uplift: int
     chose_harmful: int
-    false_positive_interventions: int
+    flagged_wasteful: int
+    """Actions the system ITSELF expected to be waste - high estimated natural
+    recovery. This is the proxy an operator sees, since truth is unavailable."""
+    truly_ineffective: int
+    """Actions whose TRUE uplift was <= 0. Only knowable here."""
     mean_regret: float
 
     @property
@@ -128,14 +132,26 @@ class DecisionScore:
     def positive_rate(self) -> float:
         return self.chose_positive_uplift / self.decisions if self.decisions else 0.0
 
+    @property
+    def effective_rate(self) -> float:
+        return 1.0 - (self.truly_ineffective / self.decisions) if self.decisions else 0.0
+
     def as_dict(self) -> dict:
         return {
             "decisions": self.decisions,
             "top1_accuracy": round(self.top1_accuracy, 4),
             "chose_positive_uplift_rate": round(self.positive_rate, 4),
             "chose_harmful": self.chose_harmful,
-            "false_positive_interventions": self.false_positive_interventions,
+            "flagged_wasteful": self.flagged_wasteful,
+            "truly_ineffective": self.truly_ineffective,
+            "effective_rate": round(self.effective_rate, 4),
             "mean_regret_uplift_points": round(self.mean_regret, 5),
+            "note": (
+                "top1_accuracy is scored against the best action that was "
+                "actually AVAILABLE - grading the optimizer against an option a "
+                "compliance gate had already removed would measure the gates, "
+                "not the optimizer."
+            ),
         }
 
 
@@ -256,7 +272,8 @@ def score_decisions(session: Session, experiment_id: str) -> DecisionScore:
     rows = session.execute(
         select(
             RecoveryAction.action_type, RecoveryAction.p_natural_at_decision,
-            GroundTruth.true_best_action, GroundTruth.true_uplift_by_action,
+            RecoveryAction.considered,
+            GroundTruth.true_uplift_by_action,
         )
         .join(GroundTruth, GroundTruth.payment_id == RecoveryAction.payment_id)
         .where(
@@ -267,30 +284,42 @@ def score_decisions(session: Session, experiment_id: str) -> DecisionScore:
     ).all()
 
     if not rows:
-        return DecisionScore(0, 0, 0, 0, 0, 0.0)
+        return DecisionScore(0, 0, 0, 0, 0, 0, 0.0)
 
-    best_hits = positive = harmful = false_positive = 0
+    best_hits = positive = harmful = flagged = ineffective = 0
     regrets: list[float] = []
 
-    for action, p_nat, true_best, uplifts in rows:
+    for action, p_nat, considered, uplifts in rows:
         uplifts = uplifts or {}
         chosen = float(uplifts.get(action, 0.0))
-        best_value = max(uplifts.values()) if uplifts else 0.0
 
-        if action == true_best:
+        # Grade against the best option that was actually on the table. The
+        # optimizer cannot pick an action a gate removed, and scoring it against
+        # one measures the gates rather than the decision.
+        available = {
+            a for a, meta in (considered or {}).items()
+            if isinstance(meta, dict) and meta.get("eligible")
+        } or set(uplifts)
+        reachable = {a: v for a, v in uplifts.items() if a in available}
+        best_value = max(reachable.values()) if reachable else 0.0
+        best_action = max(reachable, key=reachable.get) if reachable else None
+
+        if action == best_action:
             best_hits += 1
         if chosen > 0:
             positive += 1
+        else:
+            ineffective += 1
         if chosen < 0:
             harmful += 1
         if p_nat >= WASTE_THRESHOLD:
-            false_positive += 1
+            flagged += 1
         regrets.append(max(0.0, best_value - chosen))
 
     return DecisionScore(
         decisions=len(rows), chose_true_best=best_hits,
         chose_positive_uplift=positive, chose_harmful=harmful,
-        false_positive_interventions=false_positive,
+        flagged_wasteful=flagged, truly_ineffective=ineffective,
         mean_regret=float(np.mean(regrets)) if regrets else 0.0,
     )
 

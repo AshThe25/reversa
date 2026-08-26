@@ -209,6 +209,9 @@ class GateSubject:
     retries_used: int = 0
     is_frozen: bool = False
     is_closed: bool = False
+    incident_ended_at: datetime | None = None
+    """When the incident that broke this payment stopped. Drives the retry
+    cool-off below."""
     credit_linked: bool = False
     """EMI / BNPL / lender-backed subscription. Flips the RBI recovery-conduct
     rules from a standard we adopt into law that binds us."""
@@ -449,6 +452,46 @@ def _g_downtime_suppression(action: str, c: GateContext) -> Verdict:
     return Verdict("downtime_suppression", True, rule)
 
 
+# How long a rail gets to settle before we re-present into it.
+INCIDENT_RETRY_COOLOFF = timedelta(minutes=45)
+
+
+def _g_incident_cooloff(action: str, c: GateContext) -> Verdict:
+    """No immediate re-presentment on a rail that just broke.
+
+    This is an invariant, not a hypothesis, and it is deliberately not left to
+    the uplift model to discover. The evaluation made the case: the true harm
+    from retrying straight into a just-degraded rail is a few percentage points,
+    which needs thousands of matched observations to detect - so an estimator
+    fed ordinary merchant history will keep choosing RETRY NOW and keep being
+    mildly wrong, forever.
+
+    Some things you encode. Waiting for a rail to settle costs one delayed
+    retry; not waiting costs a burned attempt and a hardened decline. RETRY
+    DELAYED stays open throughout - the point is to shift the timing, not to
+    abandon the payment.
+    """
+    rule = (f"Reversa invariant: no immediate re-presentment within "
+            f"{int(INCIDENT_RETRY_COOLOFF.total_seconds() // 60)}m of the "
+            "incident clearing")
+    if action != ActionType.RETRY_NOW:
+        return Verdict("incident_cooloff", True, rule, "not an immediate retry")
+
+    ended = c.subject.incident_ended_at
+    if ended is None:
+        return Verdict("incident_cooloff", True, rule, "not tied to an incident")
+
+    ready = _aware(ended) + INCIDENT_RETRY_COOLOFF
+    if c.now < ready:
+        return Verdict(
+            "incident_cooloff", False, rule,
+            f"rail cleared {int((c.now - _aware(ended)).total_seconds() // 60)}m ago; "
+            "use a delayed retry",
+            retry_after=ready,
+        )
+    return Verdict("incident_cooloff", True, rule)
+
+
 def _g_template_registered(action: str, c: GateContext) -> Verdict:
     rule = "TRAI DLT: commercial messages must use a pre-registered template"
     if action not in REGISTERED_TEMPLATES:
@@ -475,6 +518,7 @@ GATES: tuple[tuple[Callable[[str, GateContext], Verdict], str], ...] = (
     (_g_retry_budget,          Basis.CONFIGURED),
     (_g_instrument_viable,     Basis.INVARIANT),
     (_g_downtime_suppression,  Basis.INVARIANT),
+    (_g_incident_cooloff,      Basis.INVARIANT),
     (_g_template_registered,   Basis.STATUTORY),  # TCCCPR registered template
 )
 

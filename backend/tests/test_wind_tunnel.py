@@ -196,10 +196,21 @@ def test_waiting_is_modelled_as_a_real_tradeoff_not_a_free_win(cohort):
     assert softened > 0 and harder > 0
 
 
-def test_link_capacity_binds_at_the_test_mode_ceiling(tunnel):
+def test_link_capacity_never_exceeds_the_test_mode_ceiling(tunnel):
+    """Razorpay test mode caps a business at 30 Payment Links, and that cap is
+    enforced rather than hoped for.
+
+    Whether it actually binds depends on the cohort - once the estimator learned
+    that links are not worth buying for part of it, the eligible pool can fall
+    below 30 on its own. So the invariant is the ceiling plus an explanation for
+    any shortfall, not that we always spend to the limit.
+    """
     link = next(s for s in tunnel.scenarios if s.key == "payment_link")
     assert link.action_count <= 30
-    assert "payment_link" in link.exhausted
+    if link.action_count == 30:
+        assert "payment_link" in link.exhausted
+    else:
+        assert link.notes, "unspent link capacity must be explained"
 
 
 def test_scenarios_report_what_they_cost_not_only_what_they_earn(tunnel):

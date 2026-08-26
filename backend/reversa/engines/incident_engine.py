@@ -204,6 +204,13 @@ class DetectedIncident:
     first_seen: datetime
     last_seen: datetime
     signals: list[Signal] = field(default_factory=list)
+    diffuse_members: tuple[str, ...] = ()
+    """Set when this is a cluster of unrelated slices degrading together. Its
+    presence means the scope is NOT contained - see `cluster_diffuse`."""
+
+    @property
+    def is_diffuse(self) -> bool:
+        return bool(self.diffuse_members)
 
     @property
     def peak(self) -> Signal:
@@ -247,6 +254,14 @@ def _ist_day_hour(session: Session):
 class StreamBuffer:
     """The scan range held in memory, sorted by time.
 
+    Success means CAPTURED - first presentment worked. A payment that failed at
+    18:05 and was recovered at 19:30 was still a failure at 18:05, and the
+    detector must see it that way. The first version keyed on `status != FAILED`,
+    so recovering a cohort silently rewrote the history the detector had already
+    reasoned about: re-running detection after an execution showed the UPI
+    incident being caught 33 minutes late instead of 3, because 570 of the
+    failures it had detected were now marked recovered.
+
     The scan runs ~230 ticks x 3 window lengths. Doing that as 690 SQL windows
     worked but spent most of the wall clock in the driver, and this has to feel
     instant in front of a judge. One query, then bisect.
@@ -269,7 +284,7 @@ class StreamBuffer:
         rows = [
             (
                 (t if t.tzinfo else t.replace(tzinfo=timezone.utc)),
-                m, i, st == PaymentStatus.FAILED, fr, amt,
+                m, i, st != PaymentStatus.CAPTURED, fr, amt,
             )
             for t, m, i, st, fr, amt in raw
         ]
@@ -315,6 +330,10 @@ class BaselineModel:
     def build(cls, session: Session, *, until: datetime) -> "BaselineModel":
         """Fit baselines from history.
 
+        Success is CAPTURED only - see StreamBuffer. Baselines have to be built
+        on first-attempt outcomes or a merchant who recovers well appears to have
+        had no incidents at all.
+
         Aggregated in SQL, not in Python. The first version pulled every
         historical payment into memory - 60k rows cost 33MB, which extrapolates
         to about 5.5GB on a merchant with 10M payments, i.e. it would simply
@@ -332,7 +351,7 @@ class BaselineModel:
                 bucket.label("bucket"),
                 func.count().label("n"),
                 func.sum(
-                    case((Payment.status == PaymentStatus.FAILED, 0), else_=1)
+                    case((Payment.status == PaymentStatus.CAPTURED, 1), else_=0)
                 ).label("ok"),
             )
             .where(Payment.created_at < until)
@@ -628,6 +647,67 @@ def consolidate(incidents: list[DetectedIncident]) -> list[DetectedIncident]:
     return sorted(out, key=lambda i: i.first_seen)
 
 
+# A degradation touching this many unrelated slices at once has no containable
+# scope. Three is the point at which "one bank" stops being a plausible story.
+DIFFUSE_MIN_SLICES = 3
+DIFFUSE_WINDOW = timedelta(minutes=20)
+
+
+def cluster_diffuse(incidents: list[DetectedIncident]) -> list[DetectedIncident]:
+    """Group simultaneous degradations across unrelated slices into one finding.
+
+    When a PSP breaks, every UPI handle goes with it and `consolidate` folds
+    them into UPI/*, because they share a parent. When something upstream of
+    everything degrades - merchant-side latency, a shared gateway hop - the
+    damage lands on slices with no common parent at all: some UPI handles, some
+    netbanking, some cards. Those refuse to consolidate, and reporting them as
+    five separate incidents is both noisy and actively misleading, because the
+    interesting fact about them is precisely that they have no shared scope.
+
+    So they become one incident carrying every member slice. Downstream, an
+    incident with `diffuse_members` is one whose root cause the evidence cannot
+    attribute - which is exactly the case where automation should stop and ask
+    for a human.
+    """
+    if len(incidents) < DIFFUSE_MIN_SLICES:
+        return incidents
+
+    remaining = sorted(incidents, key=lambda i: i.first_seen)
+    out: list[DetectedIncident] = []
+
+    while remaining:
+        seed = remaining.pop(0)
+        window_end = seed.first_seen + DIFFUSE_WINDOW
+        cluster = [seed]
+        rest = []
+        for other in remaining:
+            related = (
+                _is_ancestor(seed.slice, other.slice)
+                or _is_ancestor(other.slice, seed.slice)
+                or seed.slice.method == other.slice.method
+            )
+            if not related and other.first_seen <= window_end:
+                cluster.append(other)
+            else:
+                rest.append(other)
+        remaining = rest
+
+        if len(cluster) < DIFFUSE_MIN_SLICES:
+            out.extend(cluster)
+            continue
+
+        merged = DetectedIncident(
+            slice=Slice(GLOBAL, GLOBAL),
+            first_seen=min(c.first_seen for c in cluster),
+            last_seen=max(c.last_seen for c in cluster),
+            signals=[s for c in cluster for s in c.signals],
+            diffuse_members=tuple(sorted(c.slice.key for c in cluster)),
+        )
+        out.append(merged)
+
+    return sorted(out, key=lambda i: i.first_seen)
+
+
 def scan(
     session: Session,
     start: datetime,
@@ -685,7 +765,7 @@ def scan(
         cursor += timedelta(minutes=tick_minutes)
 
     closed.extend(open_incidents.values())
-    closed = consolidate(closed)
+    closed = cluster_diffuse(consolidate(closed))
 
     return closed, {
         "ticks": ticks,

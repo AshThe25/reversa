@@ -48,6 +48,7 @@ within-customer correlation.
 from __future__ import annotations
 
 import hashlib
+import math
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -70,6 +71,7 @@ EXPLORATION = "exploration"
 ARMS = (Arm.TREATMENT.value, Arm.HOLDOUT.value, EXPLORATION)
 
 _HASH_SPACE = 1 << 32
+_Z = 1.6449   # two-sided 90%
 
 
 def assign_arm(
@@ -146,6 +148,12 @@ class ExperimentResult:
     bootstrap_samples: int
     confidence: float
     compute_ms: float
+    mde_rate: float = 0.0
+    """Smallest rate lift these arm sizes could have detected. If the observed
+    effect is smaller than this, the experiment was never going to resolve it -
+    which is a fact about the design, not about the intervention."""
+    required_holdout: int = 0
+    """Holdout size that would resolve the observed effect at this confidence."""
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -156,6 +164,11 @@ class ExperimentResult:
     @property
     def rate_significant(self) -> bool:
         return self.rate_lift_lo > 0
+
+    @property
+    def underpowered(self) -> bool:
+        """Observed effect is real-looking but smaller than the design can resolve."""
+        return abs(self.rate_lift) < self.mde_rate
 
     @property
     def concentrated(self) -> bool:
@@ -197,6 +210,9 @@ class ExperimentResult:
             "net_paise": self.net_paise,
             "roi": round(self.roi, 2) if self.roi else None,
             "measurement_cost_paise": self.measurement_cost_paise,
+            "mde_rate": round(self.mde_rate, 5),
+            "required_holdout": self.required_holdout,
+            "underpowered": self.underpowered,
             "bootstrap_samples": self.bootstrap_samples,
             "confidence": self.confidence,
             "compute_ms": round(self.compute_ms, 1),
@@ -265,26 +281,95 @@ def assign(
     holdout_fraction: float,
     exploration_fraction: float = 0.0,
     now: datetime,
+    exposure: Mapping[str, int] | None = None,
+    strata: int = 5,
 ) -> dict[str, str]:
-    """Assign every payment's customer to an arm and persist it."""
+    """Assign each payment's customer to an arm, stratified on order value.
+
+    Plain hash assignment is unbiased in expectation and still produces
+    unusable draws here: recovered amounts are heavily skewed, so a single
+    realisation routinely lands the arms 30-40% apart on mean ticket, and the
+    lift estimate is then dominated by which arm happened to get the big
+    payments. We saw exactly that - a 1.35x ticket ratio and a rate lift that
+    came out negative on an intervention we know helps.
+
+    So the population is split into value strata and the target fractions are
+    allocated *within each stratum*, ordering by the same
+    sha256(experiment_id ‖ customer_id) digest. Randomisation is preserved -
+    position within a stratum is still pseudo-random and still recomputable by
+    hand from the stored hash - but the arms now match on the covariate that
+    drives the variance.
+    """
+    # Assignment is idempotent. Experiment ids are a deterministic hash of the
+    # cohort and scenario, so a second Deploy click lands on the same experiment -
+    # and the first version answered that with a 500 from the uniqueness
+    # constraint. Re-treating people who were already treated is also just wrong,
+    # so previously-assigned payments keep the arm they already had.
+    existing = {
+        row.payment_id: row.arm
+        for row in session.execute(
+            select(ExperimentAssignment).where(
+                ExperimentAssignment.experiment_id == experiment_id
+            )
+        ).scalars()
+    }
+
     arms: dict[str, str] = {}
-    rows = []
-    for idx, (payment_id, customer_id) in enumerate(payments):
-        arm, prefix = assign_arm(
-            experiment_id, customer_id,
-            holdout_fraction=holdout_fraction,
-            exploration_fraction=exploration_fraction,
-        )
-        arms[payment_id] = arm
-        rows.append(ExperimentAssignment(
+    pending = []
+    for payment_id, customer_id in payments:
+        if payment_id in existing:
+            arms[payment_id] = existing[payment_id]
+        else:
+            pending.append((payment_id, customer_id))
+
+    if pending:
+        buckets = _value_strata(pending, exposure or {}, strata)
+        for members in buckets:
+            ordered = sorted(
+                members,
+                key=lambda pc: hashlib.sha256(
+                    f"{experiment_id}|{pc[1]}".encode()
+                ).hexdigest(),
+            )
+            n = len(ordered)
+            n_holdout = int(round(n * holdout_fraction))
+            n_explore = int(round(n * exploration_fraction))
+            for position, (payment_id, _customer) in enumerate(ordered):
+                if position < n_holdout:
+                    arms[payment_id] = Arm.HOLDOUT.value
+                elif position < n_holdout + n_explore:
+                    arms[payment_id] = EXPLORATION
+                else:
+                    arms[payment_id] = Arm.TREATMENT.value
+
+    rows = [
+        ExperimentAssignment(
             id=f"asg_{experiment_id[-8:]}_{idx:06d}",
             experiment_id=experiment_id, payment_id=payment_id,
-            customer_id=customer_id, arm=arm,
-            assignment_hash=prefix, assigned_at=now,
-        ))
+            customer_id=customer_id, arm=arms[payment_id],
+            assignment_hash=hashlib.sha256(
+                f"{experiment_id}|{customer_id}".encode()
+            ).hexdigest()[:16],
+            assigned_at=now,
+        )
+        for idx, (payment_id, customer_id) in enumerate(pending)
+    ]
     session.add_all(rows)
     session.flush()
     return arms
+
+
+def _value_strata(
+    payments: Sequence[tuple[str, str]],
+    exposure: Mapping[str, int],
+    strata: int,
+) -> list[list[tuple[str, str]]]:
+    """Split the population into equal-count bands by order value."""
+    if strata <= 1 or not exposure:
+        return [list(payments)]
+    ordered = sorted(payments, key=lambda pc: exposure.get(pc[0], 0))
+    size = max(1, len(ordered) // strata)
+    return [ordered[i:i + size] for i in range(0, len(ordered), size)] or [list(payments)]
 
 
 def balance_report(arms: Mapping[str, str], exposure: Mapping[str, int]) -> dict:
@@ -379,6 +464,8 @@ def results(
     natural = int(round(treatment.exposure_paise * control_revenue_rate))
     incremental = treatment.recovered_paise - natural
 
+    mde, required = _power(treatment, holdout)
+
     lo, hi, rate_lo, rate_hi = _bootstrap(
         per_arm_rows[Arm.TREATMENT.value], per_arm_rows[Arm.HOLDOUT.value],
         samples=bootstrap_samples, seed=seed,
@@ -405,9 +492,18 @@ def results(
         bootstrap_samples=bootstrap_samples,
         confidence=CONFIDENCE,
         compute_ms=(time.perf_counter() - started) * 1000,
+        mde_rate=mde,
+        required_holdout=required,
         warnings=warnings,
     )
 
+    if result.underpowered and abs(result.rate_lift) > 1e-6:
+        warnings.append(
+            f"observed rate lift of {result.rate_lift:+.1%} is below the "
+            f"{mde:.1%} this design could resolve - a holdout of about "
+            f"{required:,} payments would be needed to call it either way. "
+            "The interval is doing its job; the sample size is the limit."
+        )
     if result.concentrated:
         result.warnings.append(
             "revenue lift is significant but the per-payment rate lift is not - "
@@ -420,6 +516,34 @@ def results(
             "free gateway retries; read net incremental rupees, not the ratio"
         )
     return result
+
+
+def _power(treatment: ArmResult, holdout: ArmResult) -> tuple[float, int]:
+    """Minimum detectable rate lift, and the holdout that would resolve what we saw.
+
+    Reported because "not significant" and "no effect" are different claims and
+    conflating them is how experimentation programmes get abandoned. A two-
+    proportion normal approximation is fine here - unlike the revenue estimate,
+    the rate is a plain mean of Bernoullis, not a ratio of skewed sums.
+    """
+    n_t, n_c = treatment.payments, holdout.payments
+    if n_t < 2 or n_c < 2:
+        return 1.0, 0
+
+    p = (treatment.recovered + holdout.recovered) / (n_t + n_c)
+    var = max(p * (1 - p), 1e-6)
+    se = math.sqrt(var * (1 / n_t + 1 / n_c))
+    mde = _Z * se
+
+    observed = abs(treatment.recovery_rate - holdout.recovery_rate)
+    if observed <= 1e-6:
+        return mde, 0
+
+    # solve for the control arm that makes the observed effect detectable,
+    # holding the treatment:control ratio fixed
+    ratio = n_t / n_c
+    required_c = var * (1 + 1 / ratio) * (_Z / observed) ** 2
+    return mde, int(math.ceil(required_c))
 
 
 def _bootstrap(

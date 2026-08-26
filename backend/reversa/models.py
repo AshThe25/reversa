@@ -351,6 +351,10 @@ class Incident(Base):
     rca_class: Mapped[str | None] = mapped_column(String(40))
     rca_confidence: Mapped[float] = mapped_column(Float, default=0.0)
     rca_is_ambiguous: Mapped[bool] = mapped_column(Boolean, default=False)
+    """True when the degradation has no containable scope - it landed on slices
+    with no common parent. No single root cause is supportable from the
+    evidence, so the policy layer refuses to automate it."""
+    rca_evidence: Mapped[dict] = mapped_column(JSON, default=dict)
 
     revenue_exposed_paise: Mapped[int] = mapped_column(Integer, default=0)
     affected_payment_count: Mapped[int] = mapped_column(Integer, default=0)

@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from reversa.config import Settings, get_settings
@@ -27,9 +27,9 @@ from reversa.engines.cohort_engine import CohortBuild, build_cohort
 from reversa.engines.counterfactual_engine import CounterfactualModel
 from reversa.engines.portfolio_optimizer import Candidate
 from reversa.models import (
-    ActionResult, Arm, Cohort, Incident, IncidentStatus, RecoveryAction,
-    RecoveryCandidate, RecoveryStrategy, SimulationRun, SimulationScenario,
-    WorldMeta,
+    ActionResult, Arm, Cohort, Experiment, ExperimentAssignment, Incident,
+    IncidentStatus, RecoveryAction, RecoveryCandidate, RecoveryStrategy,
+    SimulationRun, SimulationScenario, WorldMeta,
 )
 from reversa.world import params as P
 from reversa.world.outcomes import realise
@@ -111,6 +111,19 @@ def persist_incidents(
         row.revenue_exposed_paise = exposed
         row.affected_payment_count = obs.n - obs.successes
 
+        # A degradation spread across slices with no common parent has no
+        # containable scope, so no single root cause is supportable from the
+        # evidence. Marked here; the policy layer refuses to automate it.
+        row.rca_is_ambiguous = d.is_diffuse
+        if d.is_diffuse:
+            row.label = (
+                f"Unattributed degradation across {len(d.diffuse_members)} "
+                "unrelated slices"
+            )
+            row.rca_class = "AMBIGUOUS"
+            row.rca_confidence = 0.0
+            row.rca_evidence = {"diffuse_members": list(d.diffuse_members)}
+
         out.append(row)
 
     session.flush()
@@ -125,6 +138,7 @@ def persist_incidents(
                 "baseline_success_rate": round(row.baseline_success_rate, 4),
                 "observed_success_rate": round(row.observed_success_rate, 4),
                 "revenue_exposed_paise": row.revenue_exposed_paise,
+                "ambiguous": row.rca_is_ambiguous,
             },
             occurred_at=row.detected_at,
         )
@@ -333,6 +347,32 @@ def execute_and_measure(
     session.flush()
 
     experiment_id = _id("exp", f"{cohort.id}|{scenario.key}")
+
+    # Already run? Return what it measured rather than treating anyone twice.
+    prior = session.get(Experiment, experiment_id)
+    if prior is not None and prior.status == "concluded":
+        return ExecutionReport(
+            experiment_id=experiment_id, strategy_id=strategy_id,
+            scenario_key=scenario.key,
+            arms=_arm_counts(session, experiment_id),
+            actions_executed=session.execute(
+                select(func.count()).select_from(RecoveryAction).where(
+                    RecoveryAction.experiment_id == experiment_id,
+                    RecoveryAction.result == ActionResult.EXECUTED,
+                )
+            ).scalar() or 0,
+            result=EX.results(session, experiment_id),
+            balance=EX.balance_report(
+                {a.payment_id: a.arm for a in session.execute(
+                    select(ExperimentAssignment).where(
+                        ExperimentAssignment.experiment_id == experiment_id
+                    )
+                ).scalars()},
+                {c.payment_id: c.amount_paise for c in candidates},
+            ),
+            projected_incremental_paise=scenario.incremental_recovery_paise,
+        )
+
     EX.open_experiment(
         session, experiment_id=experiment_id, cohort_id=cohort.id,
         strategy_id=strategy_id,
@@ -341,17 +381,27 @@ def execute_and_measure(
         exploration_fraction=exploration_fraction, now=now,
     )
 
-    pairs = [(c.payment_id, c.customer_id) for c in candidates]
+    # The experiment population is the set of payments the strategy would act
+    # on - not the whole cohort. Randomising across every candidate leaves the
+    # treatment arm mostly untreated, and comparing two near-identical
+    # populations measures nothing.
+    planned = set(scenario.assignment)
+    population = [c for c in candidates if c.payment_id in planned]
+    if not population:
+        population = list(candidates)
+
+    pairs = [(c.payment_id, c.customer_id) for c in population]
     arms = EX.assign(
         session, experiment_id, pairs,
         holdout_fraction=settings.holdout_fraction,
         exploration_fraction=exploration_fraction, now=now,
+        exposure={c.payment_id: c.amount_paise for c in population},
     )
 
-    eligible = {c.payment_id: c.eligible for c in candidates}
-    by_payment = {c.payment_id: c for c in candidates}
+    eligible = {c.payment_id: c.eligible for c in population}
+    by_payment = {c.payment_id: c for c in population}
 
-    actions = dict(scenario.assignment)
+    actions = {p: a for p, a in scenario.assignment.items() if p in arms}
     for pid, arm in arms.items():
         if arm == Arm.HOLDOUT.value:
             actions.pop(pid, None)
@@ -461,10 +511,19 @@ def execute_and_measure(
         scenario_key=scenario.key, arms=_counts(arms),
         actions_executed=len(actions), result=result,
         balance=EX.balance_report(
-            arms, {c.payment_id: c.amount_paise for c in candidates}
+            arms, {c.payment_id: c.amount_paise for c in population}
         ),
         projected_incremental_paise=scenario.incremental_recovery_paise,
     )
+
+
+def _arm_counts(session: Session, experiment_id: str) -> dict[str, int]:
+    rows = session.execute(
+        select(ExperimentAssignment.arm, func.count())
+        .where(ExperimentAssignment.experiment_id == experiment_id)
+        .group_by(ExperimentAssignment.arm)
+    ).all()
+    return {arm: n for arm, n in rows}
 
 
 def _counts(arms: dict[str, str]) -> dict[str, int]:

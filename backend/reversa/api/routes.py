@@ -206,6 +206,10 @@ def _incident_dict(row: Incident) -> dict:
         "p_value": row.p_value,
         "q_value": row.q_value,
         "detection_rationale": row.detection_rationale,
+        "ambiguous": row.rca_is_ambiguous,
+        "rca_class": row.rca_class,
+        "rca_confidence": row.rca_confidence,
+        "rca_evidence": row.rca_evidence or {},
     }
 
 

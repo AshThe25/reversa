@@ -556,7 +556,7 @@ class WorldGenerator:
 
         # training era: the legacy policy gets a go, and we realise the outcome
         if not is_live:
-            self._run_legacy(pid, trait, amount, rclass, when, truth,
+            self._run_legacy(pid, trait, amount, rclass, mode, when, truth,
                              method, instrument, payments, attempts, events, counters)
 
     # -- hidden ground truth ------------------------------------------------
@@ -651,7 +651,7 @@ class WorldGenerator:
 
     # -- legacy policy (training era only) ----------------------------------
 
-    def _run_legacy(self, pid, trait, amount, rclass, when, truth,
+    def _run_legacy(self, pid, trait, amount, rclass, mode, when, truth,
                     method, instrument, payments, attempts, events, counters) -> None:
         """The merchant's pre-Reversa rule, plus epsilon-random exploration.
 
@@ -667,6 +667,8 @@ class WorldGenerator:
             action = str(rng.choice(list(P.ACTIONS_WITH_UPLIFT) + ["no_action"]))
         elif amount >= P.LEGACY_LINK_THRESHOLD_PAISE:
             action = "payment_link"
+        elif mode.source.value in P.LEGACY_DELAYED_SOURCES:
+            action = "retry_delayed"
         else:
             action = "retry_now"
 

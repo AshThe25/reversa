@@ -33,7 +33,23 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--commit", action="store_true",
                     help="persist the run (default rolls back so it is repeatable)")
+    ap.add_argument("--fresh", action="store_true",
+                    help="rebuild the world first")
     args = ap.parse_args()
+
+    if args.fresh:
+        # Executing a strategy resolves live-era payments, which is correct - it
+        # is what execution means. But it also consumes the cohort, so a second
+        # --commit run finds 74 candidates where the first found 1,132. A demo
+        # that degrades each time it is shown is not a demo.
+        from reversa.db import reset_db
+        from reversa.world.generator import generate
+
+        reset_db()
+        with session_scope() as s:
+            stats = generate(s)
+        print(f"[world] rebuilt: {stats['payments']:,} payments, "
+              f"{stats['failures']:,} failures\n")
 
     from reversa.config import IST
 
@@ -55,8 +71,23 @@ def main() -> None:
                   f"{inc.baseline_success_rate:5.1%} -> {inc.observed_success_rate:5.1%}  "
                   f"{L(inc.revenue_exposed_paise)}  q={inc.q_value:.0e}")
 
-        hero = max(incidents, key=lambda i: i.revenue_exposed_paise)
-        detected_hero = max(detected, key=lambda d: d.worst.observation.amount_failed_paise)
+        # The hero is the costliest incident whose scope is actually
+        # attributable. A diffuse cluster is the ambiguity demo, not the
+        # recovery demo - acting on one is exactly what should not happen.
+        attributable = [i for i in incidents if not i.rca_is_ambiguous]
+        if not attributable:
+            raise SystemExit("no attributable incident detected in this world")
+        hero = max(attributable, key=lambda i: i.revenue_exposed_paise)
+        detected_hero = next(
+            d for d in detected
+            if PL._id("inc", f"{d.slice.key}|{d.first_seen.isoformat()}") == hero.id
+        )
+
+        ambiguous = [i for i in incidents if i.rca_is_ambiguous]
+        for amb in ambiguous:
+            print(f"\n   [ambiguous] {amb.slice_key} {L(amb.revenue_exposed_paise)} "
+                  f"across {len(amb.rca_evidence.get('diffuse_members', []))} "
+                  "unrelated slices - no containable scope, automation refused")
         print(f"\n[cohort]    building for {hero.slice_key}")
 
         build = build_cohort(s, detected_hero, model, now=ck.now)
