@@ -23,9 +23,14 @@ export function Portfolio() {
   const selected = params.get("incident");
   const [open, setOpen] = useState<string | null>(null);
 
+  // Default to an incident whose scope is attributable. A diffuse cluster has
+  // no supportable root cause, so a ranked list of interventions for it would be
+  // a confident-looking answer to a question the evidence cannot settle.
   useEffect(() => {
     if (!selected && incidents.data?.length) {
-      const worst = incidents.data.reduce((a, b) =>
+      const attributable = incidents.data.filter((i) => !i.ambiguous);
+      const pool = attributable.length ? attributable : incidents.data;
+      const worst = pool.reduce((a, b) =>
         a.revenue_exposed_paise >= b.revenue_exposed_paise ? a : b,
       );
       setParams({ incident: worst.id }, { replace: true });
@@ -58,6 +63,7 @@ export function Portfolio() {
           {incidents.data?.map((i) => (
             <option key={i.id} value={i.id}>
               {i.slice} · {lakhs(i.revenue_exposed_paise)}
+              {i.ambiguous ? " · unattributable" : ""}
             </option>
           ))}
         </select>

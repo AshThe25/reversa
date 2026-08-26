@@ -75,6 +75,7 @@ def persist_incidents(
     double the incident list or the revenue exposed.
     """
     out: list[Incident] = []
+    newly_seen: list[Incident] = []
     for d in detected:
         peak, worst = d.peak, d.worst
         obs = worst.observation
@@ -84,7 +85,8 @@ def persist_incidents(
         severity = worst.severity(exposed)
 
         row = session.get(Incident, incident_id)
-        if row is None:
+        is_new = row is None
+        if is_new:
             row = Incident(id=incident_id, merchant_id=merchant_id)
             session.add(row)
 
@@ -125,9 +127,15 @@ def persist_incidents(
             row.rca_evidence = {"diffuse_members": list(d.diffuse_members)}
 
         out.append(row)
+        if is_new:
+            newly_seen.append(row)
 
     session.flush()
-    for row in out:
+    # Only the first sighting is an event. This route is hit on every dashboard
+    # load, and re-recording "detected" each time turns the ledger into a page-view
+    # counter - 36 entries for 4 incidents after a few refreshes. An audit trail
+    # that grows when you reload a page is not an audit trail.
+    for row in newly_seen:
         record(
             session, actor="sentinel", event_type="incident.detected",
             subject_type="incident", subject_id=row.id,
