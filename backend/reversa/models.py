@@ -28,13 +28,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from reversa.db import Base
+from reversa.db import Base, UTCDateTime
 
-_TS = DateTime(timezone=True)
+_TS = UTCDateTime()
 
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# note: never datetime.utcnow(). it returns a naive value and UTCDateTime now
+# rejects those at the bind boundary, which is the point.
 
 
 # ===========================================================================

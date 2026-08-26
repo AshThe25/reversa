@@ -52,7 +52,7 @@ from datetime import datetime, timedelta, timezone
 
 import numpy as np
 from scipy import stats
-from sqlalchemy import select
+from sqlalchemy import case, func, literal_column, select
 from sqlalchemy.orm import Session
 
 from reversa.config import IST, get_settings
@@ -218,6 +218,27 @@ def _slices_for(method: str, instrument: str) -> tuple[Slice, ...]:
     return (Slice(GLOBAL, GLOBAL), Slice(method, GLOBAL), Slice(method, instrument))
 
 
+def _ist_day_hour(session: Session):
+    """SQL expression bucketing created_at into an IST 'YYYY-MM-DDTHH' string.
+
+    Baselines are per hour-of-day *local time*, because that is what drives the
+    seasonality - Indian evening peak, bank batch windows. Doing the conversion
+    in SQL is what keeps the aggregation server-side. IST has no DST, so a fixed
+    +5:30 offset is exact rather than an approximation.
+    """
+    dialect = session.get_bind().dialect.name
+    col = Payment.created_at
+    if dialect == "sqlite":
+        return func.strftime("%Y-%m-%dT%H", func.datetime(col, "+330 minutes"))
+    if dialect in ("postgresql", "postgres"):
+        return func.to_char(
+            func.timezone("Asia/Kolkata", col), literal_column("'YYYY-MM-DD\"T\"HH24'")
+        )
+    raise NotImplementedError(
+        f"baseline bucketing not implemented for dialect {dialect!r}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # stream buffer
 # ---------------------------------------------------------------------------
@@ -292,10 +313,30 @@ class BaselineModel:
 
     @classmethod
     def build(cls, session: Session, *, until: datetime) -> "BaselineModel":
+        """Fit baselines from history.
+
+        Aggregated in SQL, not in Python. The first version pulled every
+        historical payment into memory - 60k rows cost 33MB, which extrapolates
+        to about 5.5GB on a merchant with 10M payments, i.e. it would simply
+        fall over. Grouping by (method, instrument, IST day-hour) in the database
+        turns that into ~13k rows regardless of how much history exists, because
+        the cell count is bounded by instruments x days x hours.
+        """
         model = cls()
+        bucket = _ist_day_hour(session)
+
         rows = session.execute(
-            select(Payment.method, Payment.instrument, Payment.status, Payment.created_at)
+            select(
+                Payment.method,
+                Payment.instrument,
+                bucket.label("bucket"),
+                func.count().label("n"),
+                func.sum(
+                    case((Payment.status == PaymentStatus.FAILED, 0), else_=1)
+                ).label("ok"),
+            )
             .where(Payment.created_at < until)
+            .group_by(Payment.method, Payment.instrument, bucket)
         ).all()
 
         daily: dict[str, dict[tuple[str, int], list[float]]] = defaultdict(
@@ -304,18 +345,18 @@ class BaselineModel:
         slice_tot: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
         g_tot = [0.0, 0.0]
 
-        for method, instrument, status, created in rows:
-            when = created if created.tzinfo else created.replace(tzinfo=timezone.utc)
-            ist = when.astimezone(IST)
-            ok = 1.0 if status != PaymentStatus.FAILED else 0.0
-            cellday = daily[ist.date().isoformat()]
+        for method, instrument, bucket_str, n, ok in rows:
+            day, _, hour_s = str(bucket_str).partition("T")
+            hour = int(hour_s)
+            n, ok = float(n), float(ok or 0)
+            cellday = daily[day]
             for sl in _slices_for(method, instrument):
-                cell = cellday[(sl.key, ist.hour)]
-                cell[0] += 1
+                cell = cellday[(sl.key, hour)]
+                cell[0] += n
                 cell[1] += ok
-                slice_tot[sl.key][0] += 1
+                slice_tot[sl.key][0] += n
                 slice_tot[sl.key][1] += ok
-            g_tot[0] += 1
+            g_tot[0] += n
             g_tot[1] += ok
 
         # EWMA across days, recent days weighted heaviest

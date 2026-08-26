@@ -8,6 +8,7 @@ from __future__ import annotations
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -26,6 +27,13 @@ class Settings(BaseSettings):
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None
     razorpay_base_url: str = "https://api.razorpay.com/v1"
+    razorpay_webhook_secret: str | None = None
+
+    # Network behaviour for the adapter. Razorpay rate-limits, and a batch
+    # executor that gives up on the first 429 is useless.
+    http_timeout_seconds: float = 15.0
+    http_max_attempts: int = 4
+    http_backoff_base_seconds: float = 0.4
 
     # Razorpay caps test-mode businesses at 30 live Payment Links. We budget
     # below that so a demo run can never wedge the account.
@@ -64,6 +72,32 @@ class Settings(BaseSettings):
     cost_email_paise: int = 3
     cost_voice_paise: int = 450
     cost_retry_paise: int = 0            # a gateway retry is free; it costs goodwill
+
+    @field_validator("razorpay_key_id")
+    @classmethod
+    def _refuse_live_keys(cls, v: str | None) -> str | None:
+        """Hard stop on production credentials.
+
+        Reversa moves money. Everything in this repo - the world generator, the
+        simulated payer responses, the executor - assumes test mode. Handing it a
+        live key would let a demo dunning run fire real payment links at real
+        customers. There is no flag to override this; if you want live mode you
+        write a different deployment, deliberately.
+        """
+        if v and v.startswith("rzp_live"):
+            raise ValueError(
+                "refusing to start with a live Razorpay key. Reversa is test-mode "
+                "only - use an rzp_test_ key."
+            )
+        return v
+
+    @model_validator(mode="after")
+    def _sane_holdout(self) -> "Settings":
+        if not 0.0 <= self.holdout_fraction < 0.9:
+            raise ValueError("holdout_fraction must be in [0, 0.9)")
+        if self.contact_window_start_hour >= self.contact_window_end_hour:
+            raise ValueError("contact window start must precede its end")
+        return self
 
     @property
     def has_razorpay(self) -> bool:

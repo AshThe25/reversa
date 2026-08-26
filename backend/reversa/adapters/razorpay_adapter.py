@@ -31,12 +31,25 @@ from reversa.config import Settings, get_settings
 
 log = logging.getLogger(__name__)
 
+RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+
 
 class RazorpayError(RuntimeError):
     def __init__(self, status: int, body: Any):
         super().__init__(f"Razorpay API error {status}: {body}")
         self.status = status
         self.body = body
+
+
+class AmbiguousResult(RazorpayError):
+    """A write whose outcome we could not establish.
+
+    Raised when a POST times out after the request was sent and reconciliation
+    could not tell us whether it landed. The caller must NOT retry blindly - for
+    a payment link that means a second link and a second SMS to a real person.
+    The executor treats this as a terminal state needing reconciliation, which is
+    the honest thing to do with an unknown.
+    """
 
 
 @dataclass
@@ -87,6 +100,7 @@ class RazorpayClient:
         self.calls: list[ApiCall] = []
         self._rng = random.Random(20260826)
         self._client: httpx.Client | None = None
+        self._client_lock = threading.Lock()
 
         if self.offline:
             log.warning(
@@ -97,32 +111,100 @@ class RazorpayClient:
     # -- transport ----------------------------------------------------------
 
     def _http(self) -> httpx.Client:
+        # double-checked under a lock: the executor runs this from a worker pool
+        # and two threads racing here would build two clients and leak one.
         if self._client is None:
-            token = base64.b64encode(
-                f"{self.settings.razorpay_key_id}:{self.settings.razorpay_key_secret}".encode()
-            ).decode()
-            self._client = httpx.Client(
-                base_url=self.settings.razorpay_base_url,
-                headers={
-                    "Authorization": f"Basic {token}",
-                    "Content-Type": "application/json",
-                },
-                timeout=httpx.Timeout(15.0, connect=8.0),
-            )
+            with self._client_lock:
+                if self._client is None:
+                    token = base64.b64encode(
+                        f"{self.settings.razorpay_key_id}:"
+                        f"{self.settings.razorpay_key_secret}".encode()
+                    ).decode()
+                    self._client = httpx.Client(
+                        base_url=self.settings.razorpay_base_url,
+                        headers={
+                            "Authorization": f"Basic {token}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "reversa/0.1",
+                        },
+                        timeout=httpx.Timeout(
+                            self.settings.http_timeout_seconds, connect=8.0
+                        ),
+                    )
         return self._client
 
-    def _request(self, method: str, path: str, **kwargs) -> dict:
-        started = time.perf_counter()
-        try:
-            resp = self._http().request(method, path, **kwargs)
-        except httpx.HTTPError as exc:
-            self._log_call(method, path, None, False, started)
-            raise RazorpayError(0, str(exc)) from exc
+    def _sleep_for(self, attempt: int, retry_after: str | None) -> float:
+        if retry_after:
+            try:
+                return min(float(retry_after), 30.0)
+            except ValueError:
+                pass
+        base = self.settings.http_backoff_base_seconds * (2 ** attempt)
+        return min(base + self._rng.uniform(0, base * 0.3), 20.0)   # jittered
 
-        self._log_call(method, path, resp.status_code, False, started)
-        if resp.status_code >= 400:
-            raise RazorpayError(resp.status_code, resp.text[:500])
-        return resp.json()
+    def _request(self, method: str, path: str, *, safe_to_retry: bool = False, **kwargs) -> dict:
+        """One call, with a retry policy that distinguishes the failure modes.
+
+        The distinction that matters: a 429 or a *connect* error means the
+        request never reached Razorpay, so replaying it is free. A read timeout
+        or a 5xx on a POST means it may well have landed - replaying it creates a
+        second payment link and sends a second SMS to a real customer. GETs are
+        idempotent and always retryable; unsafe writes get reconciled or
+        surfaced as AmbiguousResult instead.
+        """
+        idempotent = method.upper() in ("GET", "HEAD") or safe_to_retry
+        attempts = self.settings.http_max_attempts
+        last: Exception | None = None
+
+        for attempt in range(attempts):
+            started = time.perf_counter()
+            try:
+                resp = self._http().request(method, path, **kwargs)
+            except httpx.ConnectError as exc:
+                # never reached them - safe to replay regardless of method
+                self._log_call(method, path, None, False, started)
+                last = exc
+                if attempt + 1 < attempts:
+                    time.sleep(self._sleep_for(attempt, None))
+                    continue
+                raise RazorpayError(0, f"connect failed: {exc}") from exc
+            except httpx.HTTPError as exc:
+                self._log_call(method, path, None, False, started)
+                if not idempotent:
+                    raise AmbiguousResult(
+                        0, f"{method} {path} may or may not have been applied: {exc}"
+                    ) from exc
+                last = exc
+                if attempt + 1 < attempts:
+                    time.sleep(self._sleep_for(attempt, None))
+                    continue
+                raise RazorpayError(0, str(exc)) from exc
+
+            self._log_call(method, path, resp.status_code, False, started)
+
+            if resp.status_code == 429 or (
+                resp.status_code in RETRYABLE_STATUS and idempotent
+            ):
+                if attempt + 1 < attempts:
+                    wait = self._sleep_for(attempt, resp.headers.get("Retry-After"))
+                    log.warning(
+                        "razorpay %s %s -> %s, retrying in %.1fs (attempt %d/%d)",
+                        method, path, resp.status_code, wait, attempt + 1, attempts,
+                    )
+                    time.sleep(wait)
+                    continue
+
+            if resp.status_code in RETRYABLE_STATUS and not idempotent:
+                raise AmbiguousResult(
+                    resp.status_code,
+                    f"{method} {path} returned {resp.status_code}; "
+                    "outcome unknown, do not replay without reconciling",
+                )
+            if resp.status_code >= 400:
+                raise RazorpayError(resp.status_code, resp.text[:500])
+            return resp.json()
+
+        raise RazorpayError(0, f"exhausted {attempts} attempts: {last}")
 
     def _log_call(
         self, method: str, path: str, status: int | None, offline: bool, started: float
@@ -175,7 +257,7 @@ class RazorpayClient:
         if self.offline:
             self._offline_call("GET", f"/orders/{order_id}")
             return {"id": order_id, "status": "created", "_offline": True}
-        return self._request("GET", f"/orders/{order_id}")
+        return self._request("GET", f"/orders/{order_id}", safe_to_retry=True)
 
     # -- payment links ------------------------------------------------------
 
@@ -256,7 +338,7 @@ class RazorpayClient:
         if self.offline:
             self._offline_call("GET", "/payments/downtimes")
             return []
-        payload = self._request("GET", "/payments/downtimes")
+        payload = self._request("GET", "/payments/downtimes", safe_to_retry=True)
         return payload.get("items", [])
 
     # -- introspection ------------------------------------------------------
