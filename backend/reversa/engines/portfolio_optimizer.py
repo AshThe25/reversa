@@ -410,6 +410,11 @@ def solve_fixed_action(
             f"{skipped_negative} eligible candidates skipped - {action} has "
             "non-positive expected value for them"
         )
+    if not eligible:
+        plan.notes.append(
+            f"no candidate in this cohort may receive {action} - every one was "
+            "removed by a compliance gate before scoring"
+        )
     return plan
 
 

@@ -67,6 +67,15 @@
     @apply rounded-glass border border-white/20 bg-white/10 backdrop-blur-2xl;
   }
 
+  /* Glass over the saturated hero. A white tint on yellow leaves white text
+     at roughly 1.4:1 - the card looked right in isolation and was unreadable
+     in place. Tinting toward the void keeps the glassmorphic language (blur,
+     depth, hairline border) and restores contrast, and the yellow-to-black
+     transition is what the design system is built around anyway. */
+  .glass-void {
+    @apply rounded-glass border border-white/10 bg-onyx/90 backdrop-blur-2xl;
+  }
+
   .pill {
     @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
            transition-all duration-200 ease-liquid active:scale-95;

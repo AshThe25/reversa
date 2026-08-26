@@ -90,7 +90,7 @@ export function Landing() {
 
             {/* ------------------------------------------ glass data card */}
             <div className="lg:pt-10">
-              <Glass strong float className="p-7 text-white">
+              <Glass onColour float className="p-7 text-white">
                 <div className="flex items-start justify-between">
                   <div>
                     <Label>Live incident · this merchant, today</Label>

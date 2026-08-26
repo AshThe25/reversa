@@ -30,10 +30,15 @@ export function Futures() {
   const [deployed, setDeployed] = useState<ExecutionReport | null>(null);
   const [deploying, setDeploying] = useState(false);
 
-  // default to the costliest incident so the page is never empty on arrival
+  // Default to the costliest incident whose scope is actually attributable. A
+  // diffuse cluster may well be the most expensive thing on the board, but it
+  // is the case where automation should stop - opening the tunnel on it would
+  // invite exactly the decision the system is built to refuse.
   useEffect(() => {
     if (!selected && incidents.data && incidents.data.length > 0) {
-      const worst = incidents.data.reduce((a, b) =>
+      const attributable = incidents.data.filter((i) => !i.ambiguous);
+      const pool = attributable.length ? attributable : incidents.data;
+      const worst = pool.reduce((a, b) =>
         a.revenue_exposed_paise >= b.revenue_exposed_paise ? a : b,
       );
       setParams({ incident: worst.id }, { replace: true });
@@ -98,10 +103,11 @@ export function Futures() {
             {incidents.data?.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.slice} · {lakhs(i.revenue_exposed_paise)}
+                {i.ambiguous ? " · unattributable" : ""}
               </option>
             ))}
           </select>
-          <Button onClick={simulate} disabled={!selected || running}>
+          <Button onClick={simulate} disabled={!selected || running || !!incident?.ambiguous}>
             {running ? "Simulating…" : "Simulate ▸"}
           </Button>
         </div>
@@ -113,6 +119,8 @@ export function Futures() {
         </div>
       )}
 
+      {incident?.ambiguous && <AmbiguityRefusal incident={incident} />}
+
       {/* ------------------------------------------------ current reality */}
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.6fr]">
         <Glass className="p-7">
@@ -121,10 +129,22 @@ export function Futures() {
             <>
               <h2 className="mt-3 text-3xl font-bold tracking-tight">{incident.slice}</h2>
               <p className="mt-1 text-xs text-white/40">{incident.label}</p>
+              {/* Once a run exists every figure comes from the cohort, so the
+                  denominators match. The incident's own exposure is measured on
+                  the detector's peak window while the cohort spans the whole
+                  detected episode - showing one against the other produced
+                  "arrives with no help" exceeding "revenue exposed", which is
+                  nonsense on its face. */}
               <div className="mt-7 space-y-5">
-                <Metric label="Revenue exposed" value={lakhs(incident.revenue_exposed_paise)} tone="loss" />
-                <Metric label="Payments affected" value={count(incident.affected_payment_count)} />
-                {run && (
+                <Metric
+                  label="Revenue exposed"
+                  value={lakhs(run ? run.cohort.revenue_exposed_paise : incident.revenue_exposed_paise)}
+                  note={run
+                    ? `${count(run.candidate_count)} recoverable payments in the cohort`
+                    : `peak window · ${count(incident.affected_payment_count)} payments`}
+                  tone="loss"
+                />
+                {run ? (
                   <>
                     <Metric
                       label="Arrives with no help"
@@ -132,10 +152,20 @@ export function Futures() {
                       note={`${pct(
                         run.cohort.natural_recovery_paise /
                           Math.max(run.cohort.revenue_exposed_paise, 1),
-                      )} of exposure`}
+                      )} of exposure — a conventional tool counts this as recovered`}
                     />
-                    <Metric label="Addressable" value={lakhs(run.cohort.addressable_paise)} tone="yellow" />
+                    <Metric
+                      label="Addressable"
+                      value={lakhs(run.cohort.addressable_paise)}
+                      note="the only part worth spending on"
+                      tone="yellow"
+                    />
                   </>
+                ) : (
+                  <Metric
+                    label="Payments affected"
+                    value={count(incident.affected_payment_count)}
+                  />
                 )}
               </div>
             </>
@@ -152,7 +182,19 @@ export function Futures() {
               : "Press Simulate to evaluate every branch."
           }
         >
-          {!run && !running && (
+          {incident?.ambiguous && (
+            <div className="px-6 py-16 text-center">
+              <p className="text-sm font-semibold text-signal-loss">
+                No plan is offered for this incident.
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/35">
+                Simulating it would produce a confident-looking set of futures
+                built on a root cause the evidence does not support.
+              </p>
+            </div>
+          )}
+
+          {!run && !running && !incident?.ambiguous && (
             <div className="px-6 py-16 text-center">
               <p className="text-sm text-white/45">Nothing simulated yet.</p>
               <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
@@ -160,7 +202,9 @@ export function Futures() {
                 legal action. Nothing here is precomputed.
               </p>
               <div className="mt-6">
-                <Button onClick={simulate} disabled={!selected}>Simulate ▸</Button>
+                <Button onClick={simulate} disabled={!selected || !!incident?.ambiguous}>
+                  Simulate ▸
+                </Button>
               </div>
             </div>
           )}
@@ -244,22 +288,35 @@ export function Futures() {
                 <span className="tnum font-semibold text-white">{count(best.action_count)}</span>{" "}
                 interventions.{" "}
                 {(() => {
-                  const spray = run.scenarios.find((s) => s.key === "retry_now");
-                  if (!spray || spray.incremental_recovery_paise >= best.incremental_recovery_paise)
-                    return null;
-                  const ratio = best.incremental_recovery_paise / Math.max(spray.incremental_recovery_paise, 1);
+                  // Compare against the strongest single-action strategy that
+                  // actually placed an action. Comparing against one the gates
+                  // emptied divides by zero and produced a 7,979,192x claim.
+                  const rivals = run.scenarios.filter(
+                    (s) => s.key !== best.key && s.key !== "do_nothing" && s.action_count > 0,
+                  );
+                  if (!rivals.length) return null;
+                  const rival = rivals.reduce((a, b) =>
+                    a.incremental_recovery_paise >= b.incremental_recovery_paise ? a : b,
+                  );
+                  if (rival.incremental_recovery_paise <= 0) return null;
+                  const ratio =
+                    best.incremental_recovery_paise / rival.incremental_recovery_paise;
+                  if (!Number.isFinite(ratio) || ratio <= 1.01) return null;
                   return (
                     <>
-                      Retrying everything takes{" "}
-                      <span className="tnum font-semibold text-white">{count(spray.action_count)}</span>{" "}
-                      actions to produce{" "}
+                      The best single-action strategy,{" "}
+                      <span className="font-semibold text-white">{rival.label}</span>, produces{" "}
                       <span className="tnum font-semibold text-white">
-                        {lakhs(spray.incremental_recovery_paise)}
+                        {lakhs(rival.incremental_recovery_paise)}
                       </span>{" "}
-                      — the optimiser is{" "}
-                      <span className="font-semibold text-cyber">{ratio.toFixed(1)}×</span> more
-                      effective per rupee of exposure because it stops spending capacity on
-                      customers who were going to pay anyway.
+                      from{" "}
+                      <span className="tnum font-semibold text-white">
+                        {count(rival.action_count)}
+                      </span>{" "}
+                      actions — the optimiser is{" "}
+                      <span className="font-semibold text-cyber">{ratio.toFixed(1)}×</span>{" "}
+                      better because it stops spending capacity on customers who were
+                      going to pay anyway.
                     </>
                   );
                 })()}
@@ -288,6 +345,83 @@ export function Futures() {
   );
 }
 
+/**
+ * The refusal.
+ *
+ * A degradation that lands on slices with no common parent has no containable
+ * scope, so no single root cause is supportable from the evidence. The system
+ * detected it, sized it, and then declines to act - which is the correct
+ * behaviour and worth showing as prominently as a successful recovery.
+ */
+function AmbiguityRefusal({ incident }: { incident: import("../lib/types").Incident }) {
+  const members = incident.rca_evidence?.diffuse_members ?? [];
+  return (
+    <div className="mt-8 rounded-[32px] border border-signal-loss/25 bg-signal-loss/[0.05] p-8">
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="max-w-3xl">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-signal-loss/20 text-lg text-signal-loss">
+              !
+            </span>
+            <Label>Root cause uncertain — automation withheld</Label>
+          </div>
+
+          <h2 className="mt-4 text-3xl font-bold tracking-tight">
+            {lakhs(incident.revenue_exposed_paise)} exposed, and we are not going
+            to guess.
+          </h2>
+
+          <p className="mt-4 text-[13px] leading-relaxed text-white/55">
+            This degradation appeared on {members.length} slices at once with no
+            common parent — some UPI handles, some netbanking, some cards. A PSP
+            fault would have taken one method down together. A single bad bank
+            would have stayed inside one instrument. This did neither, so the
+            evidence cannot distinguish merchant-side latency from an upstream
+            issue, and any root cause we named would be a guess wearing a
+            confidence score.
+          </p>
+
+          <p className="mt-3 text-[13px] leading-relaxed text-white/55">
+            The detection is sound and the money is real. What is missing is
+            attribution, and interventions chosen from a wrong root cause spend
+            capacity and customer patience on the wrong people. So it goes to a
+            human.
+          </p>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {members.map((m: string) => (
+              <Tag key={m} tone="bad">{m}</Tag>
+            ))}
+          </div>
+        </div>
+
+        <div className="min-w-[220px] space-y-5">
+          <div>
+            <Label>Root-cause confidence</Label>
+            <div className="tnum mt-1 text-4xl font-bold text-signal-loss">
+              {pct(incident.rca_confidence, 0)}
+            </div>
+          </div>
+          <div>
+            <Label>Scope</Label>
+            <p className="mt-1 text-sm font-semibold">not contained</p>
+          </div>
+          <div>
+            <Label>Detection</Label>
+            <p className="mt-1 text-sm font-semibold">
+              q = {incident.q_value.toExponential(1)}
+            </p>
+            <p className="mt-0.5 text-[11px] text-white/35">the degradation is real</p>
+          </div>
+          <Button variant="ghost" disabled title="Requires an operator session">
+            Send to human review
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ScenarioRow({
   scenario: s, best, capacity, onDeploy, deploying,
 }: {
@@ -308,6 +442,11 @@ function ScenarioRow({
           {best && <Tag tone="yellow">BEST</Tag>}
         </div>
         <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-white/30">{s.description}</p>
+        {s.action_count === 0 && s.key !== "do_nothing" && s.notes.length > 0 && (
+          <p className="mt-2 max-w-xs text-[11px] leading-relaxed text-signal-loss/80">
+            {s.notes[0]}
+          </p>
+        )}
       </td>
       <td className="tnum px-5 py-4 text-sm text-white/50">{lakhs(s.gross_recovery_paise)}</td>
       <td className="tnum px-5 py-4 text-sm text-white/35">{lakhs(s.natural_recovery_paise)}</td>

@@ -713,8 +713,17 @@ class AuditEvent(Base):
     subject_type: Mapped[str] = mapped_column(String(24))
     subject_id: Mapped[str] = mapped_column(String(40), index=True)
     payload: Mapped[dict] = mapped_column(JSON, default=dict)
-    prev_hash: Mapped[str] = mapped_column(String(64))
-    entry_hash: Mapped[str] = mapped_column(String(64))
+    prev_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    """Unique, so the chain is structurally a linked list.
+
+    Appending is read-the-head-then-insert, which is not atomic. Two writers -
+    the API process and a worker, or an API process and a test run against the
+    same database - can read the same head and both link to it, silently
+    forking the chain into two branches that each verify in isolation. The
+    uniqueness constraint turns that race into a failed insert we retry instead
+    of a tamper-evident log that quietly is not one."""
+
+    entry_hash: Mapped[str] = mapped_column(String(64), unique=True)
 
 
 class WorldMeta(Base):

@@ -22,16 +22,19 @@ export function Glass({
   className = "",
   float = false,
   strong = false,
+  onColour = false,
 }: {
   children: ReactNode;
   className?: string;
   float?: boolean;
   strong?: boolean;
+  /** Set when the card sits on the saturated hero rather than the void. */
+  onColour?: boolean;
 }) {
   return (
     <div
       className={[
-        strong ? "glass-strong" : "glass",
+        onColour ? "glass-void" : strong ? "glass-strong" : "glass",
         "shadow-2xl shadow-black/40",
         float ? "animate-float" : "",
         className,

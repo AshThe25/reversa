@@ -125,8 +125,17 @@ class WindTunnelRun:
 
     @property
     def best(self) -> ScenarioResult:
-        """Best by net incremental, which is the only ranking that is defensible."""
-        return max(self.scenarios, key=lambda s: s.net_incremental_paise)
+        """Best by net incremental, which is the only defensible ranking.
+
+        Ties break toward the exact solve. Greedy frequently matches the
+        optimum on cohorts where capacity does not bind, and crowning greedy in
+        that case would misrepresent which method produced the answer.
+        """
+        rank = {"optimal": 2, "policy": 1}
+        return max(
+            self.scenarios,
+            key=lambda s: (s.net_incremental_paise, rank.get(s.key, 0)),
+        )
 
     def as_dict(self) -> dict:
         return {

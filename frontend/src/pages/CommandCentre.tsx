@@ -109,23 +109,11 @@ export function CommandCentre() {
           }
         >
           <div className="p-6">
-            <div className="flex h-12 w-full overflow-hidden rounded-full border border-white/10">
-              <div
-                className="flex items-center justify-center bg-white/[0.09] text-[11px] font-semibold text-white/55"
-                style={{ width: `${(o.natural_recovery_paise / Math.max(o.revenue_at_risk_paise, 1)) * 100}%` }}
-              >
-                natural
-              </div>
-              <div
-                className="flex items-center justify-center bg-cyber text-[11px] font-bold text-onyx"
-                style={{ width: `${(o.incremental_recovery_paise / Math.max(o.revenue_at_risk_paise, 1)) * 100}%` }}
-              >
-                incremental
-              </div>
-              <div className="flex flex-1 items-center justify-center bg-signal-loss/15 text-[11px] font-semibold text-signal-loss">
-                still lost
-              </div>
-            </div>
+            <FlowBar
+              exposed={o.revenue_at_risk_paise}
+              natural={o.natural_recovery_paise}
+              incremental={o.incremental_recovery_paise}
+            />
             <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
               <Legend swatch="bg-white/[0.15]" label="Naturally recovered" value={lakhs(o.natural_recovery_paise)} />
               <Legend swatch="bg-cyber" label="Incremental (attributable)" value={lakhs(o.incremental_recovery_paise)} />
@@ -225,6 +213,63 @@ export function CommandCentre() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/**
+ * Exposure split into natural / incremental / lost.
+ *
+ * Widths are clamped and the labels only render when the segment is wide
+ * enough to hold them. A measured incremental CAN come out negative - the
+ * treated arm underperforming the holdout is a real outcome, not an error -
+ * and the first version passed that straight into a CSS width, which pushed the
+ * label out of the bar. A negative result gets its own treatment instead of
+ * being drawn as if it were a positive one.
+ */
+function FlowBar({
+  exposed, natural, incremental,
+}: {
+  exposed: number;
+  natural: number;
+  incremental: number;
+}) {
+  const total = Math.max(exposed, 1);
+  const naturalPct = Math.max(0, Math.min(100, (natural / total) * 100));
+  const incrementalPct = Math.max(0, Math.min(100 - naturalPct, (incremental / total) * 100));
+  const lostPct = Math.max(0, 100 - naturalPct - incrementalPct);
+
+  return (
+    <>
+      <div className="flex h-12 w-full overflow-hidden rounded-full border border-white/10">
+        <div
+          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-white/[0.09] text-[11px] font-semibold text-white/55"
+          style={{ width: `${naturalPct}%` }}
+        >
+          {naturalPct > 12 ? "natural" : ""}
+        </div>
+        <div
+          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-cyber text-[11px] font-bold text-onyx"
+          style={{ width: `${incrementalPct}%` }}
+        >
+          {incrementalPct > 12 ? "incremental" : ""}
+        </div>
+        <div
+          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-signal-loss/15 text-[11px] font-semibold text-signal-loss"
+          style={{ width: `${lostPct}%` }}
+        >
+          {lostPct > 12 ? "still lost" : ""}
+        </div>
+      </div>
+      {incremental < 0 && (
+        <p className="mt-3 text-[12px] leading-relaxed text-signal-loss">
+          The measured incremental is negative: the treated group recovered less
+          than the holdout. That is a real result, not a display error — most
+          likely an underpowered run rather than a harmful intervention. The
+          Experiments page carries the interval and the sample size needed to
+          tell those apart.
+        </p>
+      )}
+    </>
   );
 }
 

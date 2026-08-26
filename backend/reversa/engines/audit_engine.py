@@ -13,15 +13,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from reversa.models import AuditEvent
+
+log = logging.getLogger(__name__)
 
 GENESIS_HASH = "0" * 64
 
@@ -79,6 +83,9 @@ def _head_hash(session: Session) -> str:
     return row or GENESIS_HASH
 
 
+MAX_APPEND_ATTEMPTS = 5
+
+
 def record(
     session: Session,
     *,
@@ -89,34 +96,50 @@ def record(
     payload: dict | None = None,
     occurred_at: datetime | None = None,
 ) -> AuditEvent:
-    """Append one entry. Flushes immediately so the chain head is never stale.
+    """Append one entry, retrying if another writer got the head first.
 
-    `actor` is the component that made the call -- `policy`, `executor`,
+    `actor` is the component that made the call - `policy`, `executor`,
     `sentinel`, `llm`, `human`. Attributing an action to the LLM when a
     deterministic rule actually made the call would defeat the point.
+
+    Reading the head and inserting is not atomic, so two writers can read the
+    same head and both link to it. `prev_hash` is unique, which turns that into
+    an IntegrityError on the loser rather than a chain that silently forks into
+    two branches each of which verifies on its own. We re-read and try again.
     """
     payload = payload or {}
     occurred_at = occurred_at or datetime.now(timezone.utc)
-    prev = _head_hash(session)
-    entry_id = f"aud_{uuid.uuid4().hex[:20]}"
 
-    entry = AuditEvent(
-        id=entry_id,
-        occurred_at=occurred_at,
-        actor=actor,
-        event_type=event_type,
-        subject_type=subject_type,
-        subject_id=subject_id,
-        payload=payload,
-        prev_hash=prev,
-        entry_hash=_digest(
-            entry_id, occurred_at, actor, event_type,
-            subject_type, subject_id, payload, prev,
-        ),
-    )
-    session.add(entry)
-    session.flush()
-    return entry
+    for attempt in range(MAX_APPEND_ATTEMPTS):
+        prev = _head_hash(session)
+        entry_id = f"aud_{uuid.uuid4().hex[:20]}"
+        entry = AuditEvent(
+            id=entry_id,
+            occurred_at=occurred_at,
+            actor=actor,
+            event_type=event_type,
+            subject_type=subject_type,
+            subject_id=subject_id,
+            payload=payload,
+            prev_hash=prev,
+            entry_hash=_digest(
+                entry_id, occurred_at, actor, event_type,
+                subject_type, subject_id, payload, prev,
+            ),
+        )
+        savepoint = session.begin_nested()
+        try:
+            session.add(entry)
+            session.flush()
+            savepoint.commit()
+            return entry
+        except IntegrityError:
+            savepoint.rollback()
+            if attempt + 1 >= MAX_APPEND_ATTEMPTS:
+                raise
+            log.warning("audit append lost a race on the chain head, retrying")
+
+    raise RuntimeError("unreachable")
 
 
 @dataclass(slots=True)
