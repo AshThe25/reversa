@@ -97,6 +97,7 @@ class Trait:
     tier: str
     # forward-carried history
     failures: int = 0
+    recoveries: int = 0
     natural_recoveries: int = 0
     contacts: list[float] = field(default_factory=list)   # epoch seconds
     instrument_dead_from: float | None = None
@@ -577,7 +578,7 @@ class WorldGenerator:
 
         z = P.NATURAL_RECOVERY_BASE_LOGIT.get(rclass, -1.0)
         z += C["intent"] * (trait.intent - 0.5)
-        prior_rate = (trait.natural_recoveries / trait.failures) if trait.failures >= 2 else 0.42
+        prior_rate = (trait.recoveries / trait.failures) if trait.failures >= 2 else 0.42
         z += C["prior_recovery_rate"] * (prior_rate - 0.42)
         z += C["log_amount"] * (math.log(max(amount, 1) / 100.0) - P.TICKET_LOGNORMAL_MU)
         z += C["is_subscription"] * (1.0 if is_sub else 0.0)
@@ -701,8 +702,8 @@ class WorldGenerator:
         hours = min(float(rng.lognormal(mu, sigma)), P.RECOVERY_HORIZON_HOURS)
         at = when + timedelta(hours=hours)
 
-        # only count it as a natural recovery for the customer's own history if
-        # nothing was actually done to them
+        trait.recoveries += 1
+        # natural only if nothing was actually done to them
         if action == "no_action":
             trait.natural_recoveries += 1
         trait.lifetime_value += amount
@@ -732,6 +733,7 @@ class WorldGenerator:
                 lifetime_orders=t.lifetime_orders,
                 lifetime_value_paise=t.lifetime_value,
                 prior_failures=t.failures,
+                prior_recoveries=t.recoveries,
                 prior_natural_recoveries=t.natural_recoveries,
                 prior_contacts=len(t.contacts),
                 last_contacted_at=(

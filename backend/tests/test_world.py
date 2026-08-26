@@ -154,7 +154,7 @@ def test_retrying_into_a_live_incident_is_worse_than_waiting(world):
 def test_customer_history_is_carried_forward_not_random(world):
     s, _ = world
     rows = s.execute(
-        select(Customer.prior_failures, Customer.prior_natural_recoveries,
+        select(Customer.prior_failures, Customer.prior_recoveries,
                Customer.lifetime_orders)
     ).all()
     assert any(f > 0 for f, _, _ in rows)
@@ -168,7 +168,7 @@ def test_prior_recovery_history_predicts_future_natural_recovery(world):
     estimator's best feature would be noise."""
     s, _ = world
     rows = s.execute(
-        select(Customer.prior_failures, Customer.prior_natural_recoveries,
+        select(Customer.prior_failures, Customer.prior_recoveries,
                GroundTruth.true_p_natural)
         .select_from(GroundTruth)
         .join(Payment, Payment.id == GroundTruth.payment_id)
@@ -178,7 +178,9 @@ def test_prior_recovery_history_predicts_future_natural_recovery(world):
     assert len(rows) > 50
     hi = [p for f, r, p in rows if r / f >= 0.5]
     lo = [p for f, r, p in rows if r / f < 0.2]
-    assert hi and lo
+    assert len(hi) >= 20 and len(lo) >= 20, (
+        f"need real samples on both sides, got {len(hi)}/{len(lo)}"
+    )
     assert st.mean(hi) > st.mean(lo)
 
 

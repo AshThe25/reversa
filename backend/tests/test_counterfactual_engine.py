@@ -143,11 +143,19 @@ def test_thin_arms_are_not_credible_and_their_intervals_straddle_zero(fitted):
 
 
 def test_well_evidenced_arms_can_be_credible(fitted):
-    """The mirror. If nothing is ever credible the estimator is just a zero."""
+    """The mirror of the test above. If nothing is ever credible the estimator is
+    an expensive way to return zero, and the optimizer has nothing to work with."""
     model, _ = fitted
-    est = model.estimate(_f("liquidity"))
-    fat = [u for u in est.uplift.values() if u.treated_n > 150]
-    assert any(u.credible for u in fat)
+    credible = [
+        (cls, u.action, u.treated_n)
+        for cls in ("infra_transient", "auth_friction", "instrument_invalid",
+                    "liquidity", "intent_absent")
+        for u in model.estimate(_f(cls)).uplift.values()
+        if u.credible
+    ]
+    assert credible, "no action reached credibility anywhere in the corpus"
+    # and whatever cleared the bar did so on real evidence, not a lucky 12
+    assert all(n >= 100 for _, _, n in credible)
 
 
 def test_treated_and_control_are_drawn_from_the_same_stratum(fitted):

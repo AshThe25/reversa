@@ -158,7 +158,13 @@ class Customer(Base):
     lifetime_orders: Mapped[int] = mapped_column(Integer, default=0)
     lifetime_value_paise: Mapped[int] = mapped_column(Integer, default=0)
     prior_failures: Mapped[int] = mapped_column(Integer, default=0)
+    prior_recoveries: Mapped[int] = mapped_column(Integer, default=0)
+    """Past failures that were eventually recovered, treated or not. This is the
+    predictive feature - it's what a merchant can actually see in their own log."""
     prior_natural_recoveries: Mapped[int] = mapped_column(Integer, default=0)
+    """Subset that recovered with nothing done. Kept for the autopsy view; NOT
+    used as a model feature, because it is deflated by however much the merchant
+    happened to intervene historically rather than by customer behaviour."""
     prior_contacts: Mapped[int] = mapped_column(Integer, default=0)
     last_contacted_at: Mapped[datetime | None] = mapped_column(_TS, nullable=True)
 
@@ -166,10 +172,10 @@ class Customer(Base):
 
     @property
     def prior_recovery_rate(self) -> float:
-        """Observable recovery propensity. Falls back to a neutral prior."""
+        """Observable recovery propensity, neutral prior for thin history."""
         if self.prior_failures < 2:
             return 0.42
-        return self.prior_natural_recoveries / self.prior_failures
+        return self.prior_recoveries / self.prior_failures
 
     def channel_consent(self, action: str) -> bool:
         return {
