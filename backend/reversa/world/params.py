@@ -29,6 +29,10 @@ from reversa.taxonomy import RecoveryClass
 # it is the regime where recovery decisions actually matter.
 SCALE_PRESETS: dict[str, dict] = {
     "tiny":   {"customers": 250, "training_days": 5, "live_orders": 1_500},
+    # sized so the estimator has enough training failures (~4.5k) to actually be
+    # testable. "small" only produces ~800, at which point the tests measure
+    # sample size rather than correctness.
+    "test":   {"customers": 4_000, "training_days": 24, "live_orders": 4_000},
     "small":  {"customers": 1_200, "training_days": 14, "live_orders": 6_000},
     "demo":   {"customers": 6_000, "training_days": 28, "live_orders": 120_000},
     "large":  {"customers": 12_000, "training_days": 28, "live_orders": 260_000},

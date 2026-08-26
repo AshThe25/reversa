@@ -681,6 +681,18 @@ class WorldGenerator:
         if action in P.CONTACT_DECAY_TAU_HOURS:
             trait.contacts.append(when.timestamp())
 
+        # Log the action whether or not it worked. A merchant's own action log
+        # records what they did, not only what succeeded - and without the
+        # failures the estimator cannot identify uplift at all, because every
+        # treated-and-failed payment would look untreated.
+        if action != "no_action":
+            events.append(dict(
+                id=self.ids("pev"), payment_id=pid,
+                event_type="recovery.attempted",
+                payload={"action": action, "by": "legacy_policy"},
+                occurred_at=when + timedelta(minutes=float(rng.uniform(2, 25))),
+            ))
+
         if not recovered:
             return
 
