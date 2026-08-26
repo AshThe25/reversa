@@ -29,6 +29,29 @@ class Settings(BaseSettings):
     razorpay_base_url: str = "https://api.razorpay.com/v1"
     razorpay_webhook_secret: str | None = None
 
+    # --- sessions -----------------------------------------------------------
+    # Generated per process when unset, which is right for a laptop and wrong
+    # for more than one replica - every restart invalidates live sessions. Set
+    # REVERSA_SESSION_SECRET in any real deployment.
+    session_secret: str = ""
+    session_ttl_seconds: int = 8 * 3600
+
+    # Fit the estimator and scan the day on boot rather than on first request.
+    warm_on_startup: bool = True
+
+    # Walk-up access. When empty, anyone can open a demo session - which is the
+    # point for a judge with a link. Demo sessions never carry EXECUTE scope, so
+    # they can explore every future without committing one.
+    demo_access_code: str = ""
+    allow_demo_sessions: bool = True
+
+    # Browser origins allowed to call the API. Not "*" - a wildcard with
+    # credentials is how a dashboard gets driven from someone else's tab.
+    cors_origins: list[str] = [
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:4173", "http://127.0.0.1:4173",
+    ]
+
     # Network behaviour for the adapter. Razorpay rate-limits, and a batch
     # executor that gives up on the first 429 is useless.
     http_timeout_seconds: float = 15.0
@@ -110,4 +133,8 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if not settings.session_secret:
+        import secrets as _secrets
+        object.__setattr__(settings, "session_secret", _secrets.token_urlsafe(48))
+    return settings
