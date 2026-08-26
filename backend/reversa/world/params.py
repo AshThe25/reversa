@@ -28,9 +28,10 @@ from reversa.taxonomy import RecoveryClass
 # push. High volume is what makes a 19-minute rail degradation cost lakhs, and
 # it is the regime where recovery decisions actually matter.
 SCALE_PRESETS: dict[str, dict] = {
+    "tiny":   {"customers": 250, "training_days": 5, "live_orders": 1_500},
     "small":  {"customers": 1_200, "training_days": 14, "live_orders": 6_000},
-    "demo":   {"customers": 4_000, "training_days": 28, "live_orders": 45_000},
-    "large":  {"customers": 9_000, "training_days": 28, "live_orders": 90_000},
+    "demo":   {"customers": 6_000, "training_days": 28, "live_orders": 120_000},
+    "large":  {"customers": 12_000, "training_days": 28, "live_orders": 260_000},
 }
 DEFAULT_SCALE = "demo"
 
@@ -470,3 +471,49 @@ INCIDENT_TEMPLATES: dict[str, dict] = {
 # the evaluation harness has more than one positive to score.
 TRAINING_INCIDENT_COUNT = 11
 TRAINING_INCIDENT_DURATION_RANGE_MIN = (8, 46)
+
+
+# Razorpay's downtime feed lags the actual degradation - the platform needs a
+# few minutes of signal before it publishes. That lag is why a merchant-side
+# detector is worth building at all, so the world reproduces it.
+DOWNTIME_PUBLISH_LAG_MIN = (4, 11)
+
+# Scheduled maintenance windows with no real failure impact. These exist to
+# give the detector something to be wrong about - a system that only ever sees
+# true positives has an untested precision number.
+DECOY_DOWNTIME_COUNT = 6
+
+# Live-day incident schedule, IST minutes from midnight. Two resolved earlier
+# today (so the incident list isn't suspiciously empty), the UPI degradation
+# that the demo hangs on, and the ambiguous one that has to end in a human
+# review.
+LIVE_INCIDENT_SCHEDULE: tuple[dict, ...] = (
+    {"template": "issuer_timeout_spike",   "start_min": 9 * 60 + 15, "duration_min": 26},
+    {"template": "single_bank_outage",     "start_min": 11 * 60 + 20, "duration_min": 32},
+    {"template": "psp_upi_degradation",    "start_min": 18 * 60 + 2,  "duration_min": 19},
+    {"template": "ambiguous_latency",      "start_min": 18 * 60 + 40, "duration_min": 25},
+)
+
+# Where the demo clock sits on the live day. Late enough that the UPI cohort has
+# had ~50 minutes to partially self-recover (so natural recovery is a real,
+# observable number and not a hypothetical), early enough that intervening still
+# makes sense.
+DEMO_CLOCK_MIN = 19 * 60 + 10
+
+# Some customers' instruments die mid-window - card hits expiry, VPA gets
+# deregistered. After that every payment on that method fails INSTRUMENT_INVALID
+# until they notice and switch. This is what makes SWITCH_METHOD genuinely
+# correct for a slice of the cohort rather than a menu option nobody picks.
+#
+# Per-payment hazard, scaled by (1 - instrument_stability). First pass had this
+# at 0.06 and instrument_invalid ended up 34% of all failures, which is
+# nonsense - real merchants see high single digits. The fix was both a lower
+# hazard and a repair window: a customer whose card dies notices within days and
+# switches, so one death shouldn't generate failures forever.
+INSTRUMENT_DEATH_RATE = 0.012
+INSTRUMENT_REPAIR_DAYS = (2, 8)
+
+# Share of customers who have opted out or have a live complaint on file. Small,
+# but non-zero, so the gates have something to actually block during the demo.
+OPT_OUT_RATE = 0.031
+COMPLAINT_RATE = 0.014
