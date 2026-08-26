@@ -82,7 +82,7 @@ export function IncidentDetail() {
             <div className="panel p-6">
               <Stat label="Payments affected" value={count(inc.affected_payment_count)} sub={`${count(inc.observed_volume)} in window`} />
             </div>
-            <div className="rounded-[28px] border border-signal-loss/20 bg-signal-loss/[0.04] p-6">
+            <div className="surface-alarm p-6">
               <Stat label="Revenue exposed" value={lakhs(inc.revenue_exposed_paise)} tone="loss" />
             </div>
             <div className="panel p-6">
@@ -93,7 +93,7 @@ export function IncidentDetail() {
                 tone="muted"
               />
             </div>
-            <div className="rounded-[28px] border border-cyber/25 bg-cyber/[0.05] p-6">
+            <div className="surface-accent p-6">
               <Stat
                 label="Addressable"
                 value={co ? lakhs(co.addressable_paise) : "—"}
@@ -112,17 +112,20 @@ export function IncidentDetail() {
                     <AreaChart data={series} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                       <defs>
                         <linearGradient id="obs" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FF5D5D" stopOpacity={0.35} />
+                          <stop offset="0%" stopColor="#FF5D5D" stopOpacity={0.45} />
+                          <stop offset="55%" stopColor="#FF5D5D" stopOpacity={0.12} />
                           <stop offset="100%" stopColor="#FF5D5D" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid stroke="#ffffff10" vertical={false} />
+                      <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                       <XAxis dataKey="t" tick={{ fill: "#ffffff40", fontSize: 11 }} tickLine={false} axisLine={false} />
                       <YAxis domain={[0, 100]} tick={{ fill: "#ffffff40", fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
                       <Tooltip
                         contentStyle={{
-                          background: "#171717", border: "1px solid #ffffff18",
-                          borderRadius: 16, fontSize: 12,
+                          background: "rgba(18,18,18,0.94)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 18, fontSize: 12,
+                          boxShadow: "0 24px 48px -24px rgba(0,0,0,0.9)",
                         }}
                         labelStyle={{ color: "#ffffff70" }}
                       />
@@ -131,7 +134,11 @@ export function IncidentDetail() {
                         stroke="#FDE047" strokeDasharray="4 4"
                         label={{ value: "baseline", fill: "#FDE047", fontSize: 10, position: "right" }}
                       />
-                      <Area type="monotone" dataKey="observed" stroke="#FF5D5D" strokeWidth={2} fill="url(#obs)" />
+                      <Area
+                        type="monotone" dataKey="observed" stroke="#FF5D5D"
+                        strokeWidth={2} fill="url(#obs)"
+                        animationDuration={520} animationEasing="ease-out"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
@@ -194,7 +201,7 @@ export function IncidentDetail() {
             >
               <div className="flex flex-wrap gap-3 p-6">
                 {Object.entries(co.exceptions_by_reason).map(([reason, n]) => (
-                  <div key={reason} className="rounded-[20px] border border-white/[0.08] bg-white/[0.02] px-5 py-3">
+                  <div key={reason} className="surface px-5 py-3">
                     <div className="tnum text-xl font-bold">{n}</div>
                     <div className="mt-0.5 text-[11px] text-white/40">{titleise(reason)}</div>
                   </div>

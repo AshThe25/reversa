@@ -98,8 +98,8 @@ function AutopsyBody({
             {stages.map((s) => (
               <div key={s.label} className={
                 s.tone === "yellow"
-                  ? "rounded-[24px] border border-cyber/25 bg-cyber/[0.05] p-5"
-                  : "rounded-[24px] border border-white/[0.07] p-5"
+                  ? "surface-accent p-5"
+                  : "surface p-5"
               }>
                 <Stat label={s.label} value={lakhs(s.value)} sub={s.note} tone={s.tone} />
                 <div className="mt-3 text-[11px] text-white/25">

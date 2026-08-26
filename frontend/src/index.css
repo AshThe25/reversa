@@ -4,24 +4,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Surface system.
+ *
+ * The reference language is deep black with *layered* surfaces, not flat
+ * panels on a flat ground. Three things carry that and all three matter:
+ *
+ *   a vertical gradient on every card, so it reads as lit from above;
+ *   a hairline inset highlight on the top edge, which is what actually sells
+ *     the depth - a plain border reads as a box, an inset top line reads as a
+ *     bevel catching light;
+ *   a long soft shadow underneath, so the card sits above the void rather than
+ *     being cut into it.
+ *
+ * Chrome is frosted and floats. Data surfaces stay opaque, because backdrop
+ * blur behind a dense numeric table is unreadable and expensive to composite.
+ */
+
 @layer base {
   :root {
     color-scheme: dark;
+    --void: #070707;
+    --surface-lo: #141414;
+    --surface-hi: #0d0d0d;
+    --hairline: rgba(255, 255, 255, 0.07);
+    --highlight: rgba(255, 255, 255, 0.07);
   }
 
   html,
   body,
   #root {
-    @apply h-full bg-onyx;
+    @apply h-full;
+    background: var(--void);
   }
 
   body {
-    font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+    font-feature-settings: "cv02", "cv03", "cv04", "tnum", "ss01";
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Tabular numerals everywhere money appears. Without this, a column of
-     rupee figures jitters as digits change width and the whole thing reads
-     as a toy. */
+  /* Tabular numerals wherever money appears, or a column of rupee figures
+     jitters as digits change width and the whole thing reads as a toy. */
   .tnum {
     font-variant-numeric: tabular-nums;
   }
@@ -31,10 +54,10 @@
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-cyber ring-offset-2 ring-offset-onyx;
+    @apply outline-none ring-2 ring-cyber/70 ring-offset-2;
+    --tw-ring-offset-color: var(--void);
   }
 
-  /* Scrollbars, so dense panels don't look like a system dialog. */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -51,6 +74,120 @@
 }
 
 @layer components {
+  /* --------------------------------------------------------------- light */
+
+  /**
+   * Ambient bleed. Two off-screen radial sources, one warm from the brand
+   * colour and one cool, sitting behind everything at very low opacity.
+   *
+   * This is the single biggest difference between "dark theme" and the
+   * reference look: without a light source the void is a flat #000 rectangle
+   * and every surface on it looks pasted on. Fixed rather than scrolled, so it
+   * behaves like room lighting instead of wallpaper.
+   */
+  .ambient::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(70% 45% at 12% -5%, rgba(253, 224, 71, 0.10), transparent 62%),
+      radial-gradient(55% 40% at 88% 4%, rgba(236, 72, 153, 0.07), transparent 60%),
+      radial-gradient(80% 50% at 50% 105%, rgba(253, 224, 71, 0.045), transparent 65%);
+  }
+
+  .above {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ------------------------------------------------------------ surfaces */
+
+  .surface {
+    @apply rounded-[26px];
+    background: linear-gradient(180deg, var(--surface-lo) 0%, var(--surface-hi) 100%);
+    border: 1px solid var(--hairline);
+    box-shadow:
+      inset 0 1px 0 var(--highlight),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  .surface-raised {
+    @apply rounded-[26px];
+    background: linear-gradient(180deg, #1b1b1b 0%, #131313 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 32px 64px -28px rgba(0, 0, 0, 0.95);
+  }
+
+  /* Accent surface. The colour is a wash, never a fill - a saturated block
+     behind small type is unreadable, and the references use accent as light
+     rather than as paint. */
+  .surface-accent {
+    @apply rounded-[26px];
+    background:
+      radial-gradient(120% 100% at 0% 0%, rgba(253, 224, 71, 0.14), transparent 55%),
+      linear-gradient(180deg, #1a1808 0%, #101008 100%);
+    border: 1px solid rgba(253, 224, 71, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(253, 224, 71, 0.16),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  .surface-alarm {
+    @apply rounded-[26px];
+    background:
+      radial-gradient(120% 100% at 0% 0%, rgba(255, 93, 93, 0.12), transparent 55%),
+      linear-gradient(180deg, #1a0f0f 0%, #100b0b 100%);
+    border: 1px solid rgba(255, 93, 93, 0.20);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 93, 93, 0.14),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  /* Legacy alias so existing pages inherit the new treatment. */
+  .panel {
+    @apply surface;
+  }
+
+  /* -------------------------------------------------------------- frost */
+
+  .frost {
+    background: rgba(18, 18, 18, 0.66);
+    backdrop-filter: blur(28px) saturate(150%);
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 24px 48px -24px rgba(0, 0, 0, 0.9);
+  }
+
+  .glass {
+    @apply surface;
+  }
+  .glass-strong {
+    @apply surface-raised;
+  }
+
+  /* Glass over the saturated hero. A white tint on yellow leaves white text at
+     roughly 1.4:1 - the card looked right in isolation and was unreadable in
+     place. Tinting toward the void keeps the blur and the bevel and restores
+     contrast. */
+  .glass-void {
+    @apply rounded-glass;
+    background: rgba(10, 10, 10, 0.90);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 40px 80px -32px rgba(0, 0, 0, 0.7);
+  }
+
+  /* ------------------------------------------------------------- controls */
+
   .label {
     @apply text-[10px] font-medium uppercase tracking-label text-white/40;
   }
@@ -59,48 +196,76 @@
     @apply text-[10px] font-medium uppercase tracking-label text-onyx/50;
   }
 
-  .glass {
-    @apply rounded-glass border border-white/10 bg-white/[0.04] backdrop-blur-2xl;
-  }
-
-  .glass-strong {
-    @apply rounded-glass border border-white/20 bg-white/10 backdrop-blur-2xl;
-  }
-
-  /* Glass over the saturated hero. A white tint on yellow leaves white text
-     at roughly 1.4:1 - the card looked right in isolation and was unreadable
-     in place. Tinting toward the void keeps the glassmorphic language (blur,
-     depth, hairline border) and restores contrast, and the yellow-to-black
-     transition is what the design system is built around anyway. */
-  .glass-void {
-    @apply rounded-glass border border-white/10 bg-onyx/90 backdrop-blur-2xl;
-  }
-
   .pill {
     @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
            transition-all duration-200 ease-liquid active:scale-95;
   }
 
   .pill-solid {
-    @apply pill bg-cyber text-onyx hover:shadow-[0_0_40px_-8px_rgba(253,224,71,0.6)];
+    @apply pill bg-cyber text-onyx;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.45),
+      0 8px 24px -8px rgba(253, 224, 71, 0.5);
+  }
+  .pill-solid:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.45),
+      0 12px 32px -8px rgba(253, 224, 71, 0.65);
   }
 
   .pill-ghost {
-    @apply pill border border-white/15 text-white/80 hover:border-white/35 hover:text-white;
+    @apply pill text-white/75;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+  .pill-ghost:hover {
+    @apply text-white;
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   .pill-dark {
-    @apply pill bg-onyx text-white hover:bg-graphite;
+    @apply pill bg-onyx text-white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
   }
 
-  /* Dense analytical surfaces live in the void, not on the yellow. The design
-     system calls this out - loud colour, disciplined structure - and a table of
-     rupee figures on a saturated ground is unreadable. */
-  .panel {
-    @apply rounded-[28px] border border-white/[0.07] bg-charcoal/70;
+  /* Segmented control, as on the reference health screen: a recessed track
+     with a raised thumb. The track is darker than its surroundings and the
+     thumb catches the top light - that inversion is what makes it read as a
+     physical switch rather than two buttons. */
+  .segment-track {
+    @apply inline-flex items-center gap-1 rounded-full p-1;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  .segment {
+    @apply rounded-full px-3.5 py-1.5 text-[12px] font-medium text-white/45
+           transition-all duration-200 ease-liquid;
+  }
+
+  .segment-on {
+    @apply text-onyx;
+    background: linear-gradient(180deg, #fde047, #eab308);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 4px 14px -4px rgba(253, 224, 71, 0.55);
   }
 
   .row-hover {
-    @apply transition-colors duration-150 hover:bg-white/[0.03];
+    @apply transition-colors duration-150 hover:bg-white/[0.028];
+  }
+
+  /* Glossy accent orb. Used sparingly - one per screen at most - as a light
+     source next to the number that matters. */
+  .orb {
+    @apply rounded-full;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.9), transparent 42%),
+      linear-gradient(155deg, #fde047, #ca8a04);
+    box-shadow:
+      inset 0 -6px 14px rgba(120, 80, 0, 0.4),
+      0 10px 30px -8px rgba(253, 224, 71, 0.6);
   }
 }

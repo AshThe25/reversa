@@ -219,7 +219,7 @@ export function Evaluation() {
             </Panel>
           )}
 
-          <div className="mt-6 rounded-[24px] border border-white/[0.07] bg-charcoal/40 p-6">
+          <div className="mt-6 surface p-6">
             <Label>Method</Label>
             <p className="mt-2 max-w-4xl text-[12px] leading-relaxed text-white/45">
               {data.method_note}

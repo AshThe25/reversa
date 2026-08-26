@@ -47,7 +47,7 @@ export function CommandCentre() {
 
       {/* ------------------------------------------------- headline tiles */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-[28px] border border-signal-loss/20 bg-signal-loss/[0.04] p-6">
+        <div className="surface-alarm p-6">
           <Stat
             label="Revenue at risk"
             value={o ? lakhs(o.revenue_at_risk_paise) : "—"}
@@ -64,7 +64,7 @@ export function CommandCentre() {
             hint="Revenue that arrives with no intervention at all. Conventional tools count this as recovered."
           />
         </div>
-        <div className="rounded-[28px] border border-cyber/25 bg-cyber/[0.05] p-6">
+        <div className="surface-accent p-6">
           <Stat
             label="Incremental recovery"
             value={o ? lakhs(o.incremental_recovery_paise) : "—"}
@@ -240,25 +240,40 @@ function FlowBar({
 
   return (
     <>
-      <div className="flex h-12 w-full overflow-hidden rounded-full border border-white/10">
-        <div
-          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-white/[0.09] text-[11px] font-semibold text-white/55"
-          style={{ width: `${naturalPct}%` }}
-        >
-          {naturalPct > 12 ? "natural" : ""}
-        </div>
-        <div
-          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-cyber text-[11px] font-bold text-onyx"
-          style={{ width: `${incrementalPct}%` }}
-        >
-          {incrementalPct > 12 ? "incremental" : ""}
-        </div>
-        <div
-          className="flex items-center justify-center overflow-hidden whitespace-nowrap bg-signal-loss/15 text-[11px] font-semibold text-signal-loss"
-          style={{ width: `${lostPct}%` }}
-        >
-          {lostPct > 12 ? "still lost" : ""}
-        </div>
+      {/* Recessed track, lit segments. Same inversion as the segmented control:
+          the channel sits below the surface and each segment catches the top
+          light, so the bar reads as filled rather than painted. */}
+      <div
+        className="flex h-14 w-full overflow-hidden rounded-full p-1"
+        style={{
+          background: "rgba(0,0,0,0.5)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "inset 0 2px 8px rgba(0,0,0,0.7)",
+        }}
+      >
+        <FlowSegment
+          width={naturalPct}
+          label="natural"
+          className="text-white/60"
+          fill="linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07))"
+          highlight="rgba(255,255,255,0.14)"
+          first
+        />
+        <FlowSegment
+          width={incrementalPct}
+          label="incremental"
+          className="font-bold text-onyx"
+          fill="linear-gradient(180deg, #fde047, #eab308)"
+          highlight="rgba(255,255,255,0.5)"
+        />
+        <FlowSegment
+          width={lostPct}
+          label="still lost"
+          className="text-signal-loss"
+          fill="linear-gradient(180deg, rgba(255,93,93,0.20), rgba(255,93,93,0.10))"
+          highlight="rgba(255,93,93,0.25)"
+          last
+        />
       </div>
       {incremental < 0 && (
         <p className="mt-3 text-[12px] leading-relaxed text-signal-loss">
@@ -270,6 +285,38 @@ function FlowBar({
         </p>
       )}
     </>
+  );
+}
+
+function FlowSegment({
+  width, label, className, fill, highlight, first, last,
+}: {
+  width: number;
+  label: string;
+  className: string;
+  fill: string;
+  highlight: string;
+  first?: boolean;
+  last?: boolean;
+}) {
+  if (width < 0.4) return null;
+  const radius = "9999px";
+  return (
+    <div
+      className={`flex items-center justify-center overflow-hidden whitespace-nowrap text-[11px] font-semibold transition-[width] duration-700 ease-liquid ${className}`}
+      style={{
+        width: `${width}%`,
+        background: fill,
+        boxShadow: `inset 0 1px 0 ${highlight}`,
+        borderTopLeftRadius: first ? radius : 4,
+        borderBottomLeftRadius: first ? radius : 4,
+        borderTopRightRadius: last ? radius : 4,
+        borderBottomRightRadius: last ? radius : 4,
+        marginRight: last ? 0 : 2,
+      }}
+    >
+      {width > 11 ? label : ""}
+    </div>
   );
 }
 

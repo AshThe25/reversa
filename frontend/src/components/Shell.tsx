@@ -5,7 +5,7 @@ import { STEPS, useTour } from "../lib/tour";
 import { Button, Tag } from "./primitives";
 
 const NAV = [
-  { to: "/command", label: "Command Centre" },
+  { to: "/command", label: "Command" },
   { to: "/incidents", label: "Incidents" },
   { to: "/futures", label: "Futures" },
   { to: "/portfolio", label: "Portfolio" },
@@ -16,33 +16,38 @@ const NAV = [
   { to: "/evaluation", label: "Evaluation" },
 ];
 
+/**
+ * The app shell.
+ *
+ * Chrome floats and is frosted; content sits on the void beneath an ambient
+ * light bleed. The nav is a recessed track with a raised thumb on the active
+ * item — the same inversion a physical switch uses, and the reason it reads as
+ * a control rather than a row of links.
+ */
 export function Shell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const role = currentRole();
 
   return (
-    <div className="min-h-full bg-onyx">
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-onyx/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-6 px-6 py-3">
-          <NavLink to="/" className="group flex items-center gap-3">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-cyber text-[13px] font-black text-onyx">
+    <div className="ambient relative min-h-full">
+      <header className="above sticky top-0 z-40 px-4 pt-4">
+        <div className="mx-auto flex max-w-[1600px] items-center gap-4 rounded-full frost px-3 py-2">
+          <NavLink to="/" className="flex shrink-0 items-center gap-2.5 pl-1.5">
+            <span className="orb grid h-7 w-7 place-items-center text-[12px] font-black text-onyx">
               R
             </span>
-            <span className="text-[15px] font-bold tracking-tight">REVERSA</span>
+            <span className="hidden text-[14px] font-bold tracking-tight sm:block">
+              REVERSA
+            </span>
           </NavLink>
 
-          <nav className="hidden flex-1 items-center gap-1 lg:flex">
+          <nav className="segment-track min-w-0 flex-1 overflow-x-auto">
             {NAV.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  [
-                    "rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors duration-200",
-                    isActive
-                      ? "bg-cyber text-onyx"
-                      : "text-white/45 hover:bg-white/[0.06] hover:text-white/80",
-                  ].join(" ")
+                  `segment whitespace-nowrap ${isActive ? "segment-on" : "hover:text-white/80"}`
                 }
               >
                 {item.label}
@@ -50,40 +55,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
-            {role && (
+          {role && (
+            <div className="hidden shrink-0 pr-1 lg:block">
               <Tag tone={role === "operator" ? "yellow" : "neutral"}>
                 {role === "operator" ? "OPERATOR" : "DEMO · read + simulate"}
               </Tag>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-
-        <nav className="flex gap-1 overflow-x-auto px-6 pb-2 lg:hidden">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                [
-                  "whitespace-nowrap rounded-full px-3 py-1.5 text-[12px]",
-                  isActive ? "bg-cyber text-onyx" : "text-white/45",
-                ].join(" ")
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
 
-      <main key={location.pathname} className="animate-rise">
+      <main key={location.pathname} className="above animate-rise">
         {children}
       </main>
 
       <TourBar />
-      <footer className="border-t border-white/[0.06] px-6 py-8">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
+
+      <footer className="above px-6 py-10">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 border-t border-white/[0.06] pt-8">
           <p className="text-[11px] text-white/25">
             Reversa · counterfactual revenue recovery · Razorpay AI Buildathon 2026
           </p>
@@ -100,7 +89,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
  * The walkthrough bar.
  *
  * Docked, never modal. It cannot cover a number the reader is looking at, and
- * every step has a visible way out - a tour you cannot escape is worse than no
+ * every step has a visible way out — a tour you cannot escape is worse than no
  * tour at all.
  */
 function TourBar() {
@@ -113,14 +102,11 @@ function TourBar() {
   const onStepPage = location.pathname === step.path;
 
   return (
-    <div className="sticky bottom-0 z-50 border-t border-cyber/25 bg-cyber text-onyx">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-6 py-4 md:flex-row md:items-center">
-        <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-onyx text-[11px] font-black text-cyber">
-            {tour.index + 1}
-          </span>
-          <div className="hidden h-8 w-px bg-onyx/15 md:block" />
-        </div>
+    <div className="sticky bottom-0 z-50 px-4 pb-4">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 rounded-[28px] bg-cyber px-5 py-4 text-onyx shadow-[0_-8px_40px_-12px_rgba(253,224,71,0.35)] md:flex-row md:items-center">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-onyx text-[11px] font-black text-cyber">
+          {tour.index + 1}
+        </span>
 
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-bold tracking-tight">{step.title}</p>
@@ -138,12 +124,15 @@ function TourBar() {
               {step.cta} →
             </Button>
           ) : (
-            <Button variant="dark" onClick={() => {
-              const nextIdx = tour.index + 1;
-              tour.next();
-              const nextStep = STEPS[nextIdx];
-              if (nextStep) navigate(nextStep.path);
-            }}>
+            <Button
+              variant="dark"
+              onClick={() => {
+                const nextIdx = tour.index + 1;
+                tour.next();
+                const nextStep = STEPS[nextIdx];
+                if (nextStep) navigate(nextStep.path);
+              }}
+            >
               {tour.index + 1 === STEPS.length ? "Done" : "Next →"}
             </Button>
           )}

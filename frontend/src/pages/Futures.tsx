@@ -224,19 +224,67 @@ export function Futures() {
                     incremental: +(s.net_incremental_paise / 1e7).toFixed(2),
                     key: s.key,
                   }))}
-                  margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+                  margin={{ top: 12, right: 8, left: -18, bottom: 0 }}
                 >
-                  <CartesianGrid stroke="#ffffff10" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: "#ffffff45", fontSize: 10 }} tickLine={false} axisLine={false} interval={0} />
-                  <YAxis tick={{ fill: "#ffffff40", fontSize: 11 }} tickLine={false} axisLine={false} unit="L" />
+                  {/* Gradient fills rather than flat colour. A flat #ffffff22
+                      bar disappears entirely against a lit surface — the whole
+                      chart read as empty until these went in. */}
+                  <defs>
+                    <linearGradient id="barBest" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FDE047" />
+                      <stop offset="100%" stopColor="#CA8A04" />
+                    </linearGradient>
+                    {/* stopColor does not accept rgba() - SVG wants a colour
+                        plus stopOpacity, and an rgba() here silently resolves
+                        to nothing, which emptied the entire chart. */}
+                    <linearGradient id="barRest" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.30} />
+                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.09} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                  />
+                  <YAxis
+                    tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    unit="L"
+                  />
                   <Tooltip
-                    cursor={{ fill: "#ffffff08" }}
-                    contentStyle={{ background: "#171717", border: "1px solid #ffffff18", borderRadius: 16, fontSize: 12 }}
+                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    contentStyle={{
+                      background: "rgba(18,18,18,0.94)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 18,
+                      fontSize: 12,
+                      boxShadow: "0 24px 48px -24px rgba(0,0,0,0.9)",
+                    }}
+                    labelStyle={{ color: "rgba(255,255,255,0.55)" }}
                     formatter={(v: number) => [`₹${v}L`, "net incremental"]}
                   />
-                  <RBar dataKey="incremental" radius={[8, 8, 0, 0]}>
+                  {/* Two-corner radius, not four. A 4-corner array makes
+                      Recharts generate a rounded path whose corner radius can
+                      exceed the bar height, and DO NOTHING / RETRY NOW are
+                      legitimately zero here - the invalid path took the whole
+                      series down with it, not just those two bars. */}
+                  <RBar
+                    dataKey="incremental"
+                    radius={[8, 8, 0, 0]}
+                    maxBarSize={64}
+                    animationDuration={520}
+                    animationEasing="ease-out"
+                  >
                     {run.scenarios.map((s) => (
-                      <Cell key={s.key} fill={s.key === run.best_scenario ? "#FDE047" : "#ffffff22"} />
+                      <Cell
+                        key={s.key}
+                        fill={s.key === run.best_scenario ? "url(#barBest)" : "url(#barRest)"}
+                      />
                     ))}
                   </RBar>
                 </BarChart>

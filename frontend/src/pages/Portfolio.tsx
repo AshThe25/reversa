@@ -92,7 +92,7 @@ export function Portfolio() {
               hint="The baseline failure rate keeps running underneath an incident. Counting every in-window failure as incident damage overstates the headline."
             />
           </div>
-          <div className="rounded-[28px] border border-cyber/25 bg-cyber/[0.05] p-6">
+          <div className="surface-accent p-6">
             <Stat label="Addressable" value={lakhs(co.addressable_paise)} tone="yellow" />
           </div>
         </div>
