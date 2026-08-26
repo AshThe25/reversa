@@ -250,6 +250,12 @@ class Estimate:
         }
 
 
+def _shrunk_mean(k: float, n: float, prior_rate: float, kappa: float) -> float:
+    """Posterior mean only. The interval costs two beta.ppf calls, which is fine
+    once but not 16,000 times while building a cohort."""
+    return (k + kappa * prior_rate) / max(n + kappa, 1e-9)
+
+
 def _beta_interval(k: float, n: float, prior_rate: float, kappa: float) -> tuple[float, float, float]:
     """Posterior mean and credible interval for a shrunk rate."""
     a = k + kappa * prior_rate
@@ -356,17 +362,19 @@ class CounterfactualModel:
         """
         grand = self.global_natural.rate or 0.35
         prior, prior_label = grand, "global"
-        best = (grand, grand, grand, 0, "global", "global")
+        best = (self.global_natural, grand, 0, "global", "global")
 
         for key in reversed(f.natural_keys()):     # coarse -> fine
             cell = self.natural.get(key)
             if cell is None or cell.n == 0:
                 continue
-            mean, lo, hi = _beta_interval(cell.k, cell.n, prior, KAPPA_NATURAL)
-            best = (mean, lo, hi, int(cell.n), key, prior_label)
+            # only the surviving (finest) cell needs an interval
+            mean = _shrunk_mean(cell.k, cell.n, prior, KAPPA_NATURAL)
+            best = (cell, prior, int(cell.n), key, prior_label)
             prior, prior_label = mean, key
 
-        mean, lo, hi, n, key, parent = best
+        cell, cell_prior, n, key, parent = best
+        mean, lo, hi = _beta_interval(cell.k, cell.n, cell_prior, KAPPA_NATURAL)
         return Estimate(
             p_natural=mean, p_natural_lo=lo, p_natural_hi=hi,
             support_n=n, source_cell=key, shrunk_from=parent,
@@ -415,8 +423,8 @@ class CounterfactualModel:
         control = control_cell
 
         grand = self.global_natural.rate or 0.35
-        r_t, _, _ = _beta_interval(treated_cell.k, treated_cell.n, grand, KAPPA_UPLIFT)
-        r_c, _, _ = _beta_interval(control.k, control.n, grand, KAPPA_UPLIFT)
+        r_t = _shrunk_mean(treated_cell.k, treated_cell.n, grand, KAPPA_UPLIFT)
+        r_c = _shrunk_mean(control.k, control.n, grand, KAPPA_UPLIFT)
 
         headroom = max(1.0 - r_c, 1e-3)
         raw_relative = (r_t - r_c) / headroom

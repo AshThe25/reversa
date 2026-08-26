@@ -13,11 +13,12 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1] / "reversa"
 
-# the world writes ground truth (it *is* the world), evaluation reads it to
-# score us, models defines it. nobody else gets to know it exists.
+# The world writes and resolves ground truth (it IS the world), evaluation reads
+# it to score us, models defines it. Nobody else gets to know it exists.
 ALLOWED = {
     "models.py",
     "world/generator.py",
+    "world/outcomes.py",
     "engines/evaluation_engine.py",
 }
 

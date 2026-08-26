@@ -343,7 +343,13 @@ def solve_fixed_action(
     limit = capacity.get(action, 0)
     cost = P.ACTION_COST_PAISE.get(action, 0)
 
-    pool = [c for c in candidates if action in c.eligible]
+    eligible = [c for c in candidates if action in c.eligible]
+    # "apply this to everyone" still stops short of candidates the model expects
+    # the action to HURT - re-presenting a card the estimator thinks will harden
+    # the decline is not a strategy, and including them let this scenario report
+    # negative incremental recovery.
+    pool = [c for c in eligible if c.value_of(action) > 0]
+    skipped_negative = len(eligible) - len(pool)
     pool.sort(key=lambda c: -(c.amount_paise * c.uplift.get(action, 0.0)))
 
     assignments = [
@@ -360,6 +366,11 @@ def solve_fixed_action(
         plan.notes.append(
             f"{len(pool) - limit} eligible candidates left untreated - "
             f"{action} capacity is {limit}"
+        )
+    if skipped_negative:
+        plan.notes.append(
+            f"{skipped_negative} eligible candidates skipped - {action} has "
+            "non-positive expected value for them"
         )
     return plan
 

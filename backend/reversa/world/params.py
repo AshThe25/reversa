@@ -33,6 +33,11 @@ SCALE_PRESETS: dict[str, dict] = {
     # testable. "small" only produces ~800, at which point the tests measure
     # sample size rather than correctness.
     "test":   {"customers": 4_000, "training_days": 24, "live_orders": 4_000},
+    # The detector needs 150 payments in a window and Rs 50k exposed before it
+    # will call anything an incident, so the estimator preset above is far too
+    # thin to exercise the detection -> cohort -> tunnel path. This one carries a
+    # real live day.
+    "test_live": {"customers": 4_000, "training_days": 20, "live_orders": 55_000},
     "small":  {"customers": 1_200, "training_days": 14, "live_orders": 6_000},
     "demo":   {"customers": 6_000, "training_days": 28, "live_orders": 120_000},
     "large":  {"customers": 12_000, "training_days": 28, "live_orders": 260_000},
@@ -495,14 +500,21 @@ LIVE_INCIDENT_SCHEDULE: tuple[dict, ...] = (
     {"template": "issuer_timeout_spike",   "start_min": 9 * 60 + 15, "duration_min": 26},
     {"template": "single_bank_outage",     "start_min": 11 * 60 + 20, "duration_min": 32},
     {"template": "psp_upi_degradation",    "start_min": 18 * 60 + 2,  "duration_min": 19},
-    {"template": "ambiguous_latency",      "start_min": 18 * 60 + 40, "duration_min": 25},
+    {"template": "ambiguous_latency",      "start_min": 18 * 60 + 25, "duration_min": 22},
 )
 
-# Where the demo clock sits on the live day. Late enough that the UPI cohort has
-# had ~50 minutes to partially self-recover (so natural recovery is a real,
-# observable number and not a hypothetical), early enough that intervening still
-# makes sense.
-DEMO_CLOCK_MIN = 19 * 60 + 10
+# Where the demo clock sits on the live day: 18:50 IST.
+#
+# Three constraints pin this down. The UPI cohort needs time to partially
+# self-recover, or natural recovery is a hypothetical rather than something you
+# can point at. The ambiguous incident has to have just closed, so it is live in
+# the incident list. And it has to be INSIDE the 08:00-19:00 contact window.
+#
+# The first version sat at 19:10 and every payment link in the wind tunnel came
+# back blocked - the gate was right and the scheduling was wrong. Sitting at
+# 18:50 also leaves ten minutes of contact window, which is a real operational
+# squeeze: act now, or everything reschedules to 08:00 tomorrow.
+DEMO_CLOCK_MIN = 18 * 60 + 50
 
 # Some customers' instruments die mid-window - card hits expiry, VPA gets
 # deregistered. After that every payment on that method fails INSTRUMENT_INVALID
