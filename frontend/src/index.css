@@ -1,0 +1,97 @@
+@import "@fontsource-variable/inter";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    @apply h-full bg-onyx;
+  }
+
+  body {
+    font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+  }
+
+  /* Tabular numerals everywhere money appears. Without this, a column of
+     rupee figures jitters as digits change width and the whole thing reads
+     as a toy. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-cyber text-onyx;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-cyber ring-offset-2 ring-offset-onyx;
+  }
+
+  /* Scrollbars, so dense panels don't look like a system dialog. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-white/10;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+@layer components {
+  .label {
+    @apply text-[10px] font-medium uppercase tracking-label text-white/40;
+  }
+
+  .label-dark {
+    @apply text-[10px] font-medium uppercase tracking-label text-onyx/50;
+  }
+
+  .glass {
+    @apply rounded-glass border border-white/10 bg-white/[0.04] backdrop-blur-2xl;
+  }
+
+  .glass-strong {
+    @apply rounded-glass border border-white/20 bg-white/10 backdrop-blur-2xl;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
+           transition-all duration-200 ease-liquid active:scale-95;
+  }
+
+  .pill-solid {
+    @apply pill bg-cyber text-onyx hover:shadow-[0_0_40px_-8px_rgba(253,224,71,0.6)];
+  }
+
+  .pill-ghost {
+    @apply pill border border-white/15 text-white/80 hover:border-white/35 hover:text-white;
+  }
+
+  .pill-dark {
+    @apply pill bg-onyx text-white hover:bg-graphite;
+  }
+
+  /* Dense analytical surfaces live in the void, not on the yellow. The design
+     system calls this out - loud colour, disciplined structure - and a table of
+     rupee figures on a saturated ground is unreadable. */
+  .panel {
+    @apply rounded-[28px] border border-white/[0.07] bg-charcoal/70;
+  }
+
+  .row-hover {
+    @apply transition-colors duration-150 hover:bg-white/[0.03];
+  }
+}

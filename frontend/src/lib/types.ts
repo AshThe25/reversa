@@ -1,0 +1,264 @@
+/** Shapes returned by the Reversa API. Kept in one place so a backend rename
+ *  breaks the typecheck rather than a screen at demo time. */
+
+export interface SessionInfo {
+  subject: string;
+  scopes: string[];
+  session_id: string;
+  expires_at: number;
+  expires_in: number;
+}
+
+export interface AuthResponse {
+  token: string;
+  session: SessionInfo;
+  role: "demo" | "operator";
+}
+
+export interface Overview {
+  as_of: string;
+  revenue_at_risk_paise: number;
+  live_failed_payments: number;
+  live_failed_amount_paise: number;
+  natural_recovery_paise: number;
+  incremental_recovery_paise: number;
+  active_incidents: number;
+  total_incidents: number;
+  experiments_concluded: number;
+  capacity: { used: number; total: number; by_action: Record<string, number> };
+  detector: Record<string, unknown>;
+}
+
+export interface Incident {
+  id: string;
+  label: string;
+  slice: string;
+  method: string | null;
+  instrument: string | null;
+  severity: "low" | "medium" | "high" | "critical";
+  status: string;
+  detected_at: string;
+  window_start: string;
+  window_end: string;
+  resolved_at: string | null;
+  baseline_success_rate: number;
+  observed_success_rate: number;
+  observed_volume: number;
+  affected_payment_count: number;
+  revenue_exposed_paise: number;
+  p_value: number;
+  q_value: number;
+  detection_rationale: string;
+}
+
+export interface IncidentSignal {
+  at: string;
+  window_minutes: number;
+  n: number;
+  success_rate: number;
+  baseline_rate: number;
+  q_value: number;
+  top_reason: string | null;
+  top_reason_share: number;
+  rolled_up_from: string[];
+}
+
+export interface FailureMixRow {
+  reason: string | null;
+  failure_class: string | null;
+  count: number;
+  amount_paise: number;
+}
+
+export interface IncidentDetail extends Incident {
+  signals: IncidentSignal[];
+  failure_mix: FailureMixRow[];
+}
+
+export interface UpliftCell {
+  delta: number;
+  credible: boolean;
+  ev_paise: number;
+}
+
+export interface CandidateRow {
+  payment_id: string;
+  customer_id: string;
+  amount_paise: number;
+  failure_class: string;
+  method: string;
+  p_natural: number;
+  confidence: number;
+  eligible: string[];
+  uplift: Record<string, UpliftCell>;
+  would_recover_anyway: boolean;
+}
+
+export interface CohortException {
+  payment_id: string;
+  amount_paise: number;
+  reason: string;
+  detail: string;
+}
+
+export interface Cohort {
+  incident_id: string;
+  slice: string;
+  window_start: string;
+  window_end: string;
+  in_window_payments: number;
+  member_count: number;
+  attribution_weight: number;
+  rail_down_now: boolean;
+  revenue_exposed_paise: number;
+  attributable_exposure_paise: number;
+  natural_recovery_paise: number;
+  addressable_paise: number;
+  exceptions: number;
+  exceptions_by_reason: Record<string, number>;
+  build_ms: number;
+  exception_sample: CohortException[];
+  candidates: CandidateRow[];
+}
+
+export interface CapacityCell {
+  used: number;
+  limit: number;
+  exhausted: boolean;
+}
+
+export interface Scenario {
+  key: string;
+  label: string;
+  description: string;
+  natural_recovery_paise: number;
+  gross_recovery_paise: number;
+  incremental_recovery_paise: number;
+  action_count: number;
+  by_action: Record<string, number>;
+  capacity_used: Record<string, CapacityCell>;
+  exhausted: string[];
+  cost_paise: number;
+  net_incremental_paise: number;
+  friction: number;
+  wasted_actions: number;
+  contacted_customers: number;
+  confidence: number;
+  risk_score: number;
+  policy_violations: number;
+  violation_detail: { count: number; sample: { payment_id: string; action: string }[] };
+  cost_per_incremental_rupee: number | null;
+  solver: string;
+  solve_ms: number;
+  notes: string[];
+}
+
+export interface WindTunnel {
+  incident_id: string;
+  cohort: Omit<Cohort, "candidates" | "exception_sample" | "incident_id">;
+  candidate_count: number;
+  capacity: Record<string, number>;
+  total_ms: number;
+  best_scenario: string;
+  scenarios: Scenario[];
+}
+
+export interface ArmResult {
+  arm: string;
+  customers: number;
+  payments: number;
+  recovered: number;
+  exposure_paise: number;
+  recovered_paise: number;
+  cost_paise: number;
+  recovery_rate: number;
+  revenue_rate: number;
+}
+
+export interface ExperimentResult {
+  experiment_id: string;
+  arms: Record<string, ArmResult>;
+  gross_recovery_paise: number;
+  natural_recovery_paise: number;
+  incremental_paise: number;
+  incremental_lo_paise: number;
+  incremental_hi_paise: number;
+  rate_lift: number;
+  rate_lift_lo: number;
+  rate_lift_hi: number;
+  significant: boolean;
+  rate_significant: boolean;
+  concentrated: boolean;
+  cost_paise: number;
+  net_paise: number;
+  roi: number | null;
+  measurement_cost_paise: number;
+  bootstrap_samples: number;
+  confidence: number;
+  compute_ms: number;
+  warnings: string[];
+}
+
+export interface ExecutionReport {
+  experiment_id: string;
+  strategy_id: string;
+  scenario_key: string;
+  arms: Record<string, number>;
+  actions_executed: number;
+  projected_incremental_paise: number;
+  balance: Record<string, { payments: number; exposure_paise: number; mean_paise: number; median_paise: number } | { mean_ticket_ratio: number; balanced: boolean }>;
+  result: ExperimentResult;
+}
+
+export interface AuditEntry {
+  seq: number;
+  id: string;
+  at: string;
+  actor: string;
+  event_type: string;
+  subject_type: string;
+  subject_id: string;
+  payload: Record<string, unknown>;
+  prev_hash: string;
+  entry_hash: string;
+}
+
+export interface ChainVerdict {
+  valid: boolean;
+  entries_checked: number;
+  head_hash: string;
+  broken_at_seq: number | null;
+  reason: string | null;
+}
+
+export interface SystemInfo {
+  adapters: {
+    razorpay: {
+      mode: string;
+      live_calls: number;
+      payment_link_budget: { limit: number; used: number; remaining: number };
+      note: string;
+    };
+    llm: { mode: string; model: string | null };
+  };
+  world: Record<string, unknown> | null;
+  engine: {
+    fit_ms: number;
+    scan_ms: number;
+    incidents_detected: number;
+    detector: Record<string, unknown>;
+    estimator: Record<string, unknown> | null;
+  };
+  capacity_defaults: Record<string, number>;
+}
+
+export interface ChaosResult {
+  incident_id: string;
+  volume_multiplier: number;
+  capacity_multiplier: number;
+  candidates: number;
+  baseline: Scenario;
+  stressed: Scenario;
+  exhaustion_minutes: Record<string, number | null>;
+  capacity: Record<string, number>;
+}

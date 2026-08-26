@@ -514,6 +514,23 @@ def audit(limit: int = 100, db: DbSession = Depends(get_session),
     }
 
 
+@router.get("/evaluation")
+def evaluation(db: DbSession = Depends(get_session),
+               _: Session = Depends(requires_read)) -> dict:
+    """Reversa graded against the simulator's hidden answer key.
+
+    Nothing on this route is self-reported. Detector recall is measured against
+    the incidents the world actually injected; the natural-recovery estimate is
+    scored on the holdout, where the realised outcome IS the natural outcome;
+    and the headline incremental figure is compared against the exact value
+    computed from potential outcomes.
+    """
+    from reversa.engines import evaluation_engine as EV
+
+    st = engine_state.get(db)
+    return EV.evaluate(db, detected=st.detected)
+
+
 @router.get("/audit/verify")
 def audit_verify(db: DbSession = Depends(get_session),
                  _: Session = Depends(requires_read)) -> dict:

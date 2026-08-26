@@ -1,0 +1,273 @@
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
+import {
+  Bar, Button, ErrorNote, Label, Panel, Skeleton, Stat, Tag,
+} from "../components/primitives";
+import { useAsync } from "../hooks/useAsync";
+import { api } from "../lib/api";
+import { count, lakhs, pct, rupees, titleise } from "../lib/format";
+import type { CandidateRow } from "../lib/types";
+
+/**
+ * The decision view.
+ *
+ * An operator has to be able to answer three questions about any row: why this
+ * customer, why this action, and why not the others. So every candidate shows
+ * its estimated natural recovery, the full scored option set including the
+ * rejected ones, and which options compliance removed before scoring began.
+ */
+export function Portfolio() {
+  const [params, setParams] = useSearchParams();
+  const incidents = useAsync(() => api.incidents(), []);
+  const selected = params.get("incident");
+  const [open, setOpen] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selected && incidents.data?.length) {
+      const worst = incidents.data.reduce((a, b) =>
+        a.revenue_exposed_paise >= b.revenue_exposed_paise ? a : b,
+      );
+      setParams({ incident: worst.id }, { replace: true });
+    }
+  }, [incidents.data, selected, setParams]);
+
+  const cohort = useAsync(
+    () => (selected ? api.cohort(selected) : Promise.resolve(null)),
+    [selected],
+  );
+  const co = cohort.data;
+
+  return (
+    <div className="mx-auto max-w-[1600px] px-6 py-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <Label>Constrained allocation</Label>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight">Recovery Portfolio</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+            Capacity is finite and the expensive actions are the scarce ones. These are
+            the candidates, ranked by what an intervention would actually add — not by
+            how big the payment is.
+          </p>
+        </div>
+        <select
+          value={selected ?? ""}
+          onChange={(e) => setParams({ incident: e.target.value })}
+          className="rounded-full border border-white/12 bg-charcoal px-4 py-2 text-sm text-white/80 outline-none focus:border-cyber/50"
+        >
+          {incidents.data?.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.slice} · {lakhs(i.revenue_exposed_paise)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {cohort.error && (
+        <div className="mt-6">
+          <ErrorNote message={cohort.error.message} requestId={cohort.error.requestId} />
+        </div>
+      )}
+
+      {co && (
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="panel p-6">
+            <Stat label="Candidates" value={count(co.member_count)} sub={`${count(co.in_window_payments)} in window`} />
+          </div>
+          <div className="panel p-6">
+            <Stat label="Exposure" value={lakhs(co.revenue_exposed_paise)} tone="loss" />
+          </div>
+          <div className="panel p-6">
+            <Stat
+              label="Attribution weight"
+              value={pct(co.attribution_weight, 0)}
+              sub="share of in-window failures the incident caused"
+              tone="muted"
+              hint="The baseline failure rate keeps running underneath an incident. Counting every in-window failure as incident damage overstates the headline."
+            />
+          </div>
+          <div className="rounded-[28px] border border-cyber/25 bg-cyber/[0.05] p-6">
+            <Stat label="Addressable" value={lakhs(co.addressable_paise)} tone="yellow" />
+          </div>
+        </div>
+      )}
+
+      <Panel
+        className="mt-6"
+        title="Candidates"
+        hint="Sorted by exposure. Expand a row for the full scored option set, including the actions that were rejected and the ones compliance removed."
+      >
+        {cohort.loading && <Skeleton rows={6} />}
+        {co && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px] text-left">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  {["Payment", "Amount", "Failure class", "P(recovers anyway)", "Best action", "Expected incremental", "Confidence", ""].map((h) => (
+                    <th key={h} className="label px-5 py-3 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {co.candidates.map((c) => (
+                  <CandidateRowView
+                    key={c.payment_id}
+                    row={c}
+                    open={open === c.payment_id}
+                    onToggle={() => setOpen(open === c.payment_id ? null : c.payment_id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {co && co.exception_sample.length > 0 && (
+        <Panel
+          className="mt-6"
+          title="Blocked by a compliance gate"
+          hint="Named, not dropped. Every one of these is a payment we could have chased and chose not to."
+        >
+          <div className="divide-y divide-white/[0.04]">
+            {co.exception_sample.slice(0, 10).map((e) => (
+              <div key={e.payment_id} className="flex items-center gap-4 px-5 py-3">
+                <Tag tone="bad">{titleise(e.reason)}</Tag>
+                <span className="font-mono text-[11px] text-white/30">{e.payment_id}</span>
+                <span className="tnum ml-auto text-sm text-white/50">{rupees(e.amount_paise)}</span>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+function CandidateRowView({
+  row, open, onToggle,
+}: {
+  row: CandidateRow;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const ranked = Object.entries(row.uplift).sort((a, b) => b[1].delta - a[1].delta);
+  const eligibleRanked = ranked.filter(([a]) => row.eligible.includes(a));
+  const bestEntry = eligibleRanked[0];
+  const maxEv = Math.max(...ranked.map(([, u]) => Math.abs(u.ev_paise)), 1);
+
+  return (
+    <>
+      <tr className={`row-hover ${row.would_recover_anyway ? "opacity-60" : ""}`}>
+        <td className="px-5 py-4 font-mono text-[11px] text-white/40">{row.payment_id}</td>
+        <td className="tnum px-5 py-4 text-sm font-semibold">{rupees(row.amount_paise)}</td>
+        <td className="px-5 py-4">
+          <span className="font-mono text-[11px] text-white/55">{row.failure_class}</span>
+        </td>
+        <td className="px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className={`tnum text-sm ${row.would_recover_anyway ? "text-white/35" : ""}`}>
+              {pct(row.p_natural)}
+            </span>
+            {row.would_recover_anyway && <Tag tone="neutral">likely anyway</Tag>}
+          </div>
+        </td>
+        <td className="px-5 py-4">
+          {bestEntry ? (
+            <span className="text-sm font-medium">{titleise(bestEntry[0])}</span>
+          ) : (
+            <span className="text-xs text-white/25">no legal action</span>
+          )}
+        </td>
+        <td className="tnum px-5 py-4 text-sm font-bold text-cyber">
+          {bestEntry ? rupees(bestEntry[1].ev_paise) : "—"}
+        </td>
+        <td className="px-5 py-4">
+          <div className="w-16">
+            <Bar value={row.confidence} max={1} tone={row.confidence > 0.6 ? "yellow" : "muted"} />
+          </div>
+        </td>
+        <td className="px-5 py-4 text-right">
+          <Button variant="ghost" onClick={onToggle}>
+            {open ? "Hide" : "Why?"}
+          </Button>
+        </td>
+      </tr>
+
+      {open && (
+        <tr>
+          <td colSpan={8} className="bg-white/[0.015] px-5 py-6">
+            <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+              <div>
+                <Label>Every action scored, including the rejected ones</Label>
+                <div className="mt-4 space-y-2.5">
+                  {ranked.map(([action, u]) => {
+                    const eligible = row.eligible.includes(action);
+                    const isBest = bestEntry?.[0] === action;
+                    return (
+                      <div key={action} className="flex items-center gap-3">
+                        <span
+                          className={`w-36 shrink-0 text-[12px] ${
+                            isBest ? "font-semibold text-cyber" : eligible ? "text-white/70" : "text-white/25 line-through"
+                          }`}
+                        >
+                          {titleise(action)}
+                        </span>
+                        <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-white/[0.06]">
+                          <div
+                            className={`h-full rounded-full ${
+                              !eligible ? "bg-white/12" : isBest ? "bg-cyber" : u.delta > 0 ? "bg-white/30" : "bg-signal-loss/50"
+                            }`}
+                            style={{ width: `${(Math.abs(u.ev_paise) / maxEv) * 100}%` }}
+                          />
+                        </div>
+                        <span className="tnum w-24 shrink-0 text-right text-[11px] text-white/45">
+                          {rupees(u.ev_paise)}
+                        </span>
+                        {!u.credible && (
+                          <span className="shrink-0 text-[10px] uppercase tracking-label text-white/25">
+                            not credible
+                          </span>
+                        )}
+                        {!eligible && (
+                          <span className="shrink-0 text-[10px] uppercase tracking-label text-signal-loss/70">
+                            gated
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Why this customer</Label>
+                  <p className="mt-2 text-[12px] leading-relaxed text-white/50">
+                    Estimated {pct(row.p_natural)} chance of recovering with no intervention
+                    at all, leaving {pct(1 - row.p_natural)} of headroom. An action can only
+                    ever compete for that remainder — which is why a large payment that is
+                    already likely to land is worth less to us than a small one that is not.
+                  </p>
+                </div>
+                <div>
+                  <Label>Why not the others</Label>
+                  <p className="mt-2 text-[12px] leading-relaxed text-white/50">
+                    Struck-through actions were removed by a compliance gate before scoring.
+                    Actions marked <em className="not-italic text-white/70">not credible</em>{" "}
+                    have uplift estimates whose interval includes zero — the optimiser will
+                    not spend money on an effect it cannot distinguish from nothing.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Tag tone="neutral">{row.method.toUpperCase()}</Tag>
+                  <Tag tone="neutral">{row.eligible.length} legal actions</Tag>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
