@@ -4,7 +4,7 @@ import {
 } from "recharts";
 
 import {
-  Button, ErrorNote, Label, Panel, Severity, Skeleton, Stat, Tag,
+  Button, ErrorNote, Panel, Severity, Skeleton, Stat, Tag,
 } from "../components/primitives";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";

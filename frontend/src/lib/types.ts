@@ -49,6 +49,10 @@ export interface Incident {
   p_value: number;
   q_value: number;
   detection_rationale: string;
+  ambiguous: boolean;
+  rca_class: string | null;
+  rca_confidence: number;
+  rca_evidence: { diffuse_members?: string[] } & Record<string, unknown>;
 }
 
 export interface IncidentSignal {
@@ -193,6 +197,9 @@ export interface ExperimentResult {
   net_paise: number;
   roi: number | null;
   measurement_cost_paise: number;
+  mde_rate: number;
+  required_holdout: number;
+  underpowered: boolean;
   bootstrap_samples: number;
   confidence: number;
   compute_ms: number;
@@ -261,4 +268,119 @@ export interface ChaosResult {
   stressed: Scenario;
   exhaustion_minutes: Record<string, number | null>;
   capacity: Record<string, number>;
+}
+
+// --- policies ---------------------------------------------------------------
+
+export interface PolicyCondition {
+  field: string;
+  op: string;
+  value: unknown;
+}
+
+export interface PolicyRule {
+  priority: number;
+  label: string;
+  conditions: PolicyCondition[];
+  effect: string;
+  effect_arg: string | null;
+  source_span: string | null;
+  describe: string;
+}
+
+export interface CompiledPolicy {
+  name: string;
+  compiled_by: string;
+  source_text: string;
+  warnings: string[];
+  rules: PolicyRule[];
+}
+
+export interface PolicyValidation {
+  ok: boolean;
+  errors: string[];
+  warnings: string[];
+  rules_checked: number;
+  unreachable: string[];
+}
+
+export interface PolicyResponse {
+  policy: CompiledPolicy;
+  path: "llm" | "deterministic";
+  injection_signals: string[];
+  validation: PolicyValidation;
+  llm: Record<string, unknown> | null;
+  run?: WindTunnel | null;
+}
+
+export interface PolicyCapabilities {
+  can: string[];
+  cannot: string[];
+  tunable_basis: string[];
+  fields: string[];
+  effects: string[];
+}
+
+// --- evaluation -------------------------------------------------------------
+
+export interface DetectionScore {
+  true_incidents: number;
+  detected: number;
+  matched: number;
+  missed: string[];
+  false_alarms: number;
+  recall: number;
+  precision: number;
+  median_latency_min: number | null;
+  latencies_min: number[];
+}
+
+export interface CalibrationBin {
+  bin_lo: number;
+  bin_hi: number;
+  n: number;
+  predicted: number;
+  actual: number;
+}
+
+export interface EvaluationExperiment {
+  experiment_id: string;
+  measurement: {
+    estimated_paise: number;
+    estimated_lo_paise: number;
+    estimated_hi_paise: number;
+    true_paise: number;
+    treated_payments: number;
+    interval_contains_truth: boolean;
+    relative_error: number | null;
+  };
+  calibration: {
+    n: number;
+    brier: number;
+    expected_calibration_error: number;
+    mean_predicted: number;
+    mean_actual: number;
+    bias: number;
+    bins: CalibrationBin[];
+  } | null;
+  decisions: {
+    decisions: number;
+    top1_accuracy: number;
+    chose_positive_uplift_rate: number;
+    chose_harmful: number;
+    flagged_wasteful: number;
+    truly_ineffective: number;
+    effective_rate: number;
+    mean_regret_uplift_points: number;
+    note: string;
+  };
+  cohort: { members: number; true_incident_members?: number; precision: number | null; note?: string };
+}
+
+export interface Evaluation {
+  generated_at: string;
+  detection: DetectionScore;
+  experiments: EvaluationExperiment[];
+  compute_ms: number;
+  method_note: string;
 }

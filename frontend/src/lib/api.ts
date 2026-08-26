@@ -170,4 +170,21 @@ export const api = {
     ),
 
   verifyChain: () => request<ChainVerdict>("/api/audit/verify"),
+
+  policyCapabilities: () =>
+    request<import("./types").PolicyCapabilities>("/api/policies/capabilities"),
+
+  compilePolicy: (text: string, name: string) =>
+    request<import("./types").PolicyResponse>("/api/policies/compile", {
+      method: "POST",
+      body: JSON.stringify({ text, name }),
+    }),
+
+  simulatePolicy: (incidentId: string, text: string, name: string) =>
+    request<import("./types").PolicyResponse>("/api/policies/simulate", {
+      method: "POST",
+      body: JSON.stringify({ incident_id: incidentId, text, name }),
+    }),
+
+  evaluation: () => request<import("./types").Evaluation>("/api/evaluation"),
 };
