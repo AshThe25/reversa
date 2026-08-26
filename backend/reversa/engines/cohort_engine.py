@@ -264,6 +264,8 @@ def build_cohort(
             uplift_credible={a: u.credible for a, u in est.uplift.items()},
             eligible=tuple(eligible),
             method=payment.method,
+            instrument=payment.instrument,
+            tier=customer.tier,
         ))
 
     build.build_ms = (time.perf_counter() - started) * 1000

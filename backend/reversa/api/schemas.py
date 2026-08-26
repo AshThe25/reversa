@@ -69,6 +69,10 @@ class PolicyCompileRequest(BaseModel):
     name: str = Field(default="Merchant policy", max_length=80)
 
 
+class PolicySimulateRequest(PolicyCompileRequest):
+    incident_id: str = Field(min_length=4, max_length=64)
+
+
 class ChaosRequest(BaseModel):
     incident_id: str = Field(min_length=4, max_length=64)
     volume_multiplier: float = Field(default=1.0, ge=0.1, le=20.0)

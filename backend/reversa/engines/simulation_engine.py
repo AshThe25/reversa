@@ -239,10 +239,49 @@ def _delayed_view(candidates: Sequence[Candidate]) -> list[Candidate]:
     return out
 
 
+def apply_policy_to_candidates(
+    candidates: Sequence[Candidate], policy, *, incident_active: bool = True
+) -> tuple[list[Candidate], int, dict[str, int]]:
+    """Narrow each candidate's legal actions by the merchant policy.
+
+    Runs AFTER the compliance gates, on the set they already approved, and can
+    only remove from it. Returns the narrowed candidates, how many were routed
+    to human review, and how often each rule fired - a merchant deploying a
+    policy should be able to see which of their sentences actually did anything.
+    """
+    from reversa.engines.policy_engine import apply_policy
+
+    narrowed: list[Candidate] = []
+    review = 0
+    fired: dict[str, int] = {}
+
+    for c in candidates:
+        decision = apply_policy(
+            policy, c.policy_context(incident_active=incident_active), c.eligible
+        )
+        for label in decision.fired:
+            fired[label] = fired.get(label, 0) + 1
+        if decision.requires_human_review:
+            review += 1
+            continue
+        if not decision.allowed:
+            continue
+        narrowed.append(Candidate(
+            payment_id=c.payment_id, customer_id=c.customer_id,
+            amount_paise=c.amount_paise, failure_class=c.failure_class,
+            p_natural=c.p_natural, confidence=c.confidence, uplift=dict(c.uplift),
+            uplift_credible=dict(c.uplift_credible),
+            eligible=tuple(decision.allowed), method=c.method,
+            instrument=c.instrument, tier=c.tier,
+        ))
+    return narrowed, review, fired
+
+
 def run(
     candidates: Sequence[Candidate],
     capacity: dict[str, int] | None = None,
     *,
+    policy=None,
     extra: dict[str, Callable[[Sequence[Candidate], dict], Plan]] | None = None,
 ) -> WindTunnelRun:
     """Evaluate every branch over one cohort."""
@@ -292,6 +331,25 @@ def run(
             solve(candidates, capacity), candidates, natural,
         ),
     ]
+
+    if policy is not None:
+        narrowed, review, fired = apply_policy_to_candidates(candidates, policy)
+        plan = solve(narrowed, capacity) if narrowed else solve_do_nothing(candidates)
+        scored = _score(
+            "policy", "YOUR POLICY",
+            f"{policy.name}: the optimal plan, restricted to what your rules allow.",
+            plan, candidates, natural,
+        )
+        scored.notes.append(
+            f"{len(candidates) - len(narrowed)} candidates removed by policy"
+            + (f", {review} routed to human review" if review else "")
+        )
+        if fired:
+            scored.notes.append(
+                "rules that fired: "
+                + ", ".join(f"{k} x{v}" for k, v in sorted(fired.items()))
+            )
+        results.append(scored)
 
     for key, builder in (extra or {}).items():
         plan = builder(candidates, capacity)

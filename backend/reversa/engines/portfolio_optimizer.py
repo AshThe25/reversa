@@ -96,6 +96,25 @@ class Candidate:
     uplift_credible: dict[str, bool] = field(default_factory=dict)
     eligible: tuple[str, ...] = ()           # actions the gates allow
     method: str = "upi"
+    instrument: str = ""
+    tier: str = "casual"
+
+    def policy_context(self, *, incident_active: bool = True) -> dict:
+        """The fields a merchant rule is allowed to read. Nothing else is
+        addressable - see engines/policy_engine.Field."""
+        best = max(self.uplift.values(), default=0.0)
+        return {
+            "amount_paise": self.amount_paise,
+            "p_natural": self.p_natural,
+            "confidence": self.confidence,
+            "failure_class": self.failure_class,
+            "method": self.method,
+            "instrument": self.instrument,
+            "customer_tier": self.tier,
+            "expected_incremental_paise": int(round(self.amount_paise * best)),
+            "incident_active": incident_active,
+            "credit_linked": False,
+        }
 
     def value_of(self, action: str) -> float:
         """Expected incremental rupees (in paise), net of the action's cost."""

@@ -18,7 +18,8 @@ from sqlalchemy.orm import Session as DbSession
 from reversa.adapters.razorpay_adapter import get_client
 from reversa.api import state as engine_state
 from reversa.api.schemas import (
-    ChaosRequest, ExecuteRequest, ScanRequest, SessionRequest, WindTunnelRequest,
+    ChaosRequest, ExecuteRequest, PolicyCompileRequest, PolicySimulateRequest,
+    ScanRequest, SessionRequest, WindTunnelRequest,
 )
 from reversa.api.deps import requires_execute, requires_read, requires_simulate
 from reversa.config import Settings, get_settings
@@ -516,6 +517,61 @@ def audit(limit: int = 100, db: DbSession = Depends(get_session),
             for r in rows
         ]
     }
+
+
+# ---------------------------------------------------------------------------
+# policies
+# ---------------------------------------------------------------------------
+
+
+@router.get("/policies/capabilities")
+def policy_capabilities(_: Session = Depends(requires_read)) -> dict:
+    """What a merchant policy can and cannot do, stated plainly.
+
+    Worth surfacing rather than documenting: the guarantee is that policy can
+    only narrow, and a merchant is far likelier to trust that if the product
+    tells them where the ceiling is before they write anything.
+    """
+    from reversa.engines.policy_engine import enforcement_summary
+
+    return enforcement_summary()
+
+
+@router.post("/policies/compile")
+def compile_policy_route(body: PolicyCompileRequest,
+                         _: Session = Depends(requires_simulate)) -> dict:
+    from reversa.ai.policy_compiler import compile_policy
+
+    policy, meta = compile_policy(body.text, name=body.name)
+    return {"policy": policy.as_dict(), **meta}
+
+
+@router.post("/policies/simulate")
+def simulate_policy_route(body: PolicySimulateRequest,
+                          db: DbSession = Depends(get_session),
+                          _: Session = Depends(requires_simulate)) -> dict:
+    """Compile a policy and run the wind tunnel with it as an extra branch.
+
+    Simulate before deploy is the entire point: a merchant should be able to see
+    what their sentences cost them in recovered revenue before those sentences
+    start governing real money.
+    """
+    from reversa.ai.policy_compiler import compile_policy
+
+    try:
+        _, build = engine_state.cohort_for(db, body.incident_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail={"error": "unknown_incident"})
+    if not build.candidates:
+        raise HTTPException(status_code=422,
+                            detail={"error": "cohort_has_no_actionable_candidates"})
+
+    policy, meta = compile_policy(body.text, name=body.name)
+    if not meta["validation"]["ok"]:
+        return {"policy": policy.as_dict(), **meta, "run": None}
+
+    run = SIM.run(build.candidates, P.DEFAULT_CAPACITY, policy=policy)
+    return {"policy": policy.as_dict(), **meta, "run": run.as_dict()}
 
 
 @router.get("/evaluation")
