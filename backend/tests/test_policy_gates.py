@@ -144,3 +144,47 @@ def test_report_keeps_every_gate_not_just_the_first_failure(make_subject, settin
     r = G.evaluate(ActionType.NUDGE_SMS, ctx(make_subject(), settings, index))
     assert len(r.verdicts) == len(G.GATES)
     assert all(v.rule for v in r.verdicts)
+
+
+# --- regulatory basis -------------------------------------------------------
+
+def test_every_verdict_declares_where_its_authority_comes_from(
+    make_subject, settings, index
+):
+    r = G.evaluate(ActionType.NUDGE_SMS, ctx(make_subject(), settings, index))
+    assert all(v.basis in set(G.Basis) for v in r.verdicts)
+    # consent and opt-out are actual law, not house style
+    basis = {v.gate: v.basis for v in r.verdicts}
+    assert basis["channel_consent"] == G.Basis.STATUTORY
+    assert basis["opt_out"] == G.Basis.STATUTORY
+    assert basis["dlt_template"] == G.Basis.STATUTORY
+
+
+def test_contact_window_is_adopted_for_retail_but_statutory_on_credit(
+    make_subject, settings, index
+):
+    """RBI recovery conduct binds lenders. A D2C merchant chasing a failed card
+    payment isn't one - but the same merchant's BNPL flow is."""
+    retail = G.evaluate(ActionType.NUDGE_SMS, ctx(make_subject(), settings, index))
+    assert next(v for v in retail.verdicts
+                if v.gate == "contact_window").basis == G.Basis.ADOPTED
+
+    emi = G.evaluate(
+        ActionType.NUDGE_SMS,
+        ctx(make_subject(credit_linked=True), settings, index),
+    )
+    assert next(v for v in emi.verdicts
+                if v.gate == "contact_window").basis == G.Basis.STATUTORY
+    assert next(v for v in emi.verdicts
+                if v.gate == "complaint_freeze").basis == G.Basis.STATUTORY
+
+
+def test_only_configured_limits_are_merchant_tunable(make_subject, settings, index):
+    """The safety property: a merchant policy can tighten anything, but the
+    non-CONFIGURED bases must be unreachable from merchant input."""
+    r = G.evaluate(ActionType.NUDGE_SMS, ctx(make_subject(), settings, index))
+    tunable = {v.gate for v in r.verdicts if v.basis in G.MERCHANT_TUNABLE}
+    assert "channel_consent" not in tunable
+    assert "opt_out" not in tunable
+    assert "downtime_suppression" not in tunable
+    assert "contact_frequency" in tunable

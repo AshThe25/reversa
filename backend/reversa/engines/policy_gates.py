@@ -4,14 +4,34 @@ Nothing executes until it clears every gate here. The optimizer proposes, gates
 dispose, and a blocked action gets recorded with the rule that blocked it rather
 than silently dropped.
 
-Rules that actually bind a recovery workflow in India right now:
+On which rules actually apply - this matters and it's easy to get wrong.
 
-- RBI recovery conduct: no contact outside 08:00-19:00 local, agent has to
-  identify itself, no masked numbers, and recovery *pauses* while a complaint
-  from that customer is open.
-- TRAI DLT: commercial messages need per-channel consent and a registered
-  template. Unregistered template is a regulatory problem, not a deliverability
-  one.
+RBI's recovery-conduct rules (08:00-19:00 contact window, mandatory agent
+identification, no masked numbers, pause while a grievance is pending) govern
+*lenders* recovering *loans*. A D2C merchant chasing a failed card payment for a
+kurta is not a regulated entity and those rules do not bind it. Claiming
+otherwise would be wrong, and someone at Razorpay would catch it in about four
+seconds.
+
+They DO bind directly when the recovery is credit-linked - EMI, BNPL, pay-later,
+lender-backed subscriptions - which is a large and growing slice of Razorpay
+volume. So Reversa treats the RBI window as: statutory where credit is involved,
+and a self-imposed standard everywhere else, because it is the strictest
+defensible norm in Indian financial communication and a merchant that respects it
+is never the one in the news.
+
+What binds every merchant, always:
+
+- TRAI TCCCPR / DLT. Commercial messages to Indian numbers need per-channel
+  consent and a pre-registered template. An unregistered template is a
+  regulatory problem, not a deliverability one.
+- DPDP Act 2023. Contacting someone using their personal data needs consent for
+  that purpose, and withdrawal has to be honoured.
+
+Every verdict carries a `basis` saying which of the three it is - statutory,
+adopted standard, or our own product invariant. Merging those into undifferentiated
+"compliance" is how teams end up unable to answer which rules they could relax
+under pressure and which they cannot.
 
 Two design notes worth flagging.
 
@@ -29,8 +49,9 @@ per-row SELECT would make the whole feature unusable.
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, time, timedelta, timezone
+from enum import StrEnum
 from typing import Callable, Iterable, Sequence
 
 from sqlalchemy import select
@@ -78,12 +99,31 @@ FREEZING_EVENTS = ("complaint_raised", "dispute_opened")
 FREE_ACTIONS = frozenset({ActionType.NO_ACTION, ActionType.WAIT})
 
 
+class Basis(StrEnum):
+    """Where a rule's authority comes from. See the module docstring."""
+
+    STATUTORY = "statutory"
+    """Binding law for this merchant. Cannot be relaxed by anyone."""
+
+    ADOPTED = "adopted_standard"
+    """A stricter norm we hold ourselves to. Statutory when credit-linked."""
+
+    INVARIANT = "product_invariant"
+    """Reversa's own safety rule. Not law, but not merchant-tunable either."""
+
+    CONFIGURED = "merchant_policy"
+    """A limit the merchant set. The only kind a merchant may loosen."""
+
+
 @dataclass(frozen=True, slots=True)
 class Verdict:
     gate: str
     allowed: bool
     rule: str
     detail: str = ""
+    # keep `basis` after `detail`: the gates below pass detail positionally, and
+    # slotting a new field in ahead of it silently rewrote every one of them.
+    basis: str = Basis.INVARIANT
     retry_after: datetime | None = None
 
     @property
@@ -95,6 +135,7 @@ class Verdict:
             "gate": self.gate,
             "allowed": self.allowed,
             "rule": self.rule,
+            "basis": self.basis,
             "detail": self.detail,
             "retry_after": self.retry_after.isoformat() if self.retry_after else None,
         }
@@ -168,6 +209,9 @@ class GateSubject:
     retries_used: int = 0
     is_frozen: bool = False
     is_closed: bool = False
+    credit_linked: bool = False
+    """EMI / BNPL / lender-backed subscription. Flips the RBI recovery-conduct
+    rules from a standard we adopt into law that binds us."""
 
 
 class ComplianceIndex:
@@ -417,20 +461,26 @@ def _g_template_registered(action: str, c: GateContext) -> Verdict:
     return Verdict("dlt_template", True, rule)
 
 
-GATES: tuple[Callable[[str, GateContext], Verdict], ...] = (
-    _g_case_open,
-    _g_actionable,
-    _g_deadline,
-    _g_complaint_freeze,
-    _g_opt_out,
-    _g_consent,
-    _g_contact_window,
-    _g_contact_frequency,
-    _g_retry_budget,
-    _g_instrument_viable,
-    _g_downtime_suppression,
-    _g_template_registered,
+# (gate, basis). Kept next to the function rather than inside it so the whole
+# regulatory posture of the system is readable in one screen.
+GATES: tuple[tuple[Callable[[str, GateContext], Verdict], str], ...] = (
+    (_g_case_open,             Basis.INVARIANT),
+    (_g_actionable,            Basis.INVARIANT),
+    (_g_deadline,              Basis.CONFIGURED),
+    (_g_complaint_freeze,      Basis.ADOPTED),    # statutory if credit-linked
+    (_g_opt_out,               Basis.STATUTORY),  # DPDP s.6(6) withdrawal, TCCCPR
+    (_g_consent,               Basis.STATUTORY),  # TCCCPR / DLT, DPDP purpose limit
+    (_g_contact_window,        Basis.ADOPTED),    # statutory if credit-linked
+    (_g_contact_frequency,     Basis.CONFIGURED),
+    (_g_retry_budget,          Basis.CONFIGURED),
+    (_g_instrument_viable,     Basis.INVARIANT),
+    (_g_downtime_suppression,  Basis.INVARIANT),
+    (_g_template_registered,   Basis.STATUTORY),  # TCCCPR registered template
 )
+
+# A merchant policy may tighten any of these. It may never loosen the ones that
+# are not CONFIGURED - see engines/policy_engine.py, which enforces it.
+MERCHANT_TUNABLE = frozenset({Basis.CONFIGURED})
 
 
 def evaluate(action_type: str, ctx: GateContext) -> GateReport:
@@ -440,7 +490,14 @@ def evaluate(action_type: str, ctx: GateContext) -> GateReport:
     the full compliance posture of a decision, not whichever rule happened to be
     checked first.
     """
-    return GateReport(action_type, [g(action_type, ctx) for g in GATES])
+    verdicts = []
+    for gate, basis in GATES:
+        v = gate(action_type, ctx)
+        if basis == Basis.ADOPTED and ctx.subject.credit_linked:
+            # not a standard we chose any more, it's the law for this payment
+            basis = Basis.STATUTORY
+        verdicts.append(replace(v, basis=basis))
+    return GateReport(action_type, verdicts)
 
 
 def allowed_actions(candidates: Iterable[str], ctx: GateContext) -> dict[str, GateReport]:
