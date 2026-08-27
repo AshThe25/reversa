@@ -19,7 +19,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        cyber: { DEFAULT: "#ffe17c", deep: "#f5cf4e", wash: "#fff3cc" },
+        cyber: { DEFAULT: "#f5d949", deep: "#e6c62f", wash: "#fdf3c4" },
+        // Razorpay's blue as the secondary accent. One saturated support colour
+        // against the yellow is the whole palette; a third would turn the
+        // illustration into a paint chart.
+        rzp: { DEFAULT: "#2b7fff", deep: "#1a5fd0" },
+        navy: "#0f1b3d",
+        cream: "#fbf7e8",
         charcoal: "#171e19",
         sage: "#b7c6c2",
         graphite: "#272727",
