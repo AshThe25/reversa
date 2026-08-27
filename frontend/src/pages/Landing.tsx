@@ -29,16 +29,16 @@ export function Landing() {
   };
 
   return (
-    <div className="min-h-full bg-onyx">
+    <div className="min-h-full bg-paper">
       {/* ---------------------------------------------------- liquid hero */}
       <section
-        className="relative overflow-hidden bg-cyber px-6 pt-10 text-onyx"
+        className="relative overflow-hidden bg-cyber px-6 pt-10 text-cyber"
         style={{ borderBottomRightRadius: "120px", borderBottomLeftRadius: "40px" }}
       >
         <div className="mx-auto max-w-[1400px]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-onyx text-sm font-black text-cyber">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-paper text-sm font-black text-black">
                 R
               </span>
               <span className="text-[15px] font-bold tracking-tight">REVERSA</span>
@@ -56,18 +56,18 @@ export function Landing() {
                 <br />
                 have happened
                 <br />
-                <span className="text-onyx/45">if we did nothing?</span>
+                <span className="text-cyber/45">if we did nothing?</span>
               </h1>
 
-              <p className="mt-8 max-w-xl text-[15px] leading-relaxed text-onyx/70">
+              <p className="mt-8 max-w-xl text-[15px] leading-relaxed text-cyber/70">
                 Every payment-recovery tool asks what to do when a payment fails,
                 then reports the money that arrived as money it recovered. Most of
                 it was arriving anyway.
               </p>
-              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-onyx/70">
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-cyber/70">
                 Reversa evaluates every treatment strategy against the affected
                 cohort
-                <em className="not-italic font-semibold text-onyx"> before </em>
+                <em className="not-italic font-semibold text-cyber"> before </em>
                 a single customer is contacted, allocates scarce capacity by
                 expected incremental value, then measures what it actually caused
                 against a randomised holdout.
@@ -76,13 +76,13 @@ export function Landing() {
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <button
                   onClick={begin}
-                  className="pill bg-onyx px-6 py-3 text-[15px] font-semibold text-cyber hover:scale-[1.03] hover:shadow-2xl"
+                  className="pill bg-paper px-6 py-3 text-[15px] font-semibold text-black hover:scale-[1.03] hover:shadow-2xl"
                 >
                   Take the 90-second walkthrough →
                 </button>
                 <button
                   onClick={() => navigate("/command")}
-                  className="pill border-2 border-onyx/20 px-6 py-3 text-[15px] font-semibold text-onyx hover:border-onyx/40"
+                  className="pill border-2 border-onyx/20 px-6 py-3 text-[15px] font-semibold text-cyber hover:border-onyx/40"
                 >
                   Skip to the dashboard
                 </button>
@@ -91,17 +91,17 @@ export function Landing() {
 
             {/* ------------------------------------------ glass data card */}
             <div className="lg:pt-10">
-              <Glass onColour float className="p-7 text-white">
+              <Glass onColour float className="p-7 text-black">
                 <div className="flex items-start justify-between">
                   <div>
                     <Label>Live incident · this merchant, today</Label>
-                    <p className="mt-2 text-[13px] text-white/50">
+                    <p className="mt-2 text-[13px] text-black/50">
                       {overview
                         ? `${overview.active_incidents} active · ${overview.total_incidents} detected`
                         : "loading"}
                     </p>
                   </div>
-                  <span className="rounded-full bg-cyber px-3 py-1 text-[11px] font-bold text-onyx">
+                  <span className="rounded-full bg-cyber px-3 py-1 text-[11px] font-bold text-cyber">
                     LIVE
                   </span>
                 </div>
@@ -113,7 +113,7 @@ export function Landing() {
                   </div>
                 </div>
 
-                <div className="mt-7 space-y-4 border-t border-white/10 pt-6">
+                <div className="mt-7 space-y-4 border-t border-black/25 pt-6">
                   <Row
                     label="Failed payments today"
                     value={overview ? overview.live_failed_payments.toLocaleString("en-IN") : "—"}
@@ -175,7 +175,7 @@ export function Landing() {
           </div>
 
           {overview && overview.natural_recovery_paise > 0 && (
-            <div className="mt-14 rounded-[32px] border border-white/[0.07] bg-charcoal/60 p-8">
+            <div className="mt-14 rounded-[32px] border border-black/15 bg-white p-8">
               <Label>Measured on this merchant's last recovery run</Label>
               <div className="mt-6 grid gap-8 sm:grid-cols-3">
                 <Figure
@@ -215,7 +215,7 @@ export function Landing() {
             >
               Start the walkthrough →
             </button>
-            <span className="text-[12px] text-white/30">
+            <span className="text-[12px] text-black/30">
               Seven stops. Nothing to install. You can leave at any point.
             </span>
           </div>
@@ -228,7 +228,7 @@ export function Landing() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="text-[12px] text-white/40">{label}</span>
+      <span className="text-[12px] text-black/40">{label}</span>
       <span className="tnum text-[13px] font-semibold">{value}</span>
     </div>
   );
@@ -250,15 +250,15 @@ function Concept({
       className={[
         "rounded-[32px] border p-8 transition-colors duration-300",
         accent
-          ? "border-cyber/25 bg-cyber/[0.05]"
-          : "border-white/[0.07] bg-charcoal/40 hover:border-white/15",
+          ? "border-black bg-cyber/20"
+          : "border-black/15 bg-white hover:border-black/25",
       ].join(" ")}
     >
-      <span className={`text-[11px] font-bold ${accent ? "text-cyber" : "text-white/25"}`}>
+      <span className={`text-[11px] font-bold ${accent ? "text-black" : "text-black/25"}`}>
         {step}
       </span>
       <h3 className="mt-3 text-2xl font-bold tracking-tight">{title}</h3>
-      <p className="mt-4 text-[13px] leading-relaxed text-white/45">{body}</p>
+      <p className="mt-4 text-[13px] leading-relaxed text-black/45">{body}</p>
     </div>
   );
 }
@@ -279,12 +279,12 @@ function Figure({
       <Label>{label}</Label>
       <div
         className={`tnum mt-2 text-4xl font-bold tracking-tight ${
-          tone === "yellow" ? "text-cyber" : "text-white/45"
+          tone === "yellow" ? "text-black" : "text-black/45"
         }`}
       >
         {value}
       </div>
-      <p className="mt-2 text-[12px] text-white/30">{note}</p>
+      <p className="mt-2 text-[12px] text-black/30">{note}</p>
     </div>
   );
 }

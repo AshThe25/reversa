@@ -87,7 +87,7 @@ export function Futures() {
         <div>
           <Label>Counterfactual scenario analysis</Label>
           <h1 className="mt-2 text-5xl font-bold tracking-tight">Revenue Wind Tunnel</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
             Rewind the incident and evaluate every treatment strategy against the same
             cohort before a single customer is contacted. Branches differ only in the
             treatment applied — the population, the estimates and the constraints are
@@ -99,7 +99,7 @@ export function Futures() {
           <select
             value={selected ?? ""}
             onChange={(e) => setParams({ incident: e.target.value })}
-            className="rounded-full border border-white/12 bg-charcoal px-4 py-2 text-sm text-white/80 outline-none focus:border-cyber/50"
+            className="rounded-neo border-2 border-black bg-white px-4 py-2 font-display text-[12px] font-extrabold uppercase tracking-tighter shadow-hard-sm outline-none"
           >
             {incidents.data?.map((i) => (
               <option key={i.id} value={i.id}>
@@ -129,7 +129,7 @@ export function Futures() {
           {incident ? (
             <>
               <h2 className="mt-3 text-3xl font-bold tracking-tight">{incident.slice}</h2>
-              <p className="mt-1 text-xs text-white/40">{incident.label}</p>
+              <p className="mt-1 text-xs text-black/40">{incident.label}</p>
               {/* Once a run exists every figure comes from the cohort, so the
                   denominators match. The incident's own exposure is measured on
                   the detector's peak window while the cohort spans the whole
@@ -148,17 +148,17 @@ export function Futures() {
                 {run ? (
                   <>
                     <Metric
-                      label="Arrives with no help"
+                      label="Baseline recovery"
                       value={lakhs(run.cohort.natural_recovery_paise)}
                       note={`${pct(
                         run.cohort.natural_recovery_paise /
                           Math.max(run.cohort.revenue_exposed_paise, 1),
-                      )} of exposure — a conventional tool counts this as recovered`}
+                      )} of exposure — a conventional tool books this as recovered`}
                     />
                     <Metric
                       label="Addressable"
                       value={lakhs(run.cohort.addressable_paise)}
-                      note="the only part worth spending on"
+                      note="the only part worth treating"
                       tone="yellow"
                     />
                   </>
@@ -188,7 +188,7 @@ export function Futures() {
               <p className="text-sm font-semibold text-signal-loss">
                 No plan is offered for this incident.
               </p>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/35">
+              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/35">
                 Running it would produce a confident-looking treatment plan built on a
                 root cause the evidence does not support.
               </p>
@@ -197,8 +197,8 @@ export function Futures() {
 
           {!run && !running && !incident?.ambiguous && (
             <div className="px-6 py-16 text-center">
-              <p className="text-sm text-white/45">No analysis run yet.</p>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
+              <p className="text-sm text-black/45">No analysis run yet.</p>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/25">
                 Solves a constrained assignment over every eligible payment and every
                 permitted treatment. Nothing here is precomputed.
               </p>
@@ -227,64 +227,49 @@ export function Futures() {
                   }))}
                   margin={{ top: 12, right: 8, left: -18, bottom: 0 }}
                 >
-                  {/* Gradient fills rather than flat colour. A flat #ffffff22
-                      bar disappears entirely against a lit surface — the whole
-                      chart read as empty until these went in. */}
-                  <defs>
-                    <linearGradient id="barBest" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FDE047" />
-                      <stop offset="100%" stopColor="#CA8A04" />
-                    </linearGradient>
-                    {/* stopColor does not accept rgba() - SVG wants a colour
-                        plus stopOpacity, and an rgba() here silently resolves
-                        to nothing, which emptied the entire chart. */}
-                    <linearGradient id="barRest" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FFFFFF" stopOpacity={0.30} />
-                      <stop offset="100%" stopColor="#FFFFFF" stopOpacity={0.09} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  {/* Flat fills with a hard black stroke. Gradients belong to
+                      the other visual language entirely - here a bar is a
+                      physical block, and the stroke is what makes it one. */}
+                  <CartesianGrid stroke="#00000018" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+                    tick={{ fill: "#000000", fontSize: 9, fontWeight: 800 }}
                     tickLine={false}
-                    axisLine={false}
+                    axisLine={{ stroke: "#000000", strokeWidth: 2 }}
                     interval={0}
                   />
                   <YAxis
-                    tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 11 }}
+                    tick={{ fill: "#00000099", fontSize: 11 }}
                     tickLine={false}
-                    axisLine={false}
+                    axisLine={{ stroke: "#000000", strokeWidth: 2 }}
                     unit="L"
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    cursor={{ fill: "#ffe17c55" }}
                     contentStyle={{
-                      background: "rgba(18,18,18,0.94)",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 18,
+                      background: "#ffffff",
+                      border: "2px solid #000000",
+                      borderRadius: 2,
                       fontSize: 12,
-                      boxShadow: "0 24px 48px -24px rgba(0,0,0,0.9)",
+                      fontWeight: 600,
+                      boxShadow: "4px 4px 0px 0px #000000",
                     }}
-                    labelStyle={{ color: "rgba(255,255,255,0.55)" }}
+                    labelStyle={{ color: "#000000", fontWeight: 800 }}
                     formatter={(v: number) => [`₹${v}L`, "net incremental lift"]}
                   />
-                  {/* Two-corner radius, not four. A 4-corner array makes
-                      Recharts generate a rounded path whose corner radius can
-                      exceed the bar height, and DO NOTHING / RETRY NOW are
-                      legitimately zero here - the invalid path took the whole
-                      series down with it, not just those two bars. */}
                   <RBar
                     dataKey="incremental"
-                    radius={[8, 8, 0, 0]}
+                    radius={[2, 2, 0, 0]}
                     maxBarSize={64}
-                    animationDuration={520}
+                    stroke="#000000"
+                    strokeWidth={2}
+                    animationDuration={420}
                     animationEasing="ease-out"
                   >
                     {run.scenarios.map((s) => (
                       <Cell
                         key={s.key}
-                        fill={s.key === run.best_scenario ? "url(#barBest)" : "url(#barRest)"}
+                        fill={s.key === run.best_scenario ? "#ffe17c" : "#b7c6c2"}
                       />
                     ))}
                   </RBar>
@@ -305,13 +290,13 @@ export function Futures() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1200px] text-left">
               <thead>
-                <tr className="border-b border-white/[0.06]">
+                <tr className="border-b border-black/15">
                   {["Strategy", "Gross", "Baseline", "Incremental", "Treatments", "Capacity", "Cost", "Net", "Non-incremental", "Friction", "Risk", ""].map((h) => (
                     <th key={h} className="label px-5 py-3 font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-black/10">
                 {run.scenarios.map((s) => (
                   <ScenarioRow
                     key={s.key}
@@ -327,14 +312,14 @@ export function Futures() {
           </div>
 
           {best && baseline && (
-            <div className="border-t border-white/[0.06] p-6">
-              <p className="max-w-4xl text-[13px] leading-relaxed text-white/55">
-                <span className="font-semibold text-cyber">{best.label}</span> recovers{" "}
-                <span className="tnum font-semibold text-white">
+            <div className="border-t border-black/15 p-6">
+              <p className="max-w-4xl text-[13px] leading-relaxed text-black/55">
+                <span className="font-semibold text-black">{best.label}</span> recovers{" "}
+                <span className="tnum font-semibold text-black">
                   {lakhs(best.incremental_recovery_paise)}
                 </span>{" "}
                 more than doing nothing, using{" "}
-                <span className="tnum font-semibold text-white">{count(best.action_count)}</span>{" "}
+                <span className="tnum font-semibold text-black">{count(best.action_count)}</span>{" "}
                 interventions.{" "}
                 {(() => {
                   // Compare against the strongest single-action strategy that
@@ -354,16 +339,16 @@ export function Futures() {
                   return (
                     <>
                       The best single-action strategy,{" "}
-                      <span className="font-semibold text-white">{rival.label}</span>, produces{" "}
-                      <span className="tnum font-semibold text-white">
+                      <span className="font-semibold text-black">{rival.label}</span>, produces{" "}
+                      <span className="tnum font-semibold text-black">
                         {lakhs(rival.incremental_recovery_paise)}
                       </span>{" "}
                       from{" "}
-                      <span className="tnum font-semibold text-white">
+                      <span className="tnum font-semibold text-black">
                         {count(rival.action_count)}
                       </span>{" "}
                       actions — the optimiser is{" "}
-                      <span className="font-semibold text-cyber">{ratio.toFixed(1)}×</span>{" "}
+                      <span className="font-semibold text-black">{ratio.toFixed(1)}×</span>{" "}
                       better because it stops spending capacity on customers who were
                       going to pay anyway.
                     </>
@@ -379,12 +364,12 @@ export function Futures() {
       {deployed && <DeployedResult report={deployed} />}
 
       {!can("execute") && run && (
-        <div className="mt-6 rounded-[24px] border border-cyber/20 bg-cyber/[0.04] p-6">
+        <div className="mt-6 rounded-[24px] border border-black bg-cyber/20 p-6">
           <Label>Why Deploy is disabled</Label>
-          <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-white/60">
-            This is a demo session. It carries <code className="text-cyber">read</code> and{" "}
-            <code className="text-cyber">simulate</code> scope but not{" "}
-            <code className="text-cyber">execute</code>, so you can explore every future here
+          <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-black/60">
+            This is a demo session. It carries <code className="text-black">read</code> and{" "}
+            <code className="text-black">simulate</code> scope but not{" "}
+            <code className="text-black">execute</code>, so you can explore every future here
             and there is no path from this browser to moving money. The check is enforced
             server-side — the button is disabled as a courtesy, not as the control.
           </p>
@@ -405,7 +390,7 @@ export function Futures() {
 function AmbiguityRefusal({ incident }: { incident: import("../lib/types").Incident }) {
   const members = incident.rca_evidence?.diffuse_members ?? [];
   return (
-    <div className="mt-8 rounded-[32px] border border-signal-loss/25 bg-signal-loss/[0.05] p-8">
+    <div className="mt-8 rounded-[32px] border border-black bg-signal-loss/10 p-8">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div className="max-w-3xl">
           <div className="flex items-center gap-3">
@@ -420,7 +405,7 @@ function AmbiguityRefusal({ incident }: { incident: import("../lib/types").Incid
             to guess.
           </h2>
 
-          <p className="mt-4 text-[13px] leading-relaxed text-white/55">
+          <p className="mt-4 text-[13px] leading-relaxed text-black/55">
             This degradation appeared on {members.length} slices at once with no
             common parent — some UPI handles, some netbanking, some cards. A PSP
             fault would have taken one method down together. A single bad bank
@@ -430,7 +415,7 @@ function AmbiguityRefusal({ incident }: { incident: import("../lib/types").Incid
             confidence score.
           </p>
 
-          <p className="mt-3 text-[13px] leading-relaxed text-white/55">
+          <p className="mt-3 text-[13px] leading-relaxed text-black/55">
             The detection is sound and the money is real. What is missing is
             attribution, and interventions chosen from a wrong root cause spend
             capacity and customer patience on the wrong people. So it goes to a
@@ -460,7 +445,7 @@ function AmbiguityRefusal({ incident }: { incident: import("../lib/types").Incid
             <p className="mt-1 text-sm font-semibold">
               q = {incident.q_value.toExponential(1)}
             </p>
-            <p className="mt-0.5 text-[11px] text-white/35">the degradation is real</p>
+            <p className="mt-0.5 text-[11px] text-black/35">the degradation is real</p>
           </div>
           <Button variant="ghost" disabled title="Requires an operator session">
             Send to human review
@@ -484,25 +469,25 @@ function ScenarioRow({
   const totalCap = Object.values(capacity).reduce((a, b) => a + b, 0);
 
   return (
-    <tr className={best ? "bg-cyber/[0.05]" : "row-hover"}>
+    <tr className={best ? "bg-cyber/20" : "row-hover"}>
       <td className="px-5 py-4">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-bold ${best ? "text-cyber" : ""}`}>{s.label}</span>
+          <span className={`text-sm font-bold ${best ? "text-black" : ""}`}>{s.label}</span>
           {best && <Tag tone="yellow">BEST</Tag>}
         </div>
-        <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-white/30">{s.description}</p>
+        <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-black/30">{s.description}</p>
         {s.action_count === 0 && s.key !== "do_nothing" && s.notes.length > 0 && (
           <p className="mt-2 max-w-xs text-[11px] leading-relaxed text-signal-loss/80">
             {s.notes[0]}
           </p>
         )}
       </td>
-      <td className="tnum px-5 py-4 text-sm text-white/50">{lakhs(s.gross_recovery_paise)}</td>
-      <td className="tnum px-5 py-4 text-sm text-white/35">{lakhs(s.natural_recovery_paise)}</td>
-      <td className={`tnum px-5 py-4 text-base font-bold ${best ? "text-cyber" : "text-white"}`}>
+      <td className="tnum px-5 py-4 text-sm text-black/50">{lakhs(s.gross_recovery_paise)}</td>
+      <td className="tnum px-5 py-4 text-sm text-black/35">{lakhs(s.natural_recovery_paise)}</td>
+      <td className={`tnum px-5 py-4 text-base font-bold ${best ? "text-black" : "text-black"}`}>
         {lakhs(s.incremental_recovery_paise)}
       </td>
-      <td className="tnum px-5 py-4 text-sm text-white/60">{count(s.action_count)}</td>
+      <td className="tnum px-5 py-4 text-sm text-black/60">{count(s.action_count)}</td>
       <td className="px-5 py-4">
         <div className="w-24">
           <Bar value={s.action_count} max={totalCap} tone={capacityBound ? "loss" : "yellow"} />
@@ -513,12 +498,12 @@ function ScenarioRow({
           </span>
         )}
       </td>
-      <td className="tnum px-5 py-4 text-sm text-white/50">{rupees(s.cost_paise)}</td>
+      <td className="tnum px-5 py-4 text-sm text-black/50">{rupees(s.cost_paise)}</td>
       <td className="tnum px-5 py-4 text-sm font-semibold">{lakhs(s.net_incremental_paise)}</td>
-      <td className="tnum px-5 py-4 text-sm text-white/40" title="Treatments applied to payments the model expects to recover without them">
+      <td className="tnum px-5 py-4 text-sm text-black/40" title="Treatments applied to payments the model expects to recover without them">
         {count(s.wasted_actions)}
       </td>
-      <td className="tnum px-5 py-4 text-sm text-white/40">{s.friction.toFixed(1)}</td>
+      <td className="tnum px-5 py-4 text-sm text-black/40">{s.friction.toFixed(1)}</td>
       <td className="px-5 py-4">
         <div className="w-14">
           <Bar value={s.risk_score} max={1} tone={s.risk_score > 0.5 ? "loss" : "muted"} />
@@ -559,16 +544,16 @@ function DeployedResult({ report }: { report: ExecutionReport }) {
         <div className="space-y-5">
           <div>
             <Label>Projected lift</Label>
-            <div className="tnum mt-1 text-2xl font-bold text-white/45">
+            <div className="tnum mt-1 text-2xl font-bold text-black/45">
               {lakhs(report.projected_incremental_paise)}
             </div>
           </div>
           <div>
             <Label>Measured lift</Label>
-            <div className="tnum mt-1 text-5xl font-bold tracking-tight text-cyber">
+            <div className="tnum mt-1 text-5xl font-bold tracking-tight text-black">
               {lakhs(r.incremental_paise)}
             </div>
-            <p className="tnum mt-2 text-[12px] text-white/40">
+            <p className="tnum mt-2 text-[12px] text-black/40">
               90% CI [{lakhs(r.incremental_lo_paise)}, {lakhs(r.incremental_hi_paise)}] ·{" "}
               {r.bootstrap_samples.toLocaleString("en-IN")} bootstrap resamples
             </p>
@@ -592,26 +577,26 @@ function DeployedResult({ report }: { report: ExecutionReport }) {
           <Label>Arms</Label>
           <div className="mt-3 space-y-3">
             {arms.map((a) => (
-              <div key={a.arm} className="rounded-[18px] border border-white/[0.07] bg-white/[0.02] px-5 py-4">
+              <div key={a.arm} className="rounded-[18px] border border-black/15 bg-black/[0.03] px-5 py-4">
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm font-semibold capitalize">{a.arm}</span>
-                  <span className="tnum text-xs text-white/40">{count(a.payments)} payments</span>
+                  <span className="tnum text-xs text-black/40">{count(a.payments)} payments</span>
                 </div>
                 <div className="mt-2 flex items-baseline justify-between">
                   <span className="tnum text-2xl font-bold">{pct(a.recovery_rate)}</span>
-                  <span className="tnum text-sm text-white/50">
+                  <span className="tnum text-sm text-black/50">
                     {lakhs(a.recovered_paise)} of {lakhs(a.exposure_paise)}
                   </span>
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-4 rounded-[18px] border border-white/[0.07] px-5 py-4">
+          <div className="mt-4 rounded-[18px] border border-black/15 px-5 py-4">
             <div className="flex items-baseline justify-between">
-              <span className="text-[11px] text-white/40">Cost of measurement</span>
+              <span className="text-[11px] text-black/40">Cost of measurement</span>
               <span className="tnum text-sm font-semibold">{lakhs(r.measurement_cost_paise)}</span>
             </div>
-            <p className="mt-1.5 text-[11px] leading-relaxed text-white/30">
+            <p className="mt-1.5 text-[11px] leading-relaxed text-black/30">
               Revenue the holdout was deliberately not chased for. Stated rather than hidden —
               it is the price of being able to make a causal claim at all.
             </p>
@@ -620,11 +605,11 @@ function DeployedResult({ report }: { report: ExecutionReport }) {
       </div>
 
       {r.warnings.length > 0 && (
-        <div className="border-t border-white/[0.06] p-6">
+        <div className="border-t border-black/15 p-6">
           <Label>The system's own caveats</Label>
           <ul className="mt-3 space-y-2">
             {r.warnings.map((w) => (
-              <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-white/50">
+              <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-black/50">
                 <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                 {w}
               </li>
@@ -644,12 +629,12 @@ function Metric({
   note?: string;
   tone?: "default" | "loss" | "yellow";
 }) {
-  const colour = { default: "text-white", loss: "text-signal-loss", yellow: "text-cyber" }[tone];
+  const colour = { default: "text-black", loss: "text-signal-loss", yellow: "text-black" }[tone];
   return (
     <div>
       <Label>{label}</Label>
       <div className={`tnum mt-1 text-2xl font-bold tracking-tight ${colour}`}>{value}</div>
-      {note && <p className="mt-0.5 text-[11px] text-white/30">{note}</p>}
+      {note && <p className="mt-0.5 text-[11px] text-black/30">{note}</p>}
     </div>
   );
 }

@@ -1,65 +1,73 @@
 /**
- * Hyper-Saturated Fluid.
+ * Neo-brutalism.
  *
- * One shout colour carrying the brand, deep void balancing it, glass for
- * anything that floats. The named radii are extreme on purpose - an 8px corner
- * anywhere in this UI reads as a different product.
+ * The constraint that defines the system: shadows have no blur. A hard offset
+ * black shadow reads as a physical object sitting on a surface, and the moment
+ * you add a blur radius it turns into an ordinary drop shadow and the whole
+ * language collapses. Same with radii — sharp by default, and only the few
+ * places the system explicitly allows get rounded.
+ *
+ * Cabinet Grotesk and Satoshi are the specified faces. Both are Fontshare
+ * releases with no npm package, and the app's CSP forbids remote font hosts, so
+ * they are substituted with the closest self-hostable equivalents: Space
+ * Grotesk for display (same geometric grotesk with the distinctive tall
+ * lowercase) and Manrope for body. Loosening the CSP to pull fonts off a CDN
+ * would be trading a real security property for a typographic near-match.
  */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        cyber: {
-          DEFAULT: "#FDE047",
-          deep: "#EAB308",
-          wash: "#FEF9C3",
-        },
-        onyx: "#0A0A0A",
-        charcoal: "#171717",
-        graphite: "#262626",
-        seam: "#333333",
-        // Semantic, for data only. Kept deliberately narrow so charts read as
-        // one system instead of a paint chart.
+        cyber: { DEFAULT: "#ffe17c", deep: "#f5cf4e", wash: "#fff3cc" },
+        charcoal: "#171e19",
+        sage: "#b7c6c2",
+        graphite: "#272727",
+        paper: "#f4f4f5",
         signal: {
-          loss: "#FF5D5D",
-          natural: "#8B8B8B",
-          incremental: "#FDE047",
-          calm: "#4ADE80",
-          info: "#60A5FA",
+          loss: "#e5484d",
+          natural: "#8b8b8b",
+          incremental: "#ffe17c",
+          calm: "#30a46c",
+          info: "#5b8def",
         },
       },
       fontFamily: {
-        sans: ["Inter Variable", "Inter", "system-ui", "sans-serif"],
+        display: ["Space Grotesk Variable", "Space Grotesk", "system-ui", "sans-serif"],
+        sans: ["Manrope Variable", "Manrope", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
-      borderRadius: {
-        liquid: "120px",
-        "liquid-sm": "40px",
-        glass: "32px",
+      letterSpacing: {
+        tighter: "-0.05em",
+        label: "0.14em",
       },
-      letterSpacing: { label: "0.18em" },
-      transitionTimingFunction: {
-        liquid: "cubic-bezier(0.22, 1, 0.36, 1)",
+      boxShadow: {
+        // No blur, ever. That is the entire language.
+        "hard-sm": "4px 4px 0px 0px #000000",
+        hard: "6px 6px 0px 0px #000000",
+        "hard-md": "8px 8px 0px 0px #000000",
+        "hard-lg": "12px 12px 0px 0px #000000",
+        "hard-yellow": "6px 6px 0px 0px #ffe17c",
+        "hard-inset": "inset 4px 4px 0px 0px #000000",
       },
+      borderRadius: { neo: "2px", btn: "12px", card: "2px" },
+      transitionTimingFunction: { neo: "cubic-bezier(0.175, 0.885, 0.32, 1.275)" },
+      backgroundImage: {
+        dots: "radial-gradient(#000000 1.5px, transparent 1.5px)",
+      },
+      backgroundSize: { dots: "32px 32px" },
       keyframes: {
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-6px)" },
-        },
+        marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
         rise: {
-          from: { opacity: "0", transform: "translateY(18px)" },
+          from: { opacity: "0", transform: "translateY(12px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        sweep: {
-          from: { transform: "translateX(-100%)" },
-          to: { transform: "translateX(200%)" },
-        },
+        sweep: { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(200%)" } },
       },
       animation: {
-        float: "float 7s cubic-bezier(0.22, 1, 0.36, 1) infinite",
-        rise: "rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both",
-        sweep: "sweep 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite",
+        marquee: "marquee 30s linear infinite",
+        rise: "rise 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both",
+        sweep: "sweep 1.4s linear infinite",
       },
     },
   },

@@ -12,9 +12,9 @@ export function Experiments() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <Label>Randomised measurement</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Experiments</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
         Every recovery run withholds treatment from a randomly assigned slice of the
-        plan, stratified on order value. Assignment is <code className="text-white/60">sha256(experiment_id ‖ customer_id)</code> —
+        plan, stratified on order value. Assignment is <code className="text-black/60">sha256(experiment_id ‖ customer_id)</code> —
         deterministic, keyed on the customer so nobody is half-treated, and recomputable
         by hand from the stored hash prefix.
       </p>
@@ -29,8 +29,8 @@ export function Experiments() {
       {data && concluded.length === 0 && (
         <Panel className="mt-8">
           <div className="px-6 py-16 text-center">
-            <p className="text-sm text-white/50">No experiment has concluded yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
+            <p className="text-sm text-black/50">No experiment has concluded yet.</p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/25">
               Deploy a strategy from Futures to create one. A guest session can model but
               not execute, so this page stays empty unless an operator runs it.
             </p>
@@ -64,12 +64,12 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
             <Stat label="Incremental lift" value={lakhs(r.incremental_paise)} tone="yellow" sub="attributable to treatment" />
           </div>
 
-          <div className="mt-7 rounded-[20px] border border-white/[0.07] bg-white/[0.02] p-5">
+          <div className="mt-7 rounded-[20px] border border-black/15 bg-black/[0.03] p-5">
             <Label>90% confidence interval</Label>
             <div className="tnum mt-2 text-lg font-semibold">
               [{lakhs(r.incremental_lo_paise)}, {lakhs(r.incremental_hi_paise)}]
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-white/35">
+            <p className="mt-2 text-[11px] leading-relaxed text-black/35">
               Customer-level bootstrap over {count(r.bootstrap_samples)} resamples. Recovered
               amounts are heavily skewed — one large payment moves the estimate more than
               fifty small ones — so a normal approximation here would flatter us.
@@ -95,7 +95,7 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
               <div key={a.arm}>
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-sm font-semibold capitalize">{a.arm}</span>
-                  <span className="tnum text-xs text-white/40">
+                  <span className="tnum text-xs text-black/40">
                     {count(a.recovered)} / {count(a.payments)} · {pct(a.recovery_rate)}
                   </span>
                 </div>
@@ -106,7 +106,7 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
                     tone={a.arm === "treatment" ? "yellow" : "muted"}
                   />
                 </div>
-                <div className="tnum mt-1.5 text-[11px] text-white/30">
+                <div className="tnum mt-1.5 text-[11px] text-black/30">
                   {lakhs(a.recovered_paise)} of {lakhs(a.exposure_paise)} exposure
                 </div>
               </div>
@@ -114,14 +114,14 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
           </div>
 
           {treatment && holdout && (
-            <div className="mt-6 rounded-[18px] border border-white/[0.07] p-5">
+            <div className="mt-6 rounded-[18px] border border-black/15 p-5">
               <Label>Cost side</Label>
               <div className="mt-3 space-y-2">
                 <Line label="Treatment cost" value={rupees(r.cost_paise)} />
                 <Line label="Net incremental lift" value={lakhs(r.net_paise)} />
                 <Line label="Measurement cost" value={lakhs(r.measurement_cost_paise)} />
               </div>
-              <p className="mt-3 text-[11px] leading-relaxed text-white/30">
+              <p className="mt-3 text-[11px] leading-relaxed text-black/30">
                 The holdout is revenue deliberately not worked. It is the price of being able
                 to make a causal claim at all, and it belongs on the same page as the
                 claim.
@@ -132,11 +132,11 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
       </div>
 
       {r.warnings.length > 0 && (
-        <div className="border-t border-white/[0.06] p-6">
+        <div className="border-t border-black/15 p-6">
           <Label>Diagnostics</Label>
           <ul className="mt-3 space-y-2">
             {r.warnings.map((w) => (
-              <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-white/50">
+              <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-black/50">
                 <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                 {w}
               </li>
@@ -151,7 +151,7 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
 function Line({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[11px] text-white/40">{label}</span>
+      <span className="text-[11px] text-black/40">{label}</span>
       <span className="tnum text-[13px] font-semibold">{value}</span>
     </div>
   );

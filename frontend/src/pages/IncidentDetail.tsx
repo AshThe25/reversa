@@ -33,7 +33,7 @@ export function IncidentDetail() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <button
         onClick={() => navigate("/incidents")}
-        className="text-[12px] text-white/35 transition-colors hover:text-white/70"
+        className="text-[12px] text-black/35 transition-colors hover:text-black/70"
       >
         ← All incidents
       </button>
@@ -51,12 +51,12 @@ export function IncidentDetail() {
             <div>
               <div className="flex items-center gap-3">
                 <Severity level={inc.severity} />
-                <span className="font-mono text-[11px] uppercase tracking-label text-white/30">
+                <span className="font-mono text-[11px] uppercase tracking-label text-black/30">
                   {inc.id}
                 </span>
               </div>
               <h1 className="mt-3 text-4xl font-bold tracking-tight">{inc.slice}</h1>
-              <p className="mt-2 text-sm text-white/40">
+              <p className="mt-2 text-sm text-black/40">
                 {timeIST(inc.window_start)} → {timeIST(inc.window_end)} IST · detected{" "}
                 {timeIST(inc.detected_at)}
               </p>
@@ -73,8 +73,8 @@ export function IncidentDetail() {
                 label="Auth rate"
                 value={
                   <span>
-                    <span className="text-white/35">{pct(inc.baseline_success_rate)}</span>
-                    <span className="mx-2 text-white/20">→</span>
+                    <span className="text-black/35">{pct(inc.baseline_success_rate)}</span>
+                    <span className="mx-2 text-black/20">→</span>
                     <span className="text-signal-loss">{pct(inc.observed_success_rate)}</span>
                   </span>
                 }
@@ -97,7 +97,7 @@ export function IncidentDetail() {
                   tone="loss"
                 />
               </div>
-              <p className="mt-2 text-xs text-white/40">
+              <p className="mt-2 text-xs text-black/40">
                 {co ? `${count(co.member_count)} recoverable payments` : "peak window"}
               </p>
             </div>
@@ -106,7 +106,7 @@ export function IncidentDetail() {
               <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
                 {co ? <Money paise={co.natural_recovery_paise} tone="muted" /> : "—"}
               </div>
-              <p className="mt-2 text-xs text-white/40">
+              <p className="mt-2 text-xs text-black/40">
                 {co
                   ? `${pct(co.natural_recovery_paise / Math.max(co.revenue_exposed_paise, 1))} of exposure — lands with no treatment`
                   : ""}
@@ -117,7 +117,7 @@ export function IncidentDetail() {
               <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
                 {co ? <Money paise={co.addressable_paise} tone="yellow" /> : "—"}
               </div>
-              <p className="mt-2 text-xs text-white/40">the only part worth treating</p>
+              <p className="mt-2 text-xs text-black/40">the only part worth treating</p>
             </div>
           </div>
 
@@ -130,37 +130,36 @@ export function IncidentDetail() {
                     <AreaChart data={series} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                       <defs>
                         <linearGradient id="obs" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#FF5D5D" stopOpacity={0.45} />
-                          <stop offset="55%" stopColor="#FF5D5D" stopOpacity={0.12} />
-                          <stop offset="100%" stopColor="#FF5D5D" stopOpacity={0} />
+                          <stop offset="0%" stopColor="#e5484d" stopOpacity={0.45} />
+                          <stop offset="55%" stopColor="#e5484d" stopOpacity={0.14} />
+                          <stop offset="100%" stopColor="#e5484d" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="t" tick={{ fill: "#ffffff40", fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis domain={[0, 100]} tick={{ fill: "#ffffff40", fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
+                      <XAxis dataKey="t" tick={{ fill: "#00000099", fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "#00000099", fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
                       <Tooltip
                         contentStyle={{
-                          background: "rgba(18,18,18,0.94)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          borderRadius: 18, fontSize: 12,
-                          boxShadow: "0 24px 48px -24px rgba(0,0,0,0.9)",
+                          background: "#ffffff", border: "2px solid #000000",
+                          borderRadius: 2, fontSize: 12, fontWeight: 600,
+                          boxShadow: "4px 4px 0px 0px #000000",
                         }}
-                        labelStyle={{ color: "#ffffff70" }}
+                        labelStyle={{ color: "#000000", fontWeight: 800 }}
                       />
                       <ReferenceLine
                         y={+(inc.baseline_success_rate * 100).toFixed(1)}
-                        stroke="#FDE047" strokeDasharray="4 4"
-                        label={{ value: "baseline", fill: "#FDE047", fontSize: 10, position: "right" }}
+                        stroke="#000000" strokeDasharray="6 4" strokeWidth={2}
+                        label={{ value: "baseline", fill: "#000000", fontSize: 10, fontWeight: 800, position: "right" }}
                       />
                       <Area
-                        type="monotone" dataKey="observed" stroke="#FF5D5D"
+                        type="monotone" dataKey="observed" stroke="#e5484d"
                         strokeWidth={2} fill="url(#obs)"
                         animationDuration={520} animationEasing="ease-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="grid h-full place-items-center text-xs text-white/30">
+                  <div className="grid h-full place-items-center text-xs text-black/30">
                     Not enough ticks to plot.
                   </div>
                 )}
@@ -175,14 +174,14 @@ export function IncidentDetail() {
                   return (
                     <div key={`${row.reason}`}>
                       <div className="flex items-baseline justify-between gap-3">
-                        <span className="truncate font-mono text-[11px] text-white/70">
+                        <span className="truncate font-mono text-[11px] text-black/70">
                           {row.reason ?? "unknown"}
                         </span>
-                        <span className="tnum shrink-0 text-[11px] text-white/40">
+                        <span className="tnum shrink-0 text-[11px] text-black/40">
                           {count(row.count)} · {pct(share, 0)}
                         </span>
                       </div>
-                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="mt-1.5 h-3 w-full overflow-hidden border-2 border-black bg-white">
                         <div className="h-full rounded-full bg-cyber/70" style={{ width: `${share * 100}%` }} />
                       </div>
                     </div>
@@ -197,7 +196,7 @@ export function IncidentDetail() {
           {/* ---------------------------------------------- why detected */}
           <Panel className="mt-6" title="Why this was called an incident" hint="The detector's own reasoning, not a summary of it.">
             <div className="p-6">
-              <p className="max-w-5xl text-[13px] leading-relaxed text-white/60">
+              <p className="max-w-5xl text-[13px] leading-relaxed text-black/60">
                 {inc.detection_rationale}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -223,7 +222,7 @@ export function IncidentDetail() {
                 {Object.entries(co.exceptions_by_reason).map(([reason, n]) => (
                   <div key={reason} className="surface px-5 py-3">
                     <div className="tnum text-xl font-bold">{n}</div>
-                    <div className="mt-0.5 text-[11px] text-white/40">{titleise(reason)}</div>
+                    <div className="mt-0.5 text-[11px] text-black/40">{titleise(reason)}</div>
                   </div>
                 ))}
               </div>
@@ -283,13 +282,13 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
               <Label>Confidence</Label>
               <div
                 className={`tnum mt-1 text-3xl font-bold ${
-                  finding.actionable ? "text-cyber" : "text-signal-loss"
+                  finding.actionable ? "text-black" : "text-signal-loss"
                 }`}
               >
                 {pct(finding.confidence, 0)}
               </div>
             </div>
-            <div className="h-10 w-px bg-white/10" />
+            <div className="h-10 w-px bg-black/[0.03]" />
             <div>
               <Label>Automation</Label>
               <p className="mt-1 text-sm font-semibold">
@@ -298,13 +297,13 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
             </div>
           </div>
 
-          <p className="mt-5 max-w-2xl text-[13px] leading-relaxed text-white/60">
+          <p className="mt-5 max-w-2xl text-[13px] leading-relaxed text-black/60">
             {finding.hypothesis}
           </p>
 
-          <div className="mt-5 rounded-[18px] border border-white/[0.08] bg-black/25 px-5 py-4">
+          <div className="mt-5 rounded-[18px] border border-black/15 bg-black/25 px-5 py-4">
             <Label>Recommended next step</Label>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-white/60">
+            <p className="mt-1.5 text-[12px] leading-relaxed text-black/60">
               {finding.recommended_next_step}
             </p>
           </div>
@@ -325,22 +324,22 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
                   key={e.id}
                   className={`flex gap-3 rounded-[16px] border px-4 py-3 ${
                     against
-                      ? "border-signal-loss/25 bg-signal-loss/[0.05]"
+                      ? "border-black bg-signal-loss/10"
                       : cited
-                        ? "border-cyber/25 bg-cyber/[0.04]"
-                        : "border-white/[0.06] bg-white/[0.015] opacity-55"
+                        ? "border-black bg-cyber/20"
+                        : "border-black/15 bg-black/[0.03] opacity-55"
                   }`}
                 >
                   <span
                     className={`mt-0.5 font-mono text-[11px] ${
-                      against ? "text-signal-loss" : cited ? "text-cyber" : "text-white/30"
+                      against ? "text-signal-loss" : cited ? "text-black" : "text-black/30"
                     }`}
                   >
                     {against ? "−" : cited ? "+" : "·"}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[12px] leading-relaxed text-white/70">{e.label}</p>
-                    <p className="mt-1 font-mono text-[10px] text-white/30">
+                    <p className="text-[12px] leading-relaxed text-black/70">{e.label}</p>
+                    <p className="mt-1 font-mono text-[10px] text-black/30">
                       {e.id} · {e.source}
                       {e.sample_size ? ` · n=${e.sample_size.toLocaleString("en-IN")}` : ""}
                     </p>
@@ -352,8 +351,8 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
         </div>
       </div>
 
-      <div className="border-t border-white/[0.06] px-6 py-4">
-        <p className="max-w-4xl text-[11px] leading-relaxed text-white/35">
+      <div className="border-t border-black/15 px-6 py-4">
+        <p className="max-w-4xl text-[11px] leading-relaxed text-black/35">
           The model may not invent a hypothesis — the label comes from a fixed
           vocabulary — and every evidence id it cites is checked against the facts
           actually collected. One fabricated citation rejects the whole response and

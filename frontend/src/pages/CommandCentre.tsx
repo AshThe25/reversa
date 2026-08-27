@@ -52,7 +52,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.revenue_at_risk_paise} tone="loss" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-black/40">
             {o ? `${count(o.live_failed_payments)} declined authorisations today` : ""}
           </p>
         </div>
@@ -65,7 +65,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.natural_recovery_paise} tone="muted" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-white/40">observed in the holdout arm</p>
+          <p className="mt-2 text-xs text-black/40">observed in the holdout arm</p>
         </div>
 
         <div
@@ -76,7 +76,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.incremental_recovery_paise} tone="yellow" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-black/40">
             {o && grossSoFar > 0
               ? `${pct(o.incremental_recovery_paise / grossSoFar)} of gross recovery`
               : "no concluded test yet"}
@@ -88,7 +88,7 @@ export function CommandCentre() {
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? o.active_incidents : "—"}
           </div>
-          <p className="mt-2 text-xs text-white/40">
+          <p className="mt-2 text-xs text-black/40">
             {o ? `${o.total_incidents} detected today` : ""}
           </p>
         </div>
@@ -97,14 +97,14 @@ export function CommandCentre() {
           <Label>Treatment capacity</Label>
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? count(o.capacity.used) : "—"}
-            <span className="text-white/35">
+            <span className="text-black/35">
               {o ? ` / ${count(o.capacity.total)}` : ""}
             </span>
           </div>
           <div className="mt-3">
             <Bar value={o?.capacity.used ?? 0} max={o?.capacity.total ?? 1} />
           </div>
-          <p className="mt-2 text-xs text-white/40">consumed this session</p>
+          <p className="mt-2 text-xs text-black/40">consumed this session</p>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export function CommandCentre() {
               incremental={o.incremental_recovery_paise}
             />
             <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
-              <Legend swatch="bg-white/[0.15]" label="Baseline (would have landed anyway)" value={lakhs(o.natural_recovery_paise)} />
+              <Legend swatch="bg-sage" label="Baseline (would have landed anyway)" value={lakhs(o.natural_recovery_paise)} />
               <Legend swatch="bg-cyber" label="Incremental lift (attributable)" value={lakhs(o.incremental_recovery_paise)} />
               <Legend
                 swatch="bg-signal-loss/40"
@@ -152,7 +152,7 @@ export function CommandCentre() {
         >
           {incidents.loading && <Skeleton rows={4} />}
           {incidents.data && (
-            <div className="divide-y divide-white/[0.05]">
+            <div className="divide-y divide-black/10">
               {incidents.data.slice(0, 5).map((inc) => (
                 <button
                   key={inc.id}
@@ -162,7 +162,7 @@ export function CommandCentre() {
                   <Severity level={inc.severity} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{inc.slice}</p>
-                    <p className="mt-0.5 text-[11px] text-white/35">
+                    <p className="mt-0.5 text-[11px] text-black/35">
                       {timeIST(inc.window_start)}–{timeIST(inc.window_end)} IST ·{" "}
                       {pct(inc.baseline_success_rate)} → {pct(inc.observed_success_rate)} ·{" "}
                       q={sci(inc.q_value)}
@@ -172,7 +172,7 @@ export function CommandCentre() {
                     <p className="tnum text-sm font-bold text-signal-loss">
                       {lakhs(inc.revenue_exposed_paise)}
                     </p>
-                    <p className="text-[11px] text-white/30">
+                    <p className="text-[11px] text-black/30">
                       {count(inc.affected_payment_count)} payments
                     </p>
                   </div>
@@ -194,22 +194,22 @@ export function CommandCentre() {
                       {system.data.adapters.razorpay.mode}
                     </Tag>
                   </div>
-                  <p className="mt-3 text-[11px] leading-relaxed text-white/30">
+                  <p className="mt-3 text-[11px] leading-relaxed text-black/30">
                     {system.data.adapters.razorpay.note}
                   </p>
                 </div>
 
-                <div className="border-t border-white/[0.06] pt-5">
+                <div className="border-t border-black/15 pt-5">
                   <Label>Payment-link budget</Label>
                   <div className="tnum mt-2 text-2xl font-bold">
                     {system.data.adapters.razorpay.payment_link_budget.remaining}
-                    <span className="text-white/25">
+                    <span className="text-black/25">
                       {" "}/ {system.data.adapters.razorpay.payment_link_budget.limit}
                     </span>
                   </div>
                 </div>
 
-                <div className="border-t border-white/[0.06] pt-5 space-y-2">
+                <div className="border-t border-black/15 pt-5 space-y-2">
                   <MetaRow label="Estimator fit" value={`${Math.round(system.data.engine.fit_ms)}ms`} />
                   <MetaRow label="Day scan" value={`${Math.round(system.data.engine.scan_ms)}ms`} />
                   <MetaRow
@@ -252,41 +252,15 @@ function FlowBar({
 
   return (
     <>
-      {/* Recessed track, lit segments. Same inversion as the segmented control:
-          the channel sits below the surface and each segment catches the top
-          light, so the bar reads as filled rather than painted. */}
-      <div
-        className="flex h-14 w-full overflow-hidden rounded-full p-1"
-        style={{
-          background: "rgba(0,0,0,0.5)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "inset 0 2px 8px rgba(0,0,0,0.7)",
-        }}
-      >
-        <FlowSegment
-          width={naturalPct}
-          label="natural"
-          className="text-white/60"
-          fill="linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07))"
-          highlight="rgba(255,255,255,0.14)"
-          first
-        />
-        <FlowSegment
-          width={incrementalPct}
-          label="incremental"
-          className="font-bold text-onyx"
-          fill="linear-gradient(180deg, #fde047, #eab308)"
-          highlight="rgba(255,255,255,0.5)"
-        />
-        <FlowSegment
-          width={lostPct}
-          label="still lost"
-          className="text-signal-loss"
-          fill="linear-gradient(180deg, rgba(255,93,93,0.20), rgba(255,93,93,0.10))"
-          highlight="rgba(255,93,93,0.25)"
-          last
-        />
+      {/* Hard segments on a bordered track. The neo-brutalist read is a
+          physical bar divided by black rules, not a gradient fill — so each
+          segment is separated by a 2px border rather than a colour change. */}
+      <div className="flex h-14 w-full overflow-hidden rounded-neo border-2 border-black bg-white">
+        <FlowSegment width={naturalPct} label="Baseline" className="bg-sage" />
+        <FlowSegment width={incrementalPct} label="Incremental" className="bg-cyber" />
+        <FlowSegment width={lostPct} label="Unrecovered" className="bg-signal-loss/25" last />
       </div>
+
       {incremental < 0 && (
         <p className="mt-3 text-[12px] leading-relaxed text-signal-loss">
           The measured incremental is negative: the treated group recovered less
@@ -301,33 +275,22 @@ function FlowBar({
 }
 
 function FlowSegment({
-  width, label, className, fill, highlight, first, last,
+  width, label, className, last,
 }: {
   width: number;
   label: string;
   className: string;
-  fill: string;
-  highlight: string;
-  first?: boolean;
   last?: boolean;
 }) {
   if (width < 0.4) return null;
-  const radius = "9999px";
   return (
     <div
-      className={`flex items-center justify-center overflow-hidden whitespace-nowrap text-[11px] font-semibold transition-[width] duration-700 ease-liquid ${className}`}
-      style={{
-        width: `${width}%`,
-        background: fill,
-        boxShadow: `inset 0 1px 0 ${highlight}`,
-        borderTopLeftRadius: first ? radius : 4,
-        borderBottomLeftRadius: first ? radius : 4,
-        borderTopRightRadius: last ? radius : 4,
-        borderBottomRightRadius: last ? radius : 4,
-        marginRight: last ? 0 : 2,
-      }}
+      className={`flex items-center justify-center overflow-hidden whitespace-nowrap
+                  font-display text-[10px] font-extrabold uppercase tracking-label
+                  transition-[width] duration-500 ${className} ${last ? "" : "border-r-2 border-black"}`}
+      style={{ width: `${width}%` }}
     >
-      {width > 11 ? label : ""}
+      {width > 13 ? label : ""}
     </div>
   );
 }
@@ -335,9 +298,9 @@ function FlowSegment({
 function Legend({ swatch, label, value }: { swatch: string; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={`h-3 w-3 shrink-0 rounded-full ${swatch}`} />
-      <span className="text-xs text-white/40">{label}</span>
-      <span className="tnum ml-auto text-sm font-semibold">{value}</span>
+      <span className={`h-4 w-4 shrink-0 border-2 border-black ${swatch}`} />
+      <span className="text-xs text-black/60">{label}</span>
+      <span className="tnum ml-auto font-display text-sm font-extrabold">{value}</span>
     </div>
   );
 }
@@ -345,7 +308,7 @@ function Legend({ swatch, label, value }: { swatch: string; label: string; value
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[11px] text-white/35">{label}</span>
+      <span className="text-[11px] text-black/35">{label}</span>
       <span className="tnum text-[12px] font-medium">{value}</span>
     </div>
   );

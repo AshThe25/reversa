@@ -22,7 +22,7 @@ export function Evaluation() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <Label>Graded against ground truth</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Evaluation</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
         The simulator holds every payment's latent resolve and both potential
         outcomes. Reversa never reads them — an import-graph test fails the build
         if any engine tries. These are the system's outputs compared against that
@@ -58,8 +58,8 @@ export function Evaluation() {
                     sub={data.detection.missed.join(", ") || "none"}
                     tone={data.detection.missed.length ? "loss" : "muted"} />
             </div>
-            <div className="border-t border-white/[0.06] px-6 py-4">
-              <p className="text-[12px] leading-relaxed text-white/40">
+            <div className="border-t border-black/15 px-6 py-4">
+              <p className="text-[12px] leading-relaxed text-black/40">
                 Per-incident latency:{" "}
                 {data.detection.latencies_min.map((l) => `${l}m`).join(" · ")}. Thin
                 slices are detected later than high-volume ones, which is honest
@@ -89,13 +89,13 @@ export function Evaluation() {
 
                     <div className={`mt-6 rounded-[20px] border p-5 ${
                       e.measurement.interval_contains_truth
-                        ? "border-signal-calm/25 bg-signal-calm/[0.05]"
-                        : "border-signal-loss/30 bg-signal-loss/[0.06]"
+                        ? "border-black bg-signal-calm/10"
+                        : "border-black bg-signal-loss/10"
                     }`}>
                       <div className="flex items-center gap-3">
                         <span className={`grid h-8 w-8 place-items-center rounded-full ${
                           e.measurement.interval_contains_truth
-                            ? "bg-signal-calm/20 text-signal-calm"
+                            ? "bg-signal-calm/20 text-black"
                             : "bg-signal-loss/20 text-signal-loss"
                         }`}>
                           {e.measurement.interval_contains_truth ? "✓" : "✕"}
@@ -106,13 +106,13 @@ export function Evaluation() {
                             : "The interval missed the truth"}
                         </p>
                       </div>
-                      <p className="mt-3 text-[12px] leading-relaxed text-white/50">
+                      <p className="mt-3 text-[12px] leading-relaxed text-black/50">
                         {e.measurement.interval_contains_truth
                           ? "The experiment design recovers the real effect. The point estimate is noisy — that is what the interval is for — but the method is sound, which is the prerequisite for every other number in this product meaning anything."
                           : "The holdout estimate did not bracket the true effect. Every headline figure downstream should be treated as unreliable until this is understood."}
                       </p>
                       {e.measurement.relative_error !== null && (
-                        <p className="tnum mt-2 text-[12px] text-white/35">
+                        <p className="tnum mt-2 text-[12px] text-black/35">
                           Point estimate error {signedPct(e.measurement.relative_error, 0)} ·{" "}
                           {count(e.measurement.treated_payments)} treated payments
                         </p>
@@ -123,7 +123,7 @@ export function Evaluation() {
                   {e.calibration && (
                     <div>
                       <Label>Natural-recovery calibration</Label>
-                      <p className="mt-2 text-[11px] leading-relaxed text-white/35">
+                      <p className="mt-2 text-[11px] leading-relaxed text-black/35">
                         Scored on the holdout only — nothing was done to them, so their
                         realised outcome is the natural outcome by definition.
                       </p>
@@ -136,7 +136,7 @@ export function Evaluation() {
                       <div className="mt-5 space-y-2">
                         {e.calibration.bins.map((b) => (
                           <div key={b.bin_lo} className="flex items-center gap-3">
-                            <span className="tnum w-16 shrink-0 text-[10px] text-white/30">
+                            <span className="tnum w-16 shrink-0 text-[10px] text-black/30">
                               {b.bin_lo.toFixed(1)}–{b.bin_hi.toFixed(1)}
                             </span>
                             <div className="flex-1">
@@ -145,13 +145,13 @@ export function Evaluation() {
                                 <Bar value={b.predicted} max={1} tone="muted" />
                               </div>
                             </div>
-                            <span className="tnum w-10 shrink-0 text-right text-[10px] text-white/30">
+                            <span className="tnum w-10 shrink-0 text-right text-[10px] text-black/30">
                               n={b.n}
                             </span>
                           </div>
                         ))}
                       </div>
-                      <p className="mt-3 text-[10px] text-white/25">
+                      <p className="mt-3 text-[10px] text-black/25">
                         yellow = actual · grey = predicted
                       </p>
                     </div>
@@ -179,8 +179,8 @@ export function Evaluation() {
                         tone="muted"
                         sub="high estimated natural recovery" />
                 </div>
-                <div className="border-t border-white/[0.06] px-6 py-4">
-                  <p className="max-w-4xl text-[12px] leading-relaxed text-white/40">
+                <div className="border-t border-black/15 px-6 py-4">
+                  <p className="max-w-4xl text-[12px] leading-relaxed text-black/40">
                     Mean regret is {e.decisions.mean_regret_uplift_points.toFixed(4)} uplift
                     points — the average gap between the action taken and the best one that
                     was available. Top-1 accuracy is low by design of the data, not of the
@@ -210,8 +210,8 @@ export function Evaluation() {
           {data.experiments.length === 0 && (
             <Panel className="mt-6">
               <div className="px-6 py-14 text-center">
-                <p className="text-sm text-white/50">No experiment has run yet.</p>
-                <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
+                <p className="text-sm text-black/50">No experiment has run yet.</p>
+                <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/25">
                   Detection is scored above regardless. The measurement and decision
                   scores need a deployed strategy, which a demo session cannot create.
                 </p>
@@ -221,7 +221,7 @@ export function Evaluation() {
 
           <div className="mt-6 surface p-6">
             <Label>Method</Label>
-            <p className="mt-2 max-w-4xl text-[12px] leading-relaxed text-white/45">
+            <p className="mt-2 max-w-4xl text-[12px] leading-relaxed text-black/45">
               {data.method_note}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

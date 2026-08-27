@@ -9,20 +9,19 @@ const NAV = [
   { to: "/incidents", label: "Incidents" },
   { to: "/futures", label: "Futures" },
   { to: "/portfolio", label: "Portfolio" },
-  { to: "/experiments", label: "Experiments" },
+  { to: "/experiments", label: "Tests" },
   { to: "/autopsy", label: "Autopsy" },
-  { to: "/policies", label: "Policies" },
+  { to: "/policies", label: "Policy" },
   { to: "/audit", label: "Audit" },
-  { to: "/evaluation", label: "Evaluation" },
+  { to: "/evaluation", label: "Eval" },
 ];
 
 /**
  * The app shell.
  *
- * Chrome floats and is frosted; content sits on the void beneath an ambient
- * light bleed. The nav is a recessed track with a raised thumb on the active
- * item — the same inversion a physical switch uses, and the reason it reads as
- * a control rather than a row of links.
+ * Fixed yellow header on a hard black rule, dot field behind it. The nav is a
+ * segmented track with a bordered yellow thumb — the active item is a physical
+ * object sitting on the track, not a highlighted link.
  */
 export function Shell({
   children,
@@ -35,15 +34,15 @@ export function Shell({
   const role = currentRole();
 
   return (
-    <div className="ambient relative min-h-full">
-      <header className="above sticky top-0 z-40 px-4 pt-4">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-4 rounded-full frost px-3 py-2">
-          <NavLink to="/" className="flex shrink-0 items-center gap-2.5 pl-1.5">
-            <span className="orb grid h-7 w-7 place-items-center text-[12px] font-black text-onyx">
+    <div className="min-h-full bg-paper">
+      <header className="dot-field sticky top-0 z-50 border-b-2 border-black bg-cyber">
+        <div className="relative z-10 mx-auto flex max-w-[1600px] flex-wrap items-center gap-4 px-6 py-3">
+          <NavLink to="/" className="flex shrink-0 items-center gap-2.5">
+            <span className="grid h-9 w-9 place-items-center border-2 border-black bg-black font-display text-base font-extrabold text-cyber">
               R
             </span>
-            <span className="hidden text-[14px] font-bold tracking-tight sm:block">
-              REVERSA
+            <span className="font-display text-xl font-extrabold uppercase tracking-tighter">
+              Reversa
             </span>
           </NavLink>
 
@@ -53,7 +52,7 @@ export function Shell({
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `segment whitespace-nowrap ${isActive ? "segment-on" : "hover:text-white/80"}`
+                  `segment whitespace-nowrap ${isActive ? "segment-on" : ""}`
                 }
               >
                 {item.label}
@@ -62,16 +61,15 @@ export function Shell({
           </nav>
 
           {role && (
-            <div className="hidden shrink-0 items-center gap-2 pr-1 lg:flex">
-              <Tag tone={role === "operator" ? "yellow" : "neutral"}>
-                {role === "operator" ? "OPERATOR" : "GUEST · read + simulate"}
+            <div className="flex shrink-0 items-center gap-2">
+              <Tag tone={role === "operator" ? "info" : "neutral"}>
+                {role === "operator" ? "Operator" : "Guest"}
               </Tag>
               {onSignOut && (
                 <button
                   onClick={onSignOut}
                   title="End this session"
-                  className="rounded-full px-3 py-1.5 text-[11px] font-medium text-white/35
-                             transition-colors hover:text-white/80"
+                  className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
                 >
                   Sign out
                 </button>
@@ -81,18 +79,18 @@ export function Shell({
         </div>
       </header>
 
-      <main key={location.pathname} className="above animate-rise">
+      <main key={location.pathname} className="animate-rise">
         {children}
       </main>
 
       <TourBar />
 
-      <footer className="above px-6 py-10">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 border-t border-white/[0.06] pt-8">
-          <p className="text-[11px] text-white/25">
-            Reversa · counterfactual revenue recovery · Razorpay AI Buildathon 2026
+      <footer className="border-t-2 border-black bg-charcoal px-6 py-10 text-white">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
+          <p className="font-display text-[11px] font-extrabold uppercase tracking-label">
+            Reversa · Counterfactual revenue recovery
           </p>
-          <p className="text-[11px] text-white/25">
+          <p className="text-[11px] text-white/50">
             Every figure on this site is computed by a backend engine. None are authored.
           </p>
         </div>
@@ -102,11 +100,8 @@ export function Shell({
 }
 
 /**
- * The walkthrough bar.
- *
- * Docked, never modal. It cannot cover a number the reader is looking at, and
- * every step has a visible way out — a tour you cannot escape is worse than no
- * tour at all.
+ * The walkthrough bar. Docked, never modal, escapable at every step — a tour
+ * you cannot leave is worse than no tour.
  */
 function TourBar() {
   const tour = useTour();
@@ -118,21 +113,23 @@ function TourBar() {
   const onStepPage = location.pathname === step.path;
 
   return (
-    <div className="sticky bottom-0 z-50 px-4 pb-4">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 rounded-[28px] bg-cyber px-5 py-4 text-onyx shadow-[0_-8px_40px_-12px_rgba(253,224,71,0.35)] md:flex-row md:items-center">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-onyx text-[11px] font-black text-cyber">
-          {tour.index + 1}
+    <div className="sticky bottom-0 z-50 border-t-2 border-black bg-cyber">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-6 py-4 md:flex-row md:items-center">
+        <span className="grid h-8 w-8 shrink-0 place-items-center border-2 border-black bg-black font-display text-xs font-extrabold text-cyber">
+          {String(tour.index + 1).padStart(2, "0")}
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-bold tracking-tight">{step.title}</p>
-          <p className="mt-0.5 max-w-3xl text-[12px] leading-relaxed text-onyx/70">
+          <p className="font-display text-sm font-extrabold uppercase tracking-tighter">
+            {step.title}
+          </p>
+          <p className="mt-0.5 max-w-3xl text-[12px] leading-relaxed text-black/70">
             {step.body}
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="label-dark hidden sm:block">
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="label hidden sm:block">
             {tour.index + 1} / {STEPS.length}
           </span>
           {!onStepPage ? (
@@ -154,7 +151,7 @@ function TourBar() {
           )}
           <button
             onClick={tour.stop}
-            className="rounded-full px-3 py-2 text-[12px] font-medium text-onyx/50 transition-colors hover:text-onyx"
+            className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
           >
             Exit
           </button>

@@ -35,7 +35,7 @@ export function Autopsy() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <Label>Post-incident forensics</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Where did the money go?</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
         Exposure decomposed into baseline recovery, the lift the treatment actually
         caused, and unrecovered revenue. The last number is the largest one, and it
         stays on the page.
@@ -51,8 +51,8 @@ export function Autopsy() {
       {concluded.length === 0 && !experiments.loading && (
         <Panel className="mt-8">
           <div className="px-6 py-16 text-center">
-            <p className="text-sm text-white/50">No concluded run to dissect yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
+            <p className="text-sm text-black/50">No concluded run to dissect yet.</p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/25">
               A read-out needs a deployed strategy with measured outcomes. A guest
               session can model but not execute.
             </p>
@@ -102,7 +102,7 @@ function AutopsyBody({
                   : "surface p-5"
               }>
                 <Stat label={s.label} value={lakhs(s.value)} sub={s.note} tone={s.tone} />
-                <div className="mt-3 text-[11px] text-white/25">
+                <div className="mt-3 text-[11px] text-black/25">
                   {pct(s.value / Math.max(exposure, 1), 0)} of exposure
                 </div>
               </div>
@@ -111,21 +111,21 @@ function AutopsyBody({
 
           <div className="mt-8">
             <Label>Attribution</Label>
-            <div className="mt-3 flex h-14 w-full overflow-hidden rounded-full border border-white/10">
+            <div className="mt-3 flex h-14 w-full overflow-hidden rounded-full border border-black/25">
               <Segment width={r.natural_recovery_paise / exposure}
-                       className="bg-white/[0.10] text-white/60" text="baseline" />
+                       className="bg-black/[0.03] text-black/60" text="baseline" />
               <Segment width={r.incremental_paise / exposure}
-                       className="bg-cyber text-onyx font-bold" text="incremental" />
+                       className="bg-cyber text-cyber font-bold" text="incremental" />
               <Segment width={lost / exposure}
                        className="bg-signal-loss/20 text-signal-loss" text="unrecovered" />
             </div>
-            <p className="mt-4 max-w-4xl text-[12px] leading-relaxed text-white/45">
+            <p className="mt-4 max-w-4xl text-[12px] leading-relaxed text-black/45">
               A conventional dunning tool would book{" "}
-              <span className="tnum font-semibold text-white">
+              <span className="tnum font-semibold text-black">
                 {lakhs(r.gross_recovery_paise)}
               </span>{" "}
               recovered. Only{" "}
-              <span className="tnum font-semibold text-cyber">
+              <span className="tnum font-semibold text-black">
                 {lakhs(r.incremental_paise)}
               </span>{" "}
               of that is attributable to the treatment — the rest was landing regardless,
@@ -153,14 +153,14 @@ function AutopsyBody({
             {r.warnings.length > 0 ? (
               <ul className="space-y-3">
                 {r.warnings.map((w) => (
-                  <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-white/55">
+                  <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-black/55">
                     <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                     {w}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-[12px] text-white/40">
+              <p className="text-[12px] text-black/40">
                 Nothing flagged. The effect was significant, the arms balanced, and the
                 design had the power to resolve it.
               </p>
@@ -197,12 +197,12 @@ function Segment({ width, className, text }: { width: number; className: string;
 
 function Line({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="border-b border-white/[0.05] pb-4 last:border-0">
+    <div className="border-b border-black/15 pb-4 last:border-0">
       <div className="flex items-baseline justify-between gap-4">
-        <span className="text-[12px] text-white/50">{label}</span>
+        <span className="text-[12px] text-black/50">{label}</span>
         <span className="tnum text-lg font-bold">{value}</span>
       </div>
-      <p className="mt-1 text-[11px] text-white/30">{note}</p>
+      <p className="mt-1 text-[11px] text-black/30">{note}</p>
     </div>
   );
 }

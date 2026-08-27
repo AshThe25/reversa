@@ -54,7 +54,7 @@ export function Policies() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <Label>Natural language, deterministic enforcement</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Policies</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
         Write what you want in plain English. It compiles into structured rules that
         deterministic code evaluates — the text is never executed, and the rule
         vocabulary has no way to express permitting anything.
@@ -69,9 +69,7 @@ export function Policies() {
               onChange={(e) => setText(e.target.value)}
               spellCheck={false}
               rows={10}
-              className="w-full resize-y rounded-[20px] border border-white/10 bg-onyx/60 p-4
-                         font-mono text-[13px] leading-relaxed text-white/80 outline-none
-                         focus:border-cyber/40"
+              className="w-full resize-y rounded-neo border-2 border-black bg-white p-4 font-mono text-[13px] leading-relaxed shadow-hard-inset outline-none"
             />
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button onClick={() => run("compile")} disabled={busy !== null || !text.trim()}
@@ -86,7 +84,7 @@ export function Policies() {
                 Deploy
               </Button>
               {!can("execute") && (
-                <span className="text-[11px] text-white/30">
+                <span className="text-[11px] text-black/30">
                   demo session — compile and simulate only
                 </span>
               )}
@@ -103,7 +101,7 @@ export function Policies() {
                 <Label>Can</Label>
                 <ul className="mt-3 space-y-2">
                   {capabilities.data.can.map((c) => (
-                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-white/55">
+                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/55">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                       {c}
                     </li>
@@ -114,7 +112,7 @@ export function Policies() {
                 <Label>Cannot</Label>
                 <ul className="mt-3 space-y-2">
                   {capabilities.data.cannot.map((c) => (
-                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-white/40">
+                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/40">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-signal-loss/60" />
                       {c}
                     </li>
@@ -152,26 +150,26 @@ export function Policies() {
               </div>
             }
           >
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-black/10">
               {result.policy.rules.map((rule) => (
                 <div key={rule.priority} className="px-6 py-4">
-                  <code className="font-mono text-[13px] text-cyber">{rule.describe}</code>
+                  <code className="font-mono text-[13px] text-black">{rule.describe}</code>
                   {rule.source_span && (
-                    <p className="mt-2 text-[11px] italic text-white/30">
+                    <p className="mt-2 text-[11px] italic text-black/30">
                       from: “{rule.source_span}”
                     </p>
                   )}
                 </div>
               ))}
               {result.policy.rules.length === 0 && (
-                <div className="px-6 py-10 text-center text-sm text-white/40">
+                <div className="px-6 py-10 text-center text-sm text-black/40">
                   Nothing in that text compiled to a rule.
                 </div>
               )}
             </div>
 
             {(result.policy.warnings.length > 0 || result.validation.errors.length > 0) && (
-              <div className="border-t border-white/[0.06] p-6">
+              <div className="border-t border-black/15 p-6">
                 <Label>What the compiler could not do</Label>
                 <ul className="mt-3 space-y-2">
                   {result.validation.errors.map((e) => (
@@ -181,7 +179,7 @@ export function Policies() {
                     </li>
                   ))}
                   {result.policy.warnings.map((w) => (
-                    <li key={w} className="flex gap-2.5 text-[12px] leading-relaxed text-white/50">
+                    <li key={w} className="flex gap-2.5 text-[12px] leading-relaxed text-black/50">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                       {w}
                     </li>
@@ -191,14 +189,14 @@ export function Policies() {
             )}
 
             {result.injection_signals.length > 0 && (
-              <div className="border-t border-signal-loss/20 bg-signal-loss/[0.04] p-6">
+              <div className="border-t border-black bg-signal-loss/10 p-6">
                 <Label>Prompt-injection patterns detected in this text</Label>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {result.injection_signals.map((s) => (
                     <Tag key={s} tone="bad">{s.replace(/_/g, " ")}</Tag>
                   ))}
                 </div>
-                <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-white/50">
+                <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-black/50">
                   The text was treated as data throughout — it went into a
                   nonce-delimited block and never into the instruction channel. It
                   could not have granted a permission regardless: every effect in
@@ -218,35 +216,35 @@ export function Policies() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[820px] text-left">
                   <thead>
-                    <tr className="border-b border-white/[0.06]">
+                    <tr className="border-b border-black/15">
                       {["Scenario", "Incremental", "Actions", "Cost", "Net", ""].map((h) => (
                         <th key={h} className="label px-6 py-3 font-medium">{h}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody className="divide-y divide-black/10">
                     {result.run.scenarios.map((s) => {
                       const mine = s.key === "policy";
                       return (
-                        <tr key={s.key} className={mine ? "bg-cyber/[0.05]" : "row-hover"}>
+                        <tr key={s.key} className={mine ? "bg-cyber/20" : "row-hover"}>
                           <td className="px-6 py-4">
-                            <span className={`text-sm font-semibold ${mine ? "text-cyber" : ""}`}>
+                            <span className={`text-sm font-semibold ${mine ? "text-black" : ""}`}>
                               {s.label}
                             </span>
                           </td>
                           <td className="tnum px-6 py-4 text-sm font-bold">
                             {lakhs(s.incremental_recovery_paise)}
                           </td>
-                          <td className="tnum px-6 py-4 text-sm text-white/60">
+                          <td className="tnum px-6 py-4 text-sm text-black/60">
                             {count(s.action_count)}
                           </td>
-                          <td className="tnum px-6 py-4 text-sm text-white/50">
+                          <td className="tnum px-6 py-4 text-sm text-black/50">
                             {lakhs(s.cost_paise)}
                           </td>
                           <td className="tnum px-6 py-4 text-sm">
                             {lakhs(s.net_incremental_paise)}
                           </td>
-                          <td className="px-6 py-4 text-[11px] text-white/35">
+                          <td className="px-6 py-4 text-[11px] text-black/35">
                             {mine ? s.notes.join(" · ") : ""}
                           </td>
                         </tr>

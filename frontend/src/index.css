@@ -1,330 +1,211 @@
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/manrope";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /**
- * Surface system.
+ * Neo-brutalist surface system.
  *
- * The reference language is deep black with *layered* surfaces, not flat
- * panels on a flat ground. Three things carry that and all three matter:
+ * Three rules do all the work and none of them may be softened:
  *
- *   a vertical gradient on every card, so it reads as lit from above;
- *   a hairline inset highlight on the top edge, which is what actually sells
- *     the depth - a plain border reads as a box, an inset top line reads as a
- *     bevel catching light;
- *   a long soft shadow underneath, so the card sits above the void rather than
- *     being cut into it.
+ *   every surface carries a 2px black border;
+ *   every elevated surface carries a hard offset shadow with zero blur;
+ *   interactive elements move INTO their shadow on press rather than lifting.
  *
- * Chrome is frosted and floats. Data surfaces stay opaque, because backdrop
- * blur behind a dense numeric table is unreadable and expensive to composite.
+ * That last one is what makes the language feel physical. A hover that raises
+ * an element is a glassmorphic idiom; here the element travels 4px toward the
+ * shadow and the shadow shortens to match, so it reads as being pushed against
+ * a surface.
+ *
+ * Density is the risk. A payments console is mostly tables of rupee figures,
+ * and a 2px border with a hard shadow on every row is unreadable noise. So
+ * borders and shadows land on containers and controls, never on rows, and the
+ * tables get a flat hairline instead.
  */
 
 @layer base {
   :root {
-    color-scheme: dark;
-    --void: #070707;
-    --surface-lo: #141414;
-    --surface-hi: #0d0d0d;
-    --hairline: rgba(255, 255, 255, 0.07);
-    --highlight: rgba(255, 255, 255, 0.07);
+    color-scheme: light;
   }
 
   html,
   body,
   #root {
     @apply h-full;
-    background: var(--void);
+    background: theme("colors.paper");
   }
 
   body {
-    font-feature-settings: "cv02", "cv03", "cv04", "tnum", "ss01";
-    -webkit-font-smoothing: antialiased;
+    @apply font-sans text-black antialiased;
+    font-feature-settings: "tnum", "ss01";
+  }
+
+  h1, h2, h3, h4, h5 {
+    @apply font-display font-extrabold uppercase tracking-tighter;
   }
 
   /* Tabular numerals wherever money appears, or a column of rupee figures
-     jitters as digits change width and the whole thing reads as a toy. */
-  .tnum {
-    font-variant-numeric: tabular-nums;
-  }
+     jitters as digits change width. */
+  .tnum { font-variant-numeric: tabular-nums; }
 
-  ::selection {
-    @apply bg-cyber text-onyx;
-  }
+  ::selection { @apply bg-black text-cyber; }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-cyber/70 ring-offset-2;
-    --tw-ring-offset-color: var(--void);
+    outline: 3px solid #000;
+    outline-offset: 2px;
   }
 
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track { background: theme("colors.paper"); border-left: 2px solid #000; }
+  ::-webkit-scrollbar-thumb { background: #000; }
+}
+
+@layer components {
+  .neo-border { border: 2px solid #000000; }
+
+  /* Dot field. 10% opacity on yellow, per the system. */
+  .dot-field { position: relative; }
+  .dot-field::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: theme("backgroundImage.dots");
+    background-size: 32px 32px;
+    opacity: 0.1;
+    pointer-events: none;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+
+  /* ----------------------------------------------------------- surfaces */
+
+  .card {
+    @apply rounded-neo border-2 border-black bg-white shadow-hard-sm;
   }
-  ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-white/10;
+  .card-lg {
+    @apply rounded-neo border-2 border-black bg-white shadow-hard-md;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/20;
+  .card-yellow {
+    @apply rounded-neo border-2 border-black bg-cyber shadow-hard-sm;
+  }
+  .card-sage {
+    @apply rounded-neo border-2 border-black bg-sage shadow-hard-sm;
+  }
+  .card-dark {
+    @apply rounded-neo border-2 border-black bg-charcoal text-white shadow-hard-sm;
+  }
+  .card-muted {
+    @apply rounded-neo border-2 border-dashed border-black/35 bg-paper;
+  }
+
+  /* Asymmetric corners, per the system. Used sparingly — it is a signature,
+     and a signature repeated on every card stops being one. */
+  .asymmetric {
+    border-top-right-radius: 1.875rem;
+    border-bottom-left-radius: 1.875rem;
+    border-top-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+  }
+
+  /* ----------------------------------------------------------- controls */
+
+  .label {
+    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-black/55;
+  }
+  .label-invert {
+    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-white/55;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-btn border-2 border-black
+           px-6 py-3 font-display text-sm font-extrabold uppercase tracking-tighter;
+    transition: all 0.2s theme("transitionTimingFunction.neo");
+    box-shadow: 8px 8px 0px 0px #000000;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+  .btn:active:not(:disabled) {
+    transform: translate(8px, 8px);
+    box-shadow: 0px 0px 0px 0px #000000;
+  }
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-40;
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+
+  .btn-primary { @apply btn bg-black text-white; }
+  .btn-yellow { @apply btn bg-cyber text-black; }
+  .btn-ghost { @apply btn bg-white text-black; }
+
+  .btn-sm {
+    @apply gap-1.5 px-4 py-2 text-[11px];
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+  .btn-sm:hover:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px #000000;
+  }
+
+  /* Segmented control: a black track with a yellow thumb. */
+  .segment-track {
+    @apply inline-flex items-center gap-0 rounded-neo border-2 border-black bg-white p-1;
+  }
+  .segment {
+    @apply rounded-neo px-3 py-1.5 font-display text-[11px] font-extrabold uppercase
+           tracking-tighter text-black/55;
+    transition: all 0.15s theme("transitionTimingFunction.neo");
+  }
+  .segment:hover { @apply text-black; }
+  .segment-on { @apply border-2 border-black bg-cyber text-black; padding: 4px 10px; }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-neo border-2 border-black bg-white
+           px-2.5 py-1 font-display text-[10px] font-extrabold uppercase tracking-label;
+  }
+
+  .row-hover { @apply transition-colors duration-100 hover:bg-cyber/25; }
+
+  /* Impact keyword. Outline only, no fill. */
+  .text-stroke {
+    -webkit-text-stroke: 2px #000000;
+    color: transparent;
+  }
+  .text-stroke-light {
+    -webkit-text-stroke: 2px #ffffff;
+    color: transparent;
   }
 }
 
 @layer components {
-  /* --------------------------------------------------------------- light */
-
   /**
-   * Ambient bleed. Two off-screen radial sources, one warm from the brand
-   * colour and one cool, sitting behind everything at very low opacity.
+   * Compatibility layer.
    *
-   * This is the single biggest difference between "dark theme" and the
-   * reference look: without a light source the void is a flat #000 rectangle
-   * and every surface on it looks pasted on. Fixed rather than scrolled, so it
-   * behaves like room lighting instead of wallpaper.
+   * The pages were written against the previous surface vocabulary. Rather than
+   * touch ten files to rename classes, the old names are re-pointed at the new
+   * system here. Every page inherits neo-brutalism from one place, and the few
+   * screens that need bespoke treatment override deliberately rather than by
+   * accident.
    */
-  .ambient::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(70% 45% at 12% -5%, rgba(253, 224, 71, 0.10), transparent 62%),
-      radial-gradient(55% 40% at 88% 4%, rgba(236, 72, 153, 0.07), transparent 60%),
-      radial-gradient(80% 50% at 50% 105%, rgba(253, 224, 71, 0.045), transparent 65%);
+  .surface, .panel, .glass, .glass-strong, .glass-void, .frost { @apply card; }
+  .surface-raised { @apply card-lg; }
+  .surface-accent, .hero-accent { @apply card-yellow; }
+  .hero-neutral { @apply card-sage; }
+  .surface-alarm, .hero-loss {
+    @apply rounded-neo border-2 border-black shadow-hard-sm;
+    background-color: #ffd9d9;
   }
+  .disc { @apply rounded-full border-2 border-black bg-white; }
+  .orb { @apply rounded-neo border-2 border-black bg-black; }
 
-  .above {
-    position: relative;
-    z-index: 1;
-  }
+  .pill { @apply btn btn-sm; }
+  .pill-solid { @apply btn btn-sm bg-cyber text-black; }
+  .pill-ghost { @apply btn btn-sm bg-white text-black; }
+  .pill-dark { @apply btn btn-sm bg-black text-white; }
 
-  /* ------------------------------------------------------------ surfaces */
-
-  .surface {
-    @apply rounded-[26px];
-    background: linear-gradient(180deg, var(--surface-lo) 0%, var(--surface-hi) 100%);
-    border: 1px solid var(--hairline);
-    box-shadow:
-      inset 0 1px 0 var(--highlight),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  .surface-raised {
-    @apply rounded-[26px];
-    background: linear-gradient(180deg, #1b1b1b 0%, #131313 100%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      0 32px 64px -28px rgba(0, 0, 0, 0.95);
-  }
-
-  /* Accent surface. The colour is a wash, never a fill - a saturated block
-     behind small type is unreadable, and the references use accent as light
-     rather than as paint. */
-  .surface-accent {
-    @apply rounded-[26px];
-    background:
-      radial-gradient(120% 100% at 0% 0%, rgba(253, 224, 71, 0.14), transparent 55%),
-      linear-gradient(180deg, #1a1808 0%, #101008 100%);
-    border: 1px solid rgba(253, 224, 71, 0.22);
-    box-shadow:
-      inset 0 1px 0 rgba(253, 224, 71, 0.16),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  .surface-alarm {
-    @apply rounded-[26px];
-    background:
-      radial-gradient(120% 100% at 0% 0%, rgba(255, 93, 93, 0.12), transparent 55%),
-      linear-gradient(180deg, #1a0f0f 0%, #100b0b 100%);
-    border: 1px solid rgba(255, 93, 93, 0.20);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 93, 93, 0.14),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  /* Legacy alias so existing pages inherit the new treatment. */
-  .panel {
-    @apply surface;
-  }
-
-  /* -------------------------------------------------------------- frost */
-
-  .frost {
-    background: rgba(18, 18, 18, 0.66);
-    backdrop-filter: blur(28px) saturate(150%);
-    -webkit-backdrop-filter: blur(28px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      0 24px 48px -24px rgba(0, 0, 0, 0.9);
-  }
-
-  .glass {
-    @apply surface;
-  }
-  .glass-strong {
-    @apply surface-raised;
-  }
-
-  /* Glass over the saturated hero. A white tint on yellow leaves white text at
-     roughly 1.4:1 - the card looked right in isolation and was unreadable in
-     place. Tinting toward the void keeps the blur and the bevel and restores
-     contrast. */
-  .glass-void {
-    @apply rounded-glass;
-    background: rgba(10, 10, 10, 0.90);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      0 40px 80px -32px rgba(0, 0, 0, 0.7);
-  }
-
-  /* ------------------------------------------------------------- controls */
-
-  .label {
-    @apply text-[10px] font-medium uppercase tracking-label text-white/40;
-  }
-
-  .label-dark {
-    @apply text-[10px] font-medium uppercase tracking-label text-onyx/50;
-  }
-
-  .pill {
-    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium
-           transition-all duration-200 ease-liquid active:scale-95;
-  }
-
-  .pill-solid {
-    @apply pill bg-cyber text-onyx;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      0 8px 24px -8px rgba(253, 224, 71, 0.5);
-  }
-  .pill-solid:hover {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.45),
-      0 12px 32px -8px rgba(253, 224, 71, 0.65);
-  }
-
-  .pill-ghost {
-    @apply pill text-white/75;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  }
-  .pill-ghost:hover {
-    @apply text-white;
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .pill-dark {
-    @apply pill bg-onyx text-white;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
-  }
-
-  /* Segmented control, as on the reference health screen: a recessed track
-     with a raised thumb. The track is darker than its surroundings and the
-     thumb catches the top light - that inversion is what makes it read as a
-     physical switch rather than two buttons. */
-  .segment-track {
-    @apply inline-flex items-center gap-1 rounded-full p-1;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
-  }
-
-  .segment {
-    @apply rounded-full px-3.5 py-1.5 text-[12px] font-medium text-white/45
-           transition-all duration-200 ease-liquid;
-  }
-
-  .segment-on {
-    @apply text-onyx;
-    background: linear-gradient(180deg, #fde047, #eab308);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 4px 14px -4px rgba(253, 224, 71, 0.55);
-  }
-
-  .row-hover {
-    @apply transition-colors duration-150 hover:bg-white/[0.028];
-  }
-
-  /**
-   * Hero cards.
-   *
-   * A saturated wash at the top fading into the surface, the way the reference
-   * finance screens treat their primary figure. Not a flat tinted panel - the
-   * fade is what makes the colour read as light falling on the card rather than
-   * as a coloured box, and it keeps the lower half dark enough for the
-   * supporting type to stay legible.
-   */
-  .hero-loss {
-    @apply rounded-[26px];
-    background:
-      radial-gradient(120% 90% at 12% -10%, rgba(255, 93, 93, 0.30), transparent 58%),
-      linear-gradient(168deg, rgba(255, 93, 93, 0.16) 0%, rgba(255, 93, 93, 0.04) 42%, #101010 100%);
-    border: 1px solid rgba(255, 93, 93, 0.22);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 140, 140, 0.22),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  .hero-accent {
-    @apply rounded-[26px];
-    background:
-      radial-gradient(120% 90% at 12% -10%, rgba(253, 224, 71, 0.30), transparent 58%),
-      linear-gradient(168deg, rgba(253, 224, 71, 0.15) 0%, rgba(253, 224, 71, 0.04) 42%, #101010 100%);
-    border: 1px solid rgba(253, 224, 71, 0.26);
-    box-shadow:
-      inset 0 1px 0 rgba(253, 224, 71, 0.26),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  .hero-neutral {
-    @apply rounded-[26px];
-    background:
-      radial-gradient(120% 90% at 12% -10%, rgba(255, 255, 255, 0.10), transparent 58%),
-      linear-gradient(168deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 42%, #101010 100%);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      0 28px 56px -32px rgba(0, 0, 0, 0.95);
-  }
-
-  /**
-   * Frosted proportion disc. Area scales with share, the arc shows it exactly.
-   *
-   * Borrowed from the reference expense breakdowns because it genuinely suits
-   * failure-class mix better than a bar list: the classes differ by an order of
-   * magnitude and a disc encodes that in two channels at once.
-   */
-  .disc {
-    @apply rounded-full;
-    background:
-      radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.16), transparent 46%),
-      rgba(255, 255, 255, 0.055);
-    border: 1px solid rgba(255, 255, 255, 0.11);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-    backdrop-filter: blur(8px);
-  }
-
-  /* Glossy accent orb. Used sparingly - one per screen at most - as a light
-     source next to the number that matters. */
-  .orb {
-    @apply rounded-full;
-    background:
-      radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.9), transparent 42%),
-      linear-gradient(155deg, #fde047, #ca8a04);
-    box-shadow:
-      inset 0 -6px 14px rgba(120, 80, 0, 0.4),
-      0 10px 30px -8px rgba(253, 224, 71, 0.6);
-  }
+  /* The ambient light layer belongs to the dark system; here the equivalent
+     texture is the dot field on yellow. */
+  .ambient::before { content: none; }
+  .above { position: relative; z-index: 1; }
 }

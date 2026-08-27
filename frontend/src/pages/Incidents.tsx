@@ -17,7 +17,7 @@ export function Incidents() {
         <div>
           <Label>Detection</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Incidents</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/40">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/40">
             Each row is a slice of the authorisation stream whose success rate broke
             against a per-hour, seasonality-aware baseline — significant after
             Benjamini-Hochberg correction across every slice and window tested that
@@ -38,7 +38,7 @@ export function Incidents() {
       <Panel className="mt-8">
         {loading && <Skeleton rows={6} />}
         {data && data.length === 0 && (
-          <div className="px-6 py-16 text-center text-sm text-white/40">
+          <div className="px-6 py-16 text-center text-sm text-black/40">
             No slice cleared both the significance and the effect-size floor.
           </div>
         )}
@@ -46,7 +46,7 @@ export function Incidents() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-left">
               <thead>
-                <tr className="border-b border-white/[0.06]">
+                <tr className="border-b border-black/15">
                   {["Severity", "Slice", "Window (IST)", "Auth rate", "Declines", "Revenue exposed", "q-value", ""].map((h) => (
                     <th key={h} className="label px-6 py-3 font-medium">
                       {h}
@@ -54,7 +54,7 @@ export function Incidents() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-black/10">
                 {data.map((inc) => (
                   <tr key={inc.id} className="row-hover">
                     <td className="px-6 py-4">
@@ -62,27 +62,27 @@ export function Incidents() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold">{inc.slice}</p>
-                      <p className="mt-0.5 text-[11px] text-white/30">{inc.label}</p>
+                      <p className="mt-0.5 text-[11px] text-black/30">{inc.label}</p>
                     </td>
-                    <td className="tnum px-6 py-4 text-sm text-white/60">
+                    <td className="tnum px-6 py-4 text-sm text-black/60">
                       {timeIST(inc.window_start)}–{timeIST(inc.window_end)}
                     </td>
                     <td className="px-6 py-4">
                       <span className="tnum text-sm">
-                        <span className="text-white/40">{pct(inc.baseline_success_rate)}</span>
-                        <span className="mx-1.5 text-white/20">→</span>
+                        <span className="text-black/40">{pct(inc.baseline_success_rate)}</span>
+                        <span className="mx-1.5 text-black/20">→</span>
                         <span className="font-semibold text-signal-loss">
                           {pct(inc.observed_success_rate)}
                         </span>
                       </span>
                     </td>
-                    <td className="tnum px-6 py-4 text-sm text-white/60">
+                    <td className="tnum px-6 py-4 text-sm text-black/60">
                       {count(inc.affected_payment_count)}
                     </td>
                     <td className="tnum px-6 py-4 text-sm font-bold text-signal-loss">
                       {lakhs(inc.revenue_exposed_paise)}
                     </td>
-                    <td className="tnum px-6 py-4 font-mono text-[11px] text-white/35">
+                    <td className="tnum px-6 py-4 font-mono text-[11px] text-black/35">
                       {sci(inc.q_value)}
                     </td>
                     <td className="px-6 py-4 text-right">
