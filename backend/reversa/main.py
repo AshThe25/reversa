@@ -79,7 +79,12 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
     )
 
-    app.add_middleware(SecurityHeadersMiddleware)
+    # Order matters, and it is the reverse of the reading order: the last one
+    # added is the outermost. Security headers go on last so they are outermost,
+    # because the responses that most need them are the ones that never reach a
+    # route - the limiter's 429, the body cap's 413, and the error boundary's
+    # 500. Registered inside those, it decorated only the happy path, and an
+    # error body went out with no nosniff and no no-store.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,   # never "*" - see config
@@ -91,6 +96,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(BodyLimitMiddleware)
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     app.include_router(router)
 

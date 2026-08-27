@@ -101,6 +101,23 @@ def test_security_headers_are_on_every_response(client, demo_headers):
         assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
 
 
+def test_security_headers_survive_a_short_circuit(client):
+    """The responses that never reach a route are the ones that most need the
+    headers. A 413 from the body cap is produced by middleware sitting above the
+    router, so it is the cheapest proof that the header middleware is outermost;
+    when it was registered innermost this came back bare.
+    """
+    r = client.post(
+        "/api/windtunnel",
+        content=b"x" * (600 * 1024),
+        headers={"Content-Type": "application/json"},
+    )
+    assert r.status_code == 413
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["Cache-Control"] == "no-store"
+    assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
+
+
 def test_csp_forbids_inline_script(client):
     csp = client.get("/api/health").headers["Content-Security-Policy"]
     assert "'unsafe-eval'" not in csp

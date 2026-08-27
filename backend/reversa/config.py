@@ -6,12 +6,20 @@ because whoever clones this repo won't have my keys.
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 IST = ZoneInfo("Asia/Kolkata")
+
+# config.py -> reversa/ -> backend/ -> repo root. Anchoring the default database
+# to the repo rather than the working directory is not tidiness: with a relative
+# `sqlite:///./reversa.db`, seeding from `backend/` and running `pytest backend`
+# from the root silently used two different files, and the second one was empty.
+# Nothing errored - the API just returned 500s for a world that was right there.
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -24,7 +32,7 @@ class Settings(BaseSettings):
         env_file=".env", env_prefix="REVERSA_", extra="ignore"
     )
 
-    database_url: str = "sqlite:///./reversa.db"
+    database_url: str = f"sqlite:///{REPO_ROOT / 'reversa.db'}"
 
     # --- Razorpay -----------------------------------------------------------
     # Test-mode keys. Absent keys put the client in `offline` mode, where it
