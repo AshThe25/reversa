@@ -24,7 +24,13 @@ const NAV = [
  * item — the same inversion a physical switch uses, and the reason it reads as
  * a control rather than a row of links.
  */
-export function Shell({ children }: { children: React.ReactNode }) {
+export function Shell({
+  children,
+  onSignOut,
+}: {
+  children: React.ReactNode;
+  onSignOut?: () => void;
+}) {
   const location = useLocation();
   const role = currentRole();
 
@@ -56,10 +62,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {role && (
-            <div className="hidden shrink-0 pr-1 lg:block">
+            <div className="hidden shrink-0 items-center gap-2 pr-1 lg:flex">
               <Tag tone={role === "operator" ? "yellow" : "neutral"}>
-                {role === "operator" ? "OPERATOR" : "DEMO · read + simulate"}
+                {role === "operator" ? "OPERATOR" : "GUEST · read + simulate"}
               </Tag>
+              {onSignOut && (
+                <button
+                  onClick={onSignOut}
+                  title="End this session"
+                  className="rounded-full px-3 py-1.5 text-[11px] font-medium text-white/35
+                             transition-colors hover:text-white/80"
+                >
+                  Sign out
+                </button>
+              )}
             </div>
           )}
         </div>

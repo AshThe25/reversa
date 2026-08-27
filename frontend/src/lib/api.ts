@@ -22,6 +22,48 @@ import type {
 let token: string | null = null;
 let role: "demo" | "operator" | null = null;
 
+/**
+ * What survives a refresh, and what deliberately does not.
+ *
+ * The token itself stays in a module variable - never localStorage, never
+ * sessionStorage. Anything readable by an injected script is a credential you
+ * have handed away, and this one authorises money movement.
+ *
+ * What IS persisted is a single flag saying the visitor previously chose the
+ * demo role. That is not a credential: a demo session is unauthenticated by
+ * design, anyone can open one, and it carries no execute scope. So on reload we
+ * silently mint a fresh demo session and the judge never sees a login wall
+ * twice. The operator role has no such shortcut - it always costs the access
+ * code again, because that is the one that can move money.
+ */
+const ROLE_FLAG = "reversa.role";
+
+function rememberDemo() {
+  try {
+    sessionStorage.setItem(ROLE_FLAG, "demo");
+  } catch {
+    /* private mode, storage disabled - the app still works, just re-prompts */
+  }
+}
+
+export function preferredRole(): "demo" | null {
+  try {
+    return sessionStorage.getItem(ROLE_FLAG) === "demo" ? "demo" : null;
+  } catch {
+    return null;
+  }
+}
+
+export function signOut() {
+  token = null;
+  role = null;
+  try {
+    sessionStorage.removeItem(ROLE_FLAG);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -56,9 +98,11 @@ async function request<T>(
   const res = await fetch(path, { ...init, headers });
   const requestId = res.headers.get("X-Request-Id") ?? undefined;
 
-  if (res.status === 401 && attempt === 0) {
-    // Session expired or the server restarted with a fresh secret. Re-open
-    // once and retry; a second failure is real.
+  if (res.status === 401 && attempt === 0 && role === "demo") {
+    // Demo sessions are unauthenticated and cheap to re-mint, so an expired one
+    // (or a server restart with a fresh secret) should not interrupt a
+    // walkthrough. An operator session is NOT silently re-opened - losing it
+    // means re-entering the access code, which is the point of having one.
     await openSession();
     return request<T>(path, init, attempt + 1);
   }
@@ -107,11 +151,25 @@ export async function openSession(accessCode?: string): Promise<AuthResponse> {
     body: JSON.stringify(accessCode ? { access_code: accessCode } : {}),
   });
   if (!res.ok) {
-    throw new ApiError(res.status, "auth_failed", "Could not open a session.");
+    let code = "auth_failed";
+    try {
+      const body = await res.json();
+      code = body?.detail?.error ?? code;
+    } catch {
+      /* thin error body */
+    }
+    throw new ApiError(
+      res.status,
+      code,
+      code === "invalid_access_code"
+        ? "That access code was not accepted."
+        : "Could not reach the Reversa API.",
+    );
   }
   const body = (await res.json()) as AuthResponse;
   token = body.token;
   role = body.role;
+  if (role === "demo") rememberDemo();
   return body;
 }
 

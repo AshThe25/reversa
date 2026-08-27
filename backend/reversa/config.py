@@ -16,7 +16,12 @@ IST = ZoneInfo("Asia/Kolkata")
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_prefix="REFLOW_", extra="ignore"
+        # REVERSA_, not REFLOW_. The project was renamed early and a
+        # case-sensitive find/replace missed this one uppercase string, so for
+        # most of the build every documented environment variable was silently
+        # ignored - keys, secrets, access codes, all of it. Nothing failed
+        # loudly; the app just quietly ran with defaults forever.
+        env_file=".env", env_prefix="REVERSA_", extra="ignore"
     )
 
     database_url: str = "sqlite:///./reversa.db"

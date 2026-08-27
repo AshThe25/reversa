@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { Shell } from "./components/Shell";
 import { ErrorNote, Spinner } from "./components/primitives";
-import { openSession } from "./lib/api";
+import { openSession, preferredRole, signOut } from "./lib/api";
 import { TourProvider } from "./lib/tour";
 import { Audit } from "./pages/Audit";
 import { Autopsy } from "./pages/Autopsy";
@@ -14,47 +14,62 @@ import { Futures } from "./pages/Futures";
 import { IncidentDetail } from "./pages/IncidentDetail";
 import { Incidents } from "./pages/Incidents";
 import { Landing } from "./pages/Landing";
+import { SignIn } from "./pages/SignIn";
 import { Policies } from "./pages/Policies";
 import { Portfolio } from "./pages/Portfolio";
 
 /**
- * A session is opened before anything renders.
+ * Auth gate.
  *
- * Every route except the landing page needs one, and the demo session is
- * deliberately capped at read+simulate - so a visitor can drive the entire
- * product and still has no path to executing a strategy. That is enforced
- * server-side; this just gets the token.
+ * Nothing renders until there is a session, and the two roles differ in the
+ * only way that matters: a guest session carries read + simulate and can never
+ * execute, which is enforced server-side.
+ *
+ * A returning guest is signed straight back in rather than shown the door
+ * twice — a demo session is unauthenticated by design, so re-minting one is
+ * free and costs nothing in safety. An operator session is deliberately NOT
+ * restored; that one can move money, so it costs the access code every time.
  */
 export function App() {
   const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
+    if (preferredRole() !== "demo") {
+      setChecking(false);
+      return;
+    }
     openSession()
       .then(() => setReady(true))
       .catch(() =>
         setFailed(
           "Could not reach the Reversa API. Start it with: uvicorn reversa.main:app --port 8000",
         ),
-      );
+      )
+      .finally(() => setChecking(false));
   }, []);
 
   if (failed) {
     return (
-      <div className="grid min-h-full place-items-center p-8">
-        <div className="max-w-lg">
+      <div className="ambient grid min-h-full place-items-center p-8">
+        <div className="above max-w-lg">
           <ErrorNote message={failed} />
         </div>
       </div>
     );
   }
 
-  if (!ready) {
+  if (checking) {
     return (
-      <div className="grid min-h-full place-items-center">
-        <Spinner label="Opening session" />
+      <div className="ambient grid min-h-full place-items-center">
+        <Spinner label="Restoring session" />
       </div>
     );
+  }
+
+  if (!ready) {
+    return <SignIn onAuthenticated={() => setReady(true)} />;
   }
 
   return (
@@ -64,7 +79,7 @@ export function App() {
         <Route
           path="*"
           element={
-            <Shell>
+            <Shell onSignOut={() => { signOut(); setReady(false); }}>
               <Routes>
                 <Route path="/command" element={<CommandCentre />} />
                 <Route path="/incidents" element={<Incidents />} />

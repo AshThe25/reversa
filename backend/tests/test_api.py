@@ -203,3 +203,41 @@ def test_audit_events_expose_the_hash_chain(client, demo_headers):
     assert events
     for e in events:
         assert e["prev_hash"] and e["entry_hash"] and e["actor"]
+
+
+# --- configuration ----------------------------------------------------------
+
+def test_env_prefix_matches_the_documented_one():
+    """Regression, and a nasty one.
+
+    The project was renamed early and a case-sensitive find/replace missed the
+    uppercase env_prefix, so it stayed REFLOW_ while every doc, .env.example and
+    README table said REVERSA_. Nothing failed loudly - keys, secrets and access
+    codes were simply never read and the app ran on defaults forever. The
+    operator login silently degraded to a guest session, which is exactly the
+    class of bug that only surfaces in front of someone.
+    """
+    from reversa.config import Settings
+
+    assert Settings.model_config["env_prefix"] == "REVERSA_"
+
+
+def test_documented_variables_actually_bind(monkeypatch):
+    from reversa.config import Settings
+
+    monkeypatch.setenv("REVERSA_DEMO_ACCESS_CODE", "unit-test-code")
+    monkeypatch.setenv("REVERSA_ANTHROPIC_API_KEY", "sk-ant-unit-test")
+    settings = Settings(_env_file=None)
+    assert settings.demo_access_code == "unit-test-code"
+    assert settings.has_llm
+
+
+def test_a_live_razorpay_key_is_refused(monkeypatch):
+    """Everything here assumes test mode. A live key would let a demo dunning
+    run fire real payment links at real customers, and there is no override."""
+    import pytest as _pytest
+
+    from reversa.config import Settings
+
+    with _pytest.raises(Exception, match="live Razorpay key"):
+        Settings(razorpay_key_id="rzp_live_ABC123", _env_file=None)
