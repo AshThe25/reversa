@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 
-import { HeroArt } from "../components/HeroArt";
 import { Label } from "../components/primitives";
 import { api } from "../lib/api";
 import { count, lakhs, pct } from "../lib/format";
@@ -34,12 +33,12 @@ export function Landing() {
     : 0;
 
   return (
-    <div className="min-h-full bg-cyber">
+    <div className="min-h-full bg-plate">
       {/* ------------------------------------------------------------ nav */}
-      <header className="dot-field border-b-2 border-black bg-cyber">
-        <div className="relative z-10 mx-auto flex max-w-[1500px] items-center justify-between gap-6 px-6 py-4 sm:px-10">
+      <header className="bg-plate">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-6 px-6 py-5 sm:px-10">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center border-2 border-black bg-black font-display text-lg font-extrabold text-cyber">
+            <span className="grid h-10 w-10 place-items-center border-2 border-black bg-black font-display text-lg font-extrabold text-plate">
               R
             </span>
             <span className="font-display text-2xl font-extrabold uppercase tracking-tighter">
@@ -67,25 +66,44 @@ export function Landing() {
       </header>
 
       {/* ---------------------------------------------------------- hero */}
-      <section className="dot-field relative overflow-hidden border-b-2 border-black bg-cyber">
-        <div className="relative z-10 mx-auto grid max-w-[1500px] items-center gap-10 px-6 py-16 sm:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:py-20">
+      <section className="relative overflow-hidden border-b-2 border-black bg-plate">
+        {/*
+          The plate carries its own dot field, halftone and horizon, so it is the
+          background rather than something layered on one — the flat yellow only
+          shows where `cover` runs out. `bg-plate` is sampled off the file so the
+          two meet without a seam.
+
+          Below `md` there is no room beside the headline, so the plate stops
+          being a background and becomes a full-bleed band under the copy —
+          same artwork, stacked instead of alongside. Behind the text itself the
+          CSS dot field stands in.
+        */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 hidden bg-[url('/hero-plate.png')]
+                     bg-contain bg-right bg-no-repeat md:block"
+        />
+        <div aria-hidden className="dot-field pointer-events-none absolute inset-0 md:hidden" />
+
+        <div className="relative z-10 mx-auto grid min-h-[560px] max-w-[1500px] items-center gap-10
+                        px-6 py-16 sm:px-10 lg:min-h-[720px] lg:grid-cols-[1fr_0.8fr] lg:py-20">
           <div>
             <span className="chip gap-2 bg-white shadow-hard-sm">
               <span className="text-rzp">⚡</span> Counterfactual revenue recovery
             </span>
 
-            <h1 className="mt-7 font-display text-[clamp(2.6rem,7vw,5.2rem)] font-extrabold uppercase leading-[0.88] tracking-tighter">
-              What would
+            <h1 className="mt-7 font-display text-[clamp(2.6rem,6.4vw,4.9rem)] font-extrabold uppercase leading-[0.88] tracking-tighter">
+              Recover only
               <br />
-              have happened
+              <span className="text-stroke">what</span> wouldn&rsquo;t
               <br />
-              <span className="text-stroke">if we did</span> nothing?
+              come back
             </h1>
 
-            <p className="mt-7 max-w-xl text-[17px] font-medium leading-relaxed text-black/75">
-              Every payment-recovery tool asks what to do when a payment fails, then
-              books the money that arrives as money it recovered. Most of it was
-              arriving anyway.
+            <p className="mt-7 max-w-lg text-[17px] font-medium leading-relaxed text-black/75">
+              Every recovery tool books the money that arrives as money it recovered.
+              Most of it was arriving anyway. Reversa measures the difference against a
+              held-out control, and only spends on the part that moves.
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
@@ -109,9 +127,18 @@ export function Landing() {
             )}
           </div>
 
-          <div className="relative -mr-6 sm:-mr-10 lg:-my-10">
-            <HeroArt className="w-full drop-shadow-none" />
-          </div>
+          {/* From `lg` the right half of the grid is deliberately empty: it is
+              where the background plate's artwork lands. Below `md` the plate
+              is a real element here instead, bled to the section edges so its
+              horizon meets the bottom border. */}
+          <img
+            src="/hero-plate.png"
+            alt=""
+            aria-hidden
+            className="-mx-6 -mb-16 mt-12 w-[calc(100%+3rem)] max-w-none border-t-2 border-black
+                       sm:-mx-10 sm:w-[calc(100%+5rem)] md:hidden"
+          />
+          <div aria-hidden className="hidden lg:block" />
         </div>
       </section>
 

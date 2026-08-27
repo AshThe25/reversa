@@ -20,6 +20,9 @@ export default {
     extend: {
       colors: {
         cyber: { DEFAULT: "#f5d949", deep: "#e6c62f", wash: "#fdf3c4" },
+        // Sampled off the hero plate so the flat area of the section and the
+        // image meet without a seam. Do not "correct" this to `cyber`.
+        plate: "#fdd860",
         // Razorpay's blue as the secondary accent. One saturated support colour
         // against the yellow is the whole palette; a third would turn the
         // illustration into a paint chart.

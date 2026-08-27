@@ -10,3 +10,4 @@ dist/
 .DS_Store
 .pytest_cache/
 venv/
+frontend/tsconfig.tsbuildinfo
