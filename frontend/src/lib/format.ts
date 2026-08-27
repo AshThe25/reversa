@@ -17,15 +17,43 @@ const PAISE_PER_CRORE = 100 * 1_00_00_000; // 1e9
 
 /** Compact, for headline tiles: "₹31.72L", "₹1.24Cr". */
 export function lakhs(paise: number, digits = 2): string {
+  const { sign, whole, fraction, unit } = splitAmount(paise, digits);
+  return `${sign}₹${whole}${fraction}${unit}`;
+}
+
+/**
+ * An amount broken into the parts a headline figure sets differently.
+ *
+ * Large numerals read better when the fractional part is de-emphasised: the eye
+ * lands on the magnitude first and the precision second, and a column of them
+ * scans as a shape rather than a wall of digits. Splitting it here rather than
+ * at each call site means every headline in the product does it the same way.
+ */
+export function splitAmount(
+  paise: number,
+  digits = 2,
+): { sign: string; whole: string; fraction: string; unit: string } {
   const sign = paise < 0 ? "-" : "";
   const abs = Math.abs(paise);
-  if (abs >= PAISE_PER_CRORE) {
-    return `${sign}₹${(abs / PAISE_PER_CRORE).toFixed(digits)}Cr`;
-  }
-  if (abs >= PAISE_PER_LAKH / 10) {
-    return `${sign}₹${(abs / PAISE_PER_LAKH).toFixed(digits)}L`;
-  }
-  return `${sign}₹${Math.round(abs / PAISE_PER_RUPEE).toLocaleString("en-IN")}`;
+
+  const render = (value: number, unit: string) => {
+    const [whole, frac] = value.toFixed(digits).split(".");
+    return {
+      sign,
+      whole: Number(whole).toLocaleString("en-IN"),
+      fraction: frac ? `.${frac}` : "",
+      unit,
+    };
+  };
+
+  if (abs >= PAISE_PER_CRORE) return render(abs / PAISE_PER_CRORE, "Cr");
+  if (abs >= PAISE_PER_LAKH / 10) return render(abs / PAISE_PER_LAKH, "L");
+  return {
+    sign,
+    whole: Math.round(abs / PAISE_PER_RUPEE).toLocaleString("en-IN"),
+    fraction: "",
+    unit: "",
+  };
 }
 
 /** Exact, for tables and tooltips: "₹3,17,240". */

@@ -85,12 +85,13 @@ export function Futures() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Label>Counterfactual simulation</Label>
+          <Label>Counterfactual scenario analysis</Label>
           <h1 className="mt-2 text-5xl font-bold tracking-tight">Revenue Wind Tunnel</h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
-            Rewind the incident and run the alternative futures over the same cohort,
-            before spending a single customer interaction. Every branch starts from
-            identical reality and differs only in what we did.
+            Rewind the incident and evaluate every treatment strategy against the same
+            cohort before a single customer is contacted. Branches differ only in the
+            treatment applied — the population, the estimates and the constraints are
+            held identical.
           </p>
         </div>
 
@@ -108,7 +109,7 @@ export function Futures() {
             ))}
           </select>
           <Button onClick={simulate} disabled={!selected || running || !!incident?.ambiguous}>
-            {running ? "Simulating…" : "Simulate ▸"}
+            {running ? "Running…" : "Run analysis ▸"}
           </Button>
         </div>
       </div>
@@ -175,11 +176,11 @@ export function Futures() {
         </Glass>
 
         <Panel
-          title="Alternative futures"
+          title="Candidate strategies"
           hint={
             run
               ? `${count(run.candidate_count)} candidates · solved in ${duration(run.total_ms)}`
-              : "Press Simulate to evaluate every branch."
+              : "Run the analysis to evaluate every branch."
           }
         >
           {incident?.ambiguous && (
@@ -188,22 +189,22 @@ export function Futures() {
                 No plan is offered for this incident.
               </p>
               <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/35">
-                Simulating it would produce a confident-looking set of futures
-                built on a root cause the evidence does not support.
+                Running it would produce a confident-looking treatment plan built on a
+                root cause the evidence does not support.
               </p>
             </div>
           )}
 
           {!run && !running && !incident?.ambiguous && (
             <div className="px-6 py-16 text-center">
-              <p className="text-sm text-white/45">Nothing simulated yet.</p>
+              <p className="text-sm text-white/45">No analysis run yet.</p>
               <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
-                The tunnel solves a linear program over every candidate and every
-                legal action. Nothing here is precomputed.
+                Solves a constrained assignment over every eligible payment and every
+                permitted treatment. Nothing here is precomputed.
               </p>
               <div className="mt-6">
                 <Button onClick={simulate} disabled={!selected || !!incident?.ambiguous}>
-                  Simulate ▸
+                  Run analysis ▸
                 </Button>
               </div>
             </div>
@@ -266,7 +267,7 @@ export function Futures() {
                       boxShadow: "0 24px 48px -24px rgba(0,0,0,0.9)",
                     }}
                     labelStyle={{ color: "rgba(255,255,255,0.55)" }}
-                    formatter={(v: number) => [`₹${v}L`, "net incremental"]}
+                    formatter={(v: number) => [`₹${v}L`, "net incremental lift"]}
                   />
                   {/* Two-corner radius, not four. A 4-corner array makes
                       Recharts generate a rounded path whose corner radius can
@@ -298,14 +299,14 @@ export function Futures() {
       {run && (
         <Panel
           className="mt-6"
-          title="Every future, side by side"
-          hint="GROSS is what a conventional tool would report. INCREMENTAL is what the intervention actually adds on top of what was arriving anyway."
+          title="Strategy comparison"
+          hint="GROSS is what a conventional dunning tool books. INCREMENTAL is what the treatment adds over the baseline that was landing anyway."
         >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1200px] text-left">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  {["Scenario", "Gross", "Natural", "Incremental", "Actions", "Capacity", "Cost", "Net", "Wasted", "Friction", "Risk", ""].map((h) => (
+                  {["Strategy", "Gross", "Baseline", "Incremental", "Treatments", "Capacity", "Cost", "Net", "Non-incremental", "Friction", "Risk", ""].map((h) => (
                     <th key={h} className="label px-5 py-3 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -514,7 +515,7 @@ function ScenarioRow({
       </td>
       <td className="tnum px-5 py-4 text-sm text-white/50">{rupees(s.cost_paise)}</td>
       <td className="tnum px-5 py-4 text-sm font-semibold">{lakhs(s.net_incremental_paise)}</td>
-      <td className="tnum px-5 py-4 text-sm text-white/40" title="Actions aimed at customers the model expects to recover anyway">
+      <td className="tnum px-5 py-4 text-sm text-white/40" title="Treatments applied to payments the model expects to recover without them">
         {count(s.wasted_actions)}
       </td>
       <td className="tnum px-5 py-4 text-sm text-white/40">{s.friction.toFixed(1)}</td>
@@ -551,19 +552,19 @@ function DeployedResult({ report }: { report: ExecutionReport }) {
   return (
     <Panel
       className="mt-6"
-      title="Deployed and measured"
-      hint="Projection versus what the randomised holdout actually showed."
+      title="Deployed · measured against holdout"
+      hint="Projected lift versus the lift the randomised holdout actually measured."
     >
       <div className="grid gap-6 p-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-5">
           <div>
-            <Label>Projected before deploying</Label>
+            <Label>Projected lift</Label>
             <div className="tnum mt-1 text-2xl font-bold text-white/45">
               {lakhs(report.projected_incremental_paise)}
             </div>
           </div>
           <div>
-            <Label>Measured against the holdout</Label>
+            <Label>Measured lift</Label>
             <div className="tnum mt-1 text-5xl font-bold tracking-tight text-cyber">
               {lakhs(r.incremental_paise)}
             </div>

@@ -4,17 +4,19 @@ import {
 } from "recharts";
 
 import {
-  Button, ErrorNote, Panel, Severity, Skeleton, Stat, Tag,
+  Button, ErrorNote, Label, Money, Panel, Severity, Skeleton, Stat, Tag,
 } from "../components/primitives";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
-import { count, lakhs, pct, sci, timeIST, titleise } from "../lib/format";
+import { count, pct, sci, timeIST, titleise } from "../lib/format";
+import type { Investigation } from "../lib/types";
 
 export function IncidentDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const incident = useAsync(() => api.incident(id), [id]);
   const cohort = useAsync(() => api.cohort(id), [id]);
+  const probe = useAsync(() => api.investigation(id), [id]);
 
   const inc = incident.data;
   const co = cohort.data;
@@ -60,7 +62,7 @@ export function IncidentDetail() {
               </p>
             </div>
             <Button onClick={() => navigate(`/futures?incident=${inc.id}`)}>
-              Open the wind tunnel →
+              Model treatments →
             </Button>
           </div>
 
@@ -68,7 +70,7 @@ export function IncidentDetail() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <div className="panel p-6">
               <Stat
-                label="Success rate"
+                label="Auth rate"
                 value={
                   <span>
                     <span className="text-white/35">{pct(inc.baseline_success_rate)}</span>
@@ -82,30 +84,46 @@ export function IncidentDetail() {
             <div className="panel p-6">
               <Stat label="Payments affected" value={count(inc.affected_payment_count)} sub={`${count(inc.observed_volume)} in window`} />
             </div>
-            <div className="surface-alarm p-6">
-              <Stat label="Revenue exposed" value={lakhs(inc.revenue_exposed_paise)} tone="loss" />
+            {/* Once the cohort is loaded every figure comes from it, so the
+                denominators match. The incident's own exposure is measured on
+                the detector's peak window while the cohort spans the whole
+                episode - showing one against the other made "would self-recover"
+                exceed "revenue exposed". */}
+            <div className="hero-loss p-6">
+              <Label>Revenue exposed</Label>
+              <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
+                <Money
+                  paise={co ? co.revenue_exposed_paise : inc.revenue_exposed_paise}
+                  tone="loss"
+                />
+              </div>
+              <p className="mt-2 text-xs text-white/40">
+                {co ? `${count(co.member_count)} recoverable payments` : "peak window"}
+              </p>
             </div>
-            <div className="panel p-6">
-              <Stat
-                label="Would self-recover"
-                value={co ? lakhs(co.natural_recovery_paise) : "—"}
-                sub={co ? `${pct(co.natural_recovery_paise / Math.max(co.revenue_exposed_paise, 1))} of exposure` : undefined}
-                tone="muted"
-              />
+            <div className="hero-neutral p-6">
+              <Label>Baseline recovery</Label>
+              <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
+                {co ? <Money paise={co.natural_recovery_paise} tone="muted" /> : "—"}
+              </div>
+              <p className="mt-2 text-xs text-white/40">
+                {co
+                  ? `${pct(co.natural_recovery_paise / Math.max(co.revenue_exposed_paise, 1))} of exposure — lands with no treatment`
+                  : ""}
+              </p>
             </div>
-            <div className="surface-accent p-6">
-              <Stat
-                label="Addressable"
-                value={co ? lakhs(co.addressable_paise) : "—"}
-                sub="exposure minus what arrives anyway"
-                tone="yellow"
-              />
+            <div className="hero-accent p-6">
+              <Label>Addressable</Label>
+              <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
+                {co ? <Money paise={co.addressable_paise} tone="yellow" /> : "—"}
+              </div>
+              <p className="mt-2 text-xs text-white/40">the only part worth treating</p>
             </div>
           </div>
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
             {/* ------------------------------------------------- chart */}
-            <Panel title="Success rate through the incident" hint="Each point is the most significant window ending at that tick.">
+            <Panel title="Auth rate through the incident" hint="Each point is the most significant window ending at that tick.">
               <div className="h-72 p-6">
                 {series.length > 1 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -150,7 +168,7 @@ export function IncidentDetail() {
             </Panel>
 
             {/* --------------------------------------------- error mix */}
-            <Panel title="Failure mix in the window" hint="Concentration in one reason code is what separates an infrastructure fault from ordinary noise.">
+            <Panel title="Decline-code mix" hint="Concentration in one reason code separates an infrastructure fault from ordinary noise.">
               <div className="space-y-3 p-6">
                 {inc.failure_mix.slice(0, 8).map((row) => {
                   const share = row.count / Math.max(inc.affected_payment_count, 1);
@@ -174,6 +192,8 @@ export function IncidentDetail() {
             </Panel>
           </div>
 
+          {probe.data && <InvestigationPanel finding={probe.data} />}
+
           {/* ---------------------------------------------- why detected */}
           <Panel className="mt-6" title="Why this was called an incident" hint="The detector's own reasoning, not a summary of it.">
             <div className="p-6">
@@ -196,7 +216,7 @@ export function IncidentDetail() {
           {co && co.exceptions > 0 && (
             <Panel
               className="mt-6"
-              title="Payments we could not act on"
+              title="Suppressed by a compliance gate"
               hint="Surfaced by name rather than quietly dropped. An honest exception list is worth more than a confident wrong answer."
             >
               <div className="flex flex-wrap gap-3 p-6">
@@ -211,6 +231,136 @@ export function IncidentDetail() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * Root-cause finding, and the evidence it rests on.
+ *
+ * Every claim cites evidence by id, and a citation that does not resolve
+ * rejects the whole finding — the groundedness figure reports that check. The
+ * refusal state gets more visual weight than the confident one on purpose:
+ * knowing when not to act is the harder property to demonstrate.
+ */
+function InvestigationPanel({ finding }: { finding: Investigation }) {
+  const supporting = new Set(finding.supporting_evidence);
+  const contradicting = new Set(finding.contradicting_evidence);
+
+  return (
+    <div
+      className={`mt-6 ${
+        finding.insufficient_evidence ? "surface-alarm" : "surface"
+      } overflow-hidden`}
+    >
+      <div className="grid gap-8 p-6 lg:grid-cols-[1.05fr_1fr]">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label>Root-cause finding</Label>
+            <Tag tone={finding.produced_by === "llm" ? "info" : "neutral"}>
+              {finding.produced_by === "llm" ? "language model" : "rule-based"}
+            </Tag>
+            {finding.produced_by === "llm" && (
+              <Tag tone={finding.groundedness === 1 ? "good" : "bad"}>
+                {pct(finding.groundedness, 0)} grounded
+              </Tag>
+            )}
+          </div>
+
+          <h2
+            className={`mt-3 text-2xl font-bold tracking-tight ${
+              finding.insufficient_evidence ? "text-signal-loss" : ""
+            }`}
+          >
+            {finding.insufficient_evidence
+              ? "Root cause not attributable"
+              : finding.root_cause_label}
+          </h2>
+
+          <div className="mt-4 flex items-center gap-4">
+            <div>
+              <Label>Confidence</Label>
+              <div
+                className={`tnum mt-1 text-3xl font-bold ${
+                  finding.actionable ? "text-cyber" : "text-signal-loss"
+                }`}
+              >
+                {pct(finding.confidence, 0)}
+              </div>
+            </div>
+            <div className="h-10 w-px bg-white/10" />
+            <div>
+              <Label>Automation</Label>
+              <p className="mt-1 text-sm font-semibold">
+                {finding.actionable ? "permitted" : "withheld"}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-5 max-w-2xl text-[13px] leading-relaxed text-white/60">
+            {finding.hypothesis}
+          </p>
+
+          <div className="mt-5 rounded-[18px] border border-white/[0.08] bg-black/25 px-5 py-4">
+            <Label>Recommended next step</Label>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-white/60">
+              {finding.recommended_next_step}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <Label>
+            Evidence · {finding.evidence.length} facts (
+            {finding.supporting_evidence.length} supporting,{" "}
+            {finding.contradicting_evidence.length} contradicting)
+          </Label>
+          <div className="mt-4 space-y-2">
+            {finding.evidence.map((e) => {
+              const cited = supporting.has(e.id) || contradicting.has(e.id);
+              const against = contradicting.has(e.id);
+              return (
+                <div
+                  key={e.id}
+                  className={`flex gap-3 rounded-[16px] border px-4 py-3 ${
+                    against
+                      ? "border-signal-loss/25 bg-signal-loss/[0.05]"
+                      : cited
+                        ? "border-cyber/25 bg-cyber/[0.04]"
+                        : "border-white/[0.06] bg-white/[0.015] opacity-55"
+                  }`}
+                >
+                  <span
+                    className={`mt-0.5 font-mono text-[11px] ${
+                      against ? "text-signal-loss" : cited ? "text-cyber" : "text-white/30"
+                    }`}
+                  >
+                    {against ? "−" : cited ? "+" : "·"}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[12px] leading-relaxed text-white/70">{e.label}</p>
+                    <p className="mt-1 font-mono text-[10px] text-white/30">
+                      {e.id} · {e.source}
+                      {e.sample_size ? ` · n=${e.sample_size.toLocaleString("en-IN")}` : ""}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-white/[0.06] px-6 py-4">
+        <p className="max-w-4xl text-[11px] leading-relaxed text-white/35">
+          The model may not invent a hypothesis — the label comes from a fixed
+          vocabulary — and every evidence id it cites is checked against the facts
+          actually collected. One fabricated citation rejects the whole response and
+          the rule-based investigator answers instead. No money path reads this
+          finding; it gates whether a plan may be built at all.
+        </p>
+      </div>
     </div>
   );
 }

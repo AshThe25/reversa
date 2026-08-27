@@ -292,6 +292,29 @@ def _failure_mix(db: DbSession, row: Incident) -> list[dict]:
     ]
 
 
+@router.get("/incidents/{incident_id}/investigation")
+def investigation(incident_id: str, db: DbSession = Depends(get_session),
+                  _: Session = Depends(requires_read)) -> dict:
+    """Evidence, and the root-cause finding weighed from it.
+
+    Every claim in the finding cites evidence by id, and a citation that does
+    not resolve rejects the whole response - that check is what the groundedness
+    score reports. INSUFFICIENT_EVIDENCE is a first-class answer here, not an
+    error path.
+    """
+    from reversa.ai.investigator import investigate
+    from reversa.engines.evidence_engine import collect
+
+    detected = engine_state.detected_by_id(db, incident_id)
+    if detected is None:
+        raise HTTPException(status_code=404, detail={"error": "unknown_incident"})
+
+    st = engine_state.get(db)
+    evidence = collect(db, detected, now=st.clock.now)
+    finding = investigate(evidence)
+    return {"incident_id": incident_id, **finding.as_dict()}
+
+
 @router.get("/incidents/{incident_id}/cohort")
 def get_cohort(incident_id: str, db: DbSession = Depends(get_session),
                _: Session = Depends(requires_read)) -> dict:

@@ -301,42 +301,46 @@ def run(
 
     results: list[ScenarioResult] = [
         _score(
-            "do_nothing", "DO NOTHING",
-            "No intervention. The counterfactual every other column is measured "
-            "against.",
+            "do_nothing", "NO TREATMENT",
+            "The control arm. Baseline recovery with zero intervention - every "
+            "other strategy is measured as lift over this.",
             solve_do_nothing(candidates), candidates, natural,
         ),
         _score(
-            "retry_now", "RETRY NOW",
-            "Re-present every eligible payment immediately, largest expected "
-            "value first.",
+            "retry_now", "IMMEDIATE RETRY",
+            "Re-present every eligible authorisation at once, highest expected "
+            "value first. The default dunning behaviour in most stacks.",
             solve_fixed_action(candidates, ActionType.RETRY_NOW, capacity),
             candidates, natural,
         ),
         _score(
-            "retry_delayed", f"RETRY +{DELAYED_RETRY_MINUTES}M",
-            f"Wait {DELAYED_RETRY_MINUTES} minutes for the rail to stabilise, "
-            "then re-present.",
+            "retry_delayed", f"DEFERRED RETRY +{DELAYED_RETRY_MINUTES}M",
+            f"Hold {DELAYED_RETRY_MINUTES} minutes for the rail to stabilise "
+            "before re-presenting. Trades intent decay against a higher auth "
+            "rate on the retry.",
             solve_fixed_action(delayed, ActionType.RETRY_DELAYED, capacity),
             delayed, natural,
         ),
         _score(
-            "payment_link", "LINK EVERYONE",
-            "Send a fresh payment link to every eligible customer until link "
-            "capacity runs out.",
+            "payment_link", "PAYMENT LINK - ALL",
+            "Issue a fresh payment link to every eligible customer until link "
+            "capacity is exhausted.",
             solve_fixed_action(candidates, ActionType.PAYMENT_LINK, capacity),
             candidates, natural,
         ),
         _score(
-            "greedy", "GREEDY",
+            "greedy", "GREEDY HEURISTIC",
             "Take the highest-value move available, repeatedly, until capacity "
-            "is gone. Included to show what the exact solve is worth.",
+            "runs out. Included so the exact solve's advantage is measured "
+            "rather than asserted.",
             solve_greedy(candidates, capacity), candidates, natural,
         ),
         _score(
-            "optimal", "OPTIMAL",
-            "Maximise expected incremental revenue net of cost, subject to "
-            "capacity and every compliance gate.",
+            "optimal", "CONSTRAINED OPTIMUM",
+            "Maximises expected incremental revenue net of treatment cost, "
+            "subject to per-channel capacity and every compliance gate. Solved "
+            "exactly - the constraint matrix is totally unimodular, so the LP "
+            "relaxation is integral.",
             solve(candidates, capacity), candidates, natural,
         ),
     ]
@@ -346,7 +350,8 @@ def run(
         plan = solve(narrowed, capacity) if narrowed else solve_do_nothing(candidates)
         scored = _score(
             "policy", "YOUR POLICY",
-            f"{policy.name}: the optimal plan, restricted to what your rules allow.",
+            f"{policy.name}: the constrained optimum, further restricted to what "
+            "your rules permit.",
             plan, candidates, natural,
         )
         scored.notes.append(

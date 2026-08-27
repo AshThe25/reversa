@@ -37,19 +37,19 @@ export const STEPS: TourStep[] = [
   {
     path: "/futures",
     title: "This is the whole product",
-    body: "Rewind the incident and run the alternative futures. Watch what happens to DO NOTHING - most of the exposed revenue arrives regardless. Every other column is only worth what it adds on top of that.",
-    cta: "Run the wind tunnel",
+    body: "Rewind the incident and evaluate every treatment strategy against the same cohort. Watch NO TREATMENT - most of the exposed revenue lands regardless. Every other strategy is only worth the lift it adds over that.",
+    cta: "Run the analysis",
   },
   {
     path: "/portfolio",
     title: "Why these customers",
-    body: "Capacity is finite: 30 payment links, because that is what Razorpay test mode allows. The optimiser spends them on the payments where an action changes the outcome, not the ones with the biggest numbers.",
+    body: "Capacity is finite: 30 payment links, because that is Razorpay test mode's ceiling. The optimiser spends them where a treatment changes the outcome, not where the ticket is largest.",
     cta: "Look at the decisions",
   },
   {
     path: "/experiments",
     title: "Measured, not claimed",
-    body: "A random slice of the cohort was deliberately left alone. The difference between the treated group and that holdout is the only number here that can honestly be called incremental.",
+    body: "A random slice of the plan was deliberately withheld. Treatment minus holdout, with a confidence interval, is the only number here that can honestly be called incremental.",
     cta: "See the result",
   },
   {

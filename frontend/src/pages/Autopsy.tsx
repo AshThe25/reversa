@@ -36,9 +36,9 @@ export function Autopsy() {
       <Label>Post-incident forensics</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Where did the money go?</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
-        Exposure decomposed into what arrived without help, what the intervention
-        actually caused, and what was lost anyway. The last number is the largest
-        one, and it stays on the page.
+        Exposure decomposed into baseline recovery, the lift the treatment actually
+        caused, and unrecovered revenue. The last number is the largest one, and it
+        stays on the page.
       </p>
 
       {experiments.error && (
@@ -53,8 +53,8 @@ export function Autopsy() {
           <div className="px-6 py-16 text-center">
             <p className="text-sm text-white/50">No concluded run to dissect yet.</p>
             <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
-              An autopsy needs a deployed strategy with measured outcomes. A demo
-              session can simulate but not execute.
+              A read-out needs a deployed strategy with measured outcomes. A guest
+              session can model but not execute.
             </p>
           </div>
         </Panel>
@@ -81,13 +81,13 @@ function AutopsyBody({
 
   const stages = [
     { label: "Revenue exposed", value: exposure, tone: "loss" as const,
-      note: "the cohort at the moment of failure" },
-    { label: "Naturally recovered", value: r.natural_recovery_paise, tone: "muted" as const,
-      note: "would have arrived with no intervention" },
-    { label: "Incremental recovery", value: r.incremental_paise, tone: "yellow" as const,
-      note: "attributable to what we did" },
-    { label: "Remaining loss", value: lost, tone: "loss" as const,
-      note: "did not come back at all" },
+      note: "cohort exposure at time of decline" },
+    { label: "Baseline recovery", value: r.natural_recovery_paise, tone: "muted" as const,
+      note: "would have landed with no treatment" },
+    { label: "Incremental lift", value: r.incremental_paise, tone: "yellow" as const,
+      note: "attributable to the treatment" },
+    { label: "Unrecovered", value: lost, tone: "loss" as const,
+      note: "written off" },
   ];
 
   return (
@@ -110,17 +110,17 @@ function AutopsyBody({
           </div>
 
           <div className="mt-8">
-            <Label>The decomposition</Label>
+            <Label>Attribution</Label>
             <div className="mt-3 flex h-14 w-full overflow-hidden rounded-full border border-white/10">
               <Segment width={r.natural_recovery_paise / exposure}
-                       className="bg-white/[0.10] text-white/60" text="natural" />
+                       className="bg-white/[0.10] text-white/60" text="baseline" />
               <Segment width={r.incremental_paise / exposure}
                        className="bg-cyber text-onyx font-bold" text="incremental" />
               <Segment width={lost / exposure}
-                       className="bg-signal-loss/20 text-signal-loss" text="lost" />
+                       className="bg-signal-loss/20 text-signal-loss" text="unrecovered" />
             </div>
             <p className="mt-4 max-w-4xl text-[12px] leading-relaxed text-white/45">
-              A conventional recovery tool would report{" "}
+              A conventional dunning tool would book{" "}
               <span className="tnum font-semibold text-white">
                 {lakhs(r.gross_recovery_paise)}
               </span>{" "}
@@ -128,27 +128,27 @@ function AutopsyBody({
               <span className="tnum font-semibold text-cyber">
                 {lakhs(r.incremental_paise)}
               </span>{" "}
-              of that is attributable to the intervention — the rest was arriving
-              regardless, and the holdout is how we know the difference.
+              of that is attributable to the treatment — the rest was landing regardless,
+              and the holdout is how we know the difference.
             </p>
           </div>
         </div>
       </Panel>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="What worked" hint="Ranked by contribution.">
+        <Panel title="Performance" hint="Ranked by contribution.">
           <div className="space-y-4 p-6">
-            <Line label="Recovery rate lift"
+            <Line label="Recovery-rate lift"
                   value={`${(r.rate_lift * 100).toFixed(2)}%`}
                   note={`treated ${pct(treatment?.recovery_rate ?? 0)} vs holdout ${pct(r.arms["holdout"]?.recovery_rate ?? 0)}`} />
-            <Line label="Net of intervention cost" value={lakhs(r.net_paise)}
-                  note={`${rupees(r.cost_paise)} spent across ${count(treatment?.payments ?? 0)} treated payments`} />
+            <Line label="Net of treatment cost" value={lakhs(r.net_paise)}
+                  note={`${rupees(r.cost_paise)} across ${count(treatment?.payments ?? 0)} treated payments`} />
             <Line label="Cost of measurement" value={lakhs(r.measurement_cost_paise)}
-                  note="revenue the holdout was deliberately not chased for" />
+                  note="revenue the holdout was deliberately not worked" />
           </div>
         </Panel>
 
-        <Panel title="What the run tells us to change" hint="The system's own reading of its result.">
+        <Panel title="Read-out" hint="The system's own assessment of its result.">
           <div className="p-6">
             {r.warnings.length > 0 ? (
               <ul className="space-y-3">

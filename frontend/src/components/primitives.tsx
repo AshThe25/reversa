@@ -9,6 +9,8 @@
 
 import type { ReactNode } from "react";
 
+import { splitAmount } from "../lib/format";
+
 /* ---------------------------------------------------------------- labels */
 
 export function Label({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
@@ -150,6 +152,45 @@ export function Tag({
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${tones[tone]}`}
     >
       {children}
+    </span>
+  );
+}
+
+/* ----------------------------------------------------------------- money */
+
+/**
+ * A headline amount.
+ *
+ * The fractional part and the unit are set lighter than the magnitude. It is a
+ * small thing that does most of the work in making a figure feel designed
+ * rather than printed - the eye gets the order of magnitude immediately and the
+ * precision only if it looks for it.
+ */
+export function Money({
+  paise,
+  className = "",
+  tone = "default",
+}: {
+  paise: number;
+  className?: string;
+  tone?: "default" | "yellow" | "muted" | "loss";
+}) {
+  const { sign, whole, fraction, unit } = splitAmount(paise);
+  const colour = {
+    default: "text-white",
+    yellow: "text-cyber",
+    muted: "text-white/45",
+    loss: "text-signal-loss",
+  }[tone];
+  return (
+    <span className={`tnum ${colour} ${className}`}>
+      {sign}
+      <span className="opacity-45">₹</span>
+      {whole}
+      <span className="opacity-45">
+        {fraction}
+        {unit}
+      </span>
     </span>
   );
 }

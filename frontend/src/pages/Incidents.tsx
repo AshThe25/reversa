@@ -18,8 +18,8 @@ export function Incidents() {
           <Label>Detection</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Incidents</h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/40">
-            Each row is a slice of the payment stream whose success rate broke against
-            a per-hour, seasonality-aware baseline — significant after
+            Each row is a slice of the authorisation stream whose success rate broke
+            against a per-hour, seasonality-aware baseline — significant after
             Benjamini-Hochberg correction across every slice and window tested that
             tick, and large enough to be worth an operator's attention.
           </p>
@@ -47,7 +47,7 @@ export function Incidents() {
             <table className="w-full min-w-[1000px] text-left">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  {["Severity", "Slice", "Window (IST)", "Success rate", "Payments", "Revenue exposed", "q-value", ""].map((h) => (
+                  {["Severity", "Slice", "Window (IST)", "Auth rate", "Declines", "Revenue exposed", "q-value", ""].map((h) => (
                     <th key={h} className="label px-6 py-3 font-medium">
                       {h}
                     </th>

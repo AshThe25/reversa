@@ -65,11 +65,12 @@ export function Landing() {
                 it was arriving anyway.
               </p>
               <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-onyx/70">
-                Reversa simulates the alternative futures for an affected cohort
+                Reversa evaluates every treatment strategy against the affected
+                cohort
                 <em className="not-italic font-semibold text-onyx"> before </em>
-                spending a single customer interaction, allocates scarce capacity
-                to where an intervention actually changes the outcome, then proves
-                what it caused against a randomised holdout.
+                a single customer is contacted, allocates scarce capacity by
+                expected incremental value, then measures what it actually caused
+                against a randomised holdout.
               </p>
 
               <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -158,18 +159,18 @@ export function Landing() {
             <Concept
               step="01"
               title="Detect"
-              body="Slice the payment stream by method and instrument, test every slice against a seasonality-aware baseline, and control the false-discovery rate across hundreds of simultaneous tests. One outage reports as one incident, not seven alerts."
+              body="Slice the authorisation stream by method and instrument, test each against a seasonality-aware baseline, and control the false-discovery rate across hundreds of simultaneous tests. One PSP outage reports as one incident, not seven alerts."
             />
             <Concept
               step="02"
-              title="Simulate"
-              body="Rewind the incident and evaluate the alternative futures over the same cohort. Do nothing. Retry now. Wait fifteen minutes. Send links. Optimal. The aggressive strategy is usually not the best one."
+              title="Model"
+              body="Rewind the incident and evaluate every treatment against the same cohort. No treatment. Immediate retry. Deferred retry. Payment link. Constrained optimum. The most aggressive strategy is rarely the best one."
               accent
             />
             <Concept
               step="03"
               title="Prove"
-              body="Randomly withhold treatment from a slice of the cohort. The difference between the treated group and that holdout, with a confidence interval, is the only number here that can honestly be called incremental."
+              body="Withhold treatment from a randomly assigned slice of the plan, stratified on order value. Treatment minus holdout, with a confidence interval, is the only number here that can honestly be called incremental."
             />
           </div>
 

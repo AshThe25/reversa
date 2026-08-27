@@ -9,9 +9,9 @@ import { ApiError, openSession } from "../lib/api";
  * Two doors, and the difference between them is the product's whole safety
  * story rather than a permissions detail:
  *
- *   Demo — one click, no credential, read + simulate. Every future in the wind
- *     tunnel is explorable and there is no path from this browser to moving
- *     money. That is enforced server-side; the disabled buttons are a courtesy.
+ *   Demo — one click, no credential, read + simulate. Every strategy is
+ *     explorable and there is no path from this browser to moving money. That is
+ *     enforced server-side; the disabled buttons are a courtesy.
  *
  *   Operator — an access code, and the execute scope that comes with it.
  *
@@ -64,9 +64,9 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
           <span className="text-white/35">before reality.</span>
         </h1>
         <p className="mt-4 text-[13px] leading-relaxed text-white/45">
-          Test recovery strategies against a simulation of the affected cohort
-          before spending a customer interaction — then prove which one created
-          incremental revenue.
+          Evaluate dunning strategies against the affected cohort before a
+          single customer is contacted, then measure which one produced
+          incremental revenue against a randomised holdout.
         </p>
 
         <div className="surface mt-9 p-6">
@@ -79,8 +79,8 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
           </button>
 
           <p className="mt-3 text-center text-[11px] leading-relaxed text-white/35">
-            Read and simulate. You can run every future in the wind tunnel;
-            deploying a strategy is refused server-side.
+            Read and model. Every strategy is explorable; deploying one is
+            refused server-side.
           </p>
 
           <div className="my-6 flex items-center gap-3">

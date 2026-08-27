@@ -257,6 +257,65 @@
     @apply transition-colors duration-150 hover:bg-white/[0.028];
   }
 
+  /**
+   * Hero cards.
+   *
+   * A saturated wash at the top fading into the surface, the way the reference
+   * finance screens treat their primary figure. Not a flat tinted panel - the
+   * fade is what makes the colour read as light falling on the card rather than
+   * as a coloured box, and it keeps the lower half dark enough for the
+   * supporting type to stay legible.
+   */
+  .hero-loss {
+    @apply rounded-[26px];
+    background:
+      radial-gradient(120% 90% at 12% -10%, rgba(255, 93, 93, 0.30), transparent 58%),
+      linear-gradient(168deg, rgba(255, 93, 93, 0.16) 0%, rgba(255, 93, 93, 0.04) 42%, #101010 100%);
+    border: 1px solid rgba(255, 93, 93, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 140, 140, 0.22),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  .hero-accent {
+    @apply rounded-[26px];
+    background:
+      radial-gradient(120% 90% at 12% -10%, rgba(253, 224, 71, 0.30), transparent 58%),
+      linear-gradient(168deg, rgba(253, 224, 71, 0.15) 0%, rgba(253, 224, 71, 0.04) 42%, #101010 100%);
+    border: 1px solid rgba(253, 224, 71, 0.26);
+    box-shadow:
+      inset 0 1px 0 rgba(253, 224, 71, 0.26),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  .hero-neutral {
+    @apply rounded-[26px];
+    background:
+      radial-gradient(120% 90% at 12% -10%, rgba(255, 255, 255, 0.10), transparent 58%),
+      linear-gradient(168deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.02) 42%, #101010 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 28px 56px -32px rgba(0, 0, 0, 0.95);
+  }
+
+  /**
+   * Frosted proportion disc. Area scales with share, the arc shows it exactly.
+   *
+   * Borrowed from the reference expense breakdowns because it genuinely suits
+   * failure-class mix better than a bar list: the classes differ by an order of
+   * magnitude and a disc encodes that in two channels at once.
+   */
+  .disc {
+    @apply rounded-full;
+    background:
+      radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.16), transparent 46%),
+      rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(8px);
+  }
+
   /* Glossy accent orb. Used sparingly - one per screen at most - as a light
      source next to the number that matters. */
   .orb {

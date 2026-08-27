@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import {
-  Bar, Button, ErrorNote, Label, Panel, Severity, Skeleton, Stat, Tag,
+  Bar, Button, ErrorNote, Label, Money, Panel, Severity, Skeleton, Tag,
 } from "../components/primitives";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
@@ -47,52 +47,64 @@ export function CommandCentre() {
 
       {/* ------------------------------------------------- headline tiles */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="surface-alarm p-6">
-          <Stat
-            label="Revenue at risk"
-            value={o ? lakhs(o.revenue_at_risk_paise) : "—"}
-            sub={o ? `${count(o.live_failed_payments)} failed payments today` : undefined}
-            tone="loss"
-          />
+        <div className="hero-loss p-6">
+          <Label>Revenue at risk</Label>
+          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+            {o ? <Money paise={o.revenue_at_risk_paise} tone="loss" /> : "—"}
+          </div>
+          <p className="mt-2 text-xs text-white/40">
+            {o ? `${count(o.live_failed_payments)} declined authorisations today` : ""}
+          </p>
         </div>
-        <div className="panel p-6">
-          <Stat
-            label="Would self-recover"
-            value={o ? lakhs(o.natural_recovery_paise) : "—"}
-            sub="measured from the holdout arm"
-            tone="muted"
-            hint="Revenue that arrives with no intervention at all. Conventional tools count this as recovered."
-          />
+
+        <div
+          className="hero-neutral p-6"
+          title="Revenue that lands with no treatment at all. Conventional dunning tools book this as recovered."
+        >
+          <Label>Baseline recovery</Label>
+          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+            {o ? <Money paise={o.natural_recovery_paise} tone="muted" /> : "—"}
+          </div>
+          <p className="mt-2 text-xs text-white/40">observed in the holdout arm</p>
         </div>
-        <div className="surface-accent p-6">
-          <Stat
-            label="Incremental recovery"
-            value={o ? lakhs(o.incremental_recovery_paise) : "—"}
-            sub={
-              o && grossSoFar > 0
-                ? `${pct(o.incremental_recovery_paise / grossSoFar)} of gross`
-                : "no concluded experiments yet"
-            }
-            tone="yellow"
-            hint="Treatment minus holdout. The only figure attributable to intervention."
-          />
+
+        <div
+          className="hero-accent p-6"
+          title="Treatment minus holdout. The only figure attributable to the intervention."
+        >
+          <Label>Incremental lift</Label>
+          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+            {o ? <Money paise={o.incremental_recovery_paise} tone="yellow" /> : "—"}
+          </div>
+          <p className="mt-2 text-xs text-white/40">
+            {o && grossSoFar > 0
+              ? `${pct(o.incremental_recovery_paise / grossSoFar)} of gross recovery`
+              : "no concluded test yet"}
+          </p>
         </div>
-        <div className="panel p-6">
-          <Stat
-            label="Active incidents"
-            value={o ? `${o.active_incidents}` : "—"}
-            sub={o ? `${o.total_incidents} detected today` : undefined}
-          />
+
+        <div className="hero-neutral p-6">
+          <Label>Open incidents</Label>
+          <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
+            {o ? o.active_incidents : "—"}
+          </div>
+          <p className="mt-2 text-xs text-white/40">
+            {o ? `${o.total_incidents} detected today` : ""}
+          </p>
         </div>
-        <div className="panel p-6">
-          <Label>Intervention capacity</Label>
-          <div className="tnum mt-2 text-3xl font-bold tracking-tight">
-            {o ? `${count(o.capacity.used)} / ${count(o.capacity.total)}` : "—"}
+
+        <div className="hero-neutral p-6">
+          <Label>Treatment capacity</Label>
+          <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
+            {o ? count(o.capacity.used) : "—"}
+            <span className="text-white/35">
+              {o ? ` / ${count(o.capacity.total)}` : ""}
+            </span>
           </div>
           <div className="mt-3">
             <Bar value={o?.capacity.used ?? 0} max={o?.capacity.total ?? 1} />
           </div>
-          <p className="mt-2 text-xs text-white/35">consumed this session</p>
+          <p className="mt-2 text-xs text-white/40">consumed this session</p>
         </div>
       </div>
 
@@ -100,8 +112,8 @@ export function CommandCentre() {
       {o && grossSoFar > 0 && (
         <Panel
           className="mt-6"
-          title="Where the money went"
-          hint="Exposure decomposed into what arrived on its own and what we caused. Sourced from concluded experiments, not projections."
+          title="Recovery attribution"
+          hint="Exposure decomposed into baseline recovery and incremental lift. Sourced from concluded tests, not projections."
           action={
             <Button variant="ghost" onClick={() => navigate("/autopsy")}>
               Full autopsy →
@@ -115,11 +127,11 @@ export function CommandCentre() {
               incremental={o.incremental_recovery_paise}
             />
             <div className="mt-4 grid gap-4 text-sm sm:grid-cols-3">
-              <Legend swatch="bg-white/[0.15]" label="Naturally recovered" value={lakhs(o.natural_recovery_paise)} />
-              <Legend swatch="bg-cyber" label="Incremental (attributable)" value={lakhs(o.incremental_recovery_paise)} />
+              <Legend swatch="bg-white/[0.15]" label="Baseline (would have landed anyway)" value={lakhs(o.natural_recovery_paise)} />
+              <Legend swatch="bg-cyber" label="Incremental lift (attributable)" value={lakhs(o.incremental_recovery_paise)} />
               <Legend
                 swatch="bg-signal-loss/40"
-                label="Remaining loss"
+                label="Unrecovered"
                 value={lakhs(Math.max(0, o.revenue_at_risk_paise - grossSoFar))}
               />
             </div>
@@ -131,7 +143,7 @@ export function CommandCentre() {
         {/* -------------------------------------------------- incidents */}
         <Panel
           title="Detected incidents"
-          hint="Slices whose success rate broke, after Benjamini-Hochberg correction across every slice and window tested."
+          hint="Auth-rate breaks by slice, after Benjamini-Hochberg correction across every slice and window tested."
           action={
             <Button variant="ghost" onClick={() => navigate("/incidents")}>
               All incidents →

@@ -14,7 +14,7 @@ export function Experiments() {
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Experiments</h1>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
         Every recovery run withholds treatment from a randomly assigned slice of the
-        cohort. Assignment is <code className="text-white/60">sha256(experiment_id ‖ customer_id)</code> —
+        plan, stratified on order value. Assignment is <code className="text-white/60">sha256(experiment_id ‖ customer_id)</code> —
         deterministic, keyed on the customer so nobody is half-treated, and recomputable
         by hand from the stored hash prefix.
       </p>
@@ -31,9 +31,8 @@ export function Experiments() {
           <div className="px-6 py-16 text-center">
             <p className="text-sm text-white/50">No experiment has concluded yet.</p>
             <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/25">
-              Deploy a strategy from the Wind Tunnel to create one. A demo session can
-              simulate but not execute, so this page stays empty unless an operator
-              session runs it.
+              Deploy a strategy from Futures to create one. A guest session can model but
+              not execute, so this page stays empty unless an operator runs it.
             </p>
           </div>
         </Panel>
@@ -60,9 +59,9 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
         {/* ------------------------------------------------- headline */}
         <div>
           <div className="grid gap-6 sm:grid-cols-3">
-            <Stat label="Gross recovery" value={lakhs(r.gross_recovery_paise)} tone="muted" sub="what a conventional tool reports" />
-            <Stat label="Natural (holdout)" value={lakhs(r.natural_recovery_paise)} tone="muted" sub="arrived with no help" />
-            <Stat label="Incremental" value={lakhs(r.incremental_paise)} tone="yellow" sub="attributable to us" />
+            <Stat label="Gross recovery" value={lakhs(r.gross_recovery_paise)} tone="muted" sub="what a conventional tool books" />
+            <Stat label="Baseline (holdout)" value={lakhs(r.natural_recovery_paise)} tone="muted" sub="landed with no treatment" />
+            <Stat label="Incremental lift" value={lakhs(r.incremental_paise)} tone="yellow" sub="attributable to treatment" />
           </div>
 
           <div className="mt-7 rounded-[20px] border border-white/[0.07] bg-white/[0.02] p-5">
@@ -118,14 +117,14 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
             <div className="mt-6 rounded-[18px] border border-white/[0.07] p-5">
               <Label>Cost side</Label>
               <div className="mt-3 space-y-2">
-                <Line label="Intervention cost" value={rupees(r.cost_paise)} />
-                <Line label="Net incremental" value={lakhs(r.net_paise)} />
-                <Line label="Cost of measurement" value={lakhs(r.measurement_cost_paise)} />
+                <Line label="Treatment cost" value={rupees(r.cost_paise)} />
+                <Line label="Net incremental lift" value={lakhs(r.net_paise)} />
+                <Line label="Measurement cost" value={lakhs(r.measurement_cost_paise)} />
               </div>
               <p className="mt-3 text-[11px] leading-relaxed text-white/30">
-                The holdout is revenue we deliberately did not chase. It is the price of
-                being able to make a causal claim at all, and it belongs on the same page
-                as the claim.
+                The holdout is revenue deliberately not worked. It is the price of being able
+                to make a causal claim at all, and it belongs on the same page as the
+                claim.
               </p>
             </div>
           )}
@@ -134,7 +133,7 @@ function ExperimentCard({ name, result: r }: { name: string; result: ExperimentR
 
       {r.warnings.length > 0 && (
         <div className="border-t border-white/[0.06] p-6">
-          <Label>What the system flagged about its own result</Label>
+          <Label>Diagnostics</Label>
           <ul className="mt-3 space-y-2">
             {r.warnings.map((w) => (
               <li key={w} className="flex gap-3 text-[12px] leading-relaxed text-white/50">

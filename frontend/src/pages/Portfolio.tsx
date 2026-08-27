@@ -50,9 +50,8 @@ export function Portfolio() {
           <Label>Constrained allocation</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Recovery Portfolio</h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/45">
-            Capacity is finite and the expensive actions are the scarce ones. These are
-            the candidates, ranked by what an intervention would actually add — not by
-            how big the payment is.
+            Capacity is finite and the expensive channels are the scarce ones. Eligible
+            payments ranked by expected incremental value — not by ticket size.
           </p>
         </div>
         <select
@@ -78,7 +77,7 @@ export function Portfolio() {
       {co && (
         <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="panel p-6">
-            <Stat label="Candidates" value={count(co.member_count)} sub={`${count(co.in_window_payments)} in window`} />
+            <Stat label="Eligible" value={count(co.member_count)} sub={`${count(co.in_window_payments)} in window`} />
           </div>
           <div className="panel p-6">
             <Stat label="Exposure" value={lakhs(co.revenue_exposed_paise)} tone="loss" />
@@ -87,7 +86,7 @@ export function Portfolio() {
             <Stat
               label="Attribution weight"
               value={pct(co.attribution_weight, 0)}
-              sub="share of in-window failures the incident caused"
+              sub="share of in-window declines the incident caused"
               tone="muted"
               hint="The baseline failure rate keeps running underneath an incident. Counting every in-window failure as incident damage overstates the headline."
             />
@@ -100,7 +99,7 @@ export function Portfolio() {
 
       <Panel
         className="mt-6"
-        title="Candidates"
+        title="Eligible payments"
         hint="Sorted by exposure. Expand a row for the full scored option set, including the actions that were rejected and the ones compliance removed."
       >
         {cohort.loading && <Skeleton rows={6} />}
@@ -109,7 +108,7 @@ export function Portfolio() {
             <table className="w-full min-w-[1000px] text-left">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  {["Payment", "Amount", "Failure class", "P(recovers anyway)", "Best action", "Expected incremental", "Confidence", ""].map((h) => (
+                  {["Payment", "Amount", "Decline class", "Baseline P(recover)", "Best treatment", "Expected lift", "Confidence", ""].map((h) => (
                     <th key={h} className="label px-5 py-3 font-medium">{h}</th>
                   ))}
                 </tr>
@@ -132,8 +131,8 @@ export function Portfolio() {
       {co && co.exception_sample.length > 0 && (
         <Panel
           className="mt-6"
-          title="Blocked by a compliance gate"
-          hint="Named, not dropped. Every one of these is a payment we could have chased and chose not to."
+          title="Suppressed by a compliance gate"
+          hint="Named, not dropped. Each is a payment we could have worked and chose not to."
         >
           <div className="divide-y divide-white/[0.04]">
             {co.exception_sample.slice(0, 10).map((e) => (
@@ -205,7 +204,7 @@ function CandidateRowView({
           <td colSpan={8} className="bg-white/[0.015] px-5 py-6">
             <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
               <div>
-                <Label>Every action scored, including the rejected ones</Label>
+                <Label>Every treatment scored, including the rejected</Label>
                 <div className="mt-4 space-y-2.5">
                   {ranked.map(([action, u]) => {
                     const eligible = row.eligible.includes(action);
@@ -248,26 +247,26 @@ function CandidateRowView({
 
               <div className="space-y-4">
                 <div>
-                  <Label>Why this customer</Label>
+                  <Label>Why this payment</Label>
                   <p className="mt-2 text-[12px] leading-relaxed text-white/50">
-                    Estimated {pct(row.p_natural)} chance of recovering with no intervention
-                    at all, leaving {pct(1 - row.p_natural)} of headroom. An action can only
-                    ever compete for that remainder — which is why a large payment that is
-                    already likely to land is worth less to us than a small one that is not.
+                    Estimated {pct(row.p_natural)} chance of recovering with no treatment at
+                    all, leaving {pct(1 - row.p_natural)} of headroom. A treatment can only
+                    ever compete for that remainder — which is why a large payment already
+                    likely to land is worth less than a small one that is not.
                   </p>
                 </div>
                 <div>
                   <Label>Why not the others</Label>
                   <p className="mt-2 text-[12px] leading-relaxed text-white/50">
-                    Struck-through actions were removed by a compliance gate before scoring.
-                    Actions marked <em className="not-italic text-white/70">not credible</em>{" "}
-                    have uplift estimates whose interval includes zero — the optimiser will
-                    not spend money on an effect it cannot distinguish from nothing.
+                    Struck-through treatments were removed by a compliance gate before scoring.
+                    Those marked <em className="not-italic text-white/70">not credible</em>{" "}
+                    have uplift estimates whose interval spans zero — the optimiser will not
+                    spend on an effect it cannot distinguish from nothing.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Tag tone="neutral">{row.method.toUpperCase()}</Tag>
-                  <Tag tone="neutral">{row.eligible.length} legal actions</Tag>
+                  <Tag tone="neutral">{row.eligible.length} permitted treatments</Tag>
                 </div>
               </div>
             </div>

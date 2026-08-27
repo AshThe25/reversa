@@ -384,3 +384,40 @@ export interface Evaluation {
   compute_ms: number;
   method_note: string;
 }
+
+// --- investigation ----------------------------------------------------------
+
+export interface EvidenceItem {
+  id: string;
+  kind: string;
+  label: string;
+  source: string;
+  observed: number | null;
+  baseline: number | null;
+  unit: string;
+  sample_size: number;
+  confidence: number;
+  supports: string | null;
+  contradicts: string | null;
+  detail: Record<string, unknown>;
+}
+
+export interface Investigation {
+  incident_id: string;
+  root_cause: string;
+  root_cause_label: string;
+  hypothesis: string;
+  confidence: number;
+  supporting_evidence: string[];
+  contradicting_evidence: string[];
+  recommended_next_step: string;
+  requires_human_review: boolean;
+  insufficient_evidence: boolean;
+  actionable: boolean;
+  produced_by: "llm" | "deterministic";
+  groundedness: number;
+  latency_ms: number;
+  cost_micro_usd: number;
+  validation_errors: string[];
+  evidence: EvidenceItem[];
+}
