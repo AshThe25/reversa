@@ -99,7 +99,7 @@ export function Button({
 }) {
   const base =
     variant === "solid" ? "bg-cyber text-black"
-      : variant === "dark" ? "bg-black text-black"
+      : variant === "dark" ? "bg-black text-white"
         : "bg-white text-black";
   return (
     <button

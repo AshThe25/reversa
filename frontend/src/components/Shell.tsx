@@ -111,9 +111,28 @@ function TourBar() {
   if (!tour.active || !tour.step) return null;
   const step = tour.step;
   const onStepPage = location.pathname === step.path;
+  const last = tour.index + 1 === STEPS.length;
+
+  const advance = () => {
+    const nextIdx = tour.index + 1;
+    tour.next();
+    const nextStep = STEPS[nextIdx];
+    // Two steps share /command - the opener explains the idea, the next one
+    // reads the screen - so only navigate when the page actually changes.
+    if (nextStep && nextStep.path !== step.path) navigate(nextStep.path);
+  };
 
   return (
     <div className="sticky bottom-0 z-50 border-t-2 border-black bg-cyber">
+      {/* Progress reads as a bar rather than only a fraction: "3 / 8" says where
+          you are, the bar says how much is left. */}
+      <div className="h-1.5 w-full bg-black/10">
+        <div
+          className="h-full bg-black transition-[width] duration-300"
+          style={{ width: `${((tour.index + 1) / STEPS.length) * 100}%` }}
+        />
+      </div>
+
       <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-6 py-4 md:flex-row md:items-center">
         <span className="grid h-8 w-8 shrink-0 place-items-center border-2 border-black bg-black font-display text-xs font-extrabold text-cyber">
           {String(tour.index + 1).padStart(2, "0")}
@@ -128,27 +147,36 @@ function TourBar() {
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
           <span className="label hidden sm:block">
             {tour.index + 1} / {STEPS.length}
           </span>
+
+          {tour.index > 0 && (
+            <button
+              onClick={() => {
+                const prev = tour.index - 1;
+                tour.goTo(prev);
+                const prevStep = STEPS[prev];
+                if (prevStep && prevStep.path !== location.pathname) navigate(prevStep.path);
+              }}
+              className="font-display text-[10px] font-extrabold uppercase tracking-label
+                         text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
+            >
+              &larr; Back
+            </button>
+          )}
+
           {!onStepPage ? (
             <Button variant="dark" onClick={() => navigate(step.path)}>
-              {step.cta} →
+              Take me there &rarr;
             </Button>
           ) : (
-            <Button
-              variant="dark"
-              onClick={() => {
-                const nextIdx = tour.index + 1;
-                tour.next();
-                const nextStep = STEPS[nextIdx];
-                if (nextStep) navigate(nextStep.path);
-              }}
-            >
-              {tour.index + 1 === STEPS.length ? "Done" : "Next →"}
+            <Button variant="dark" onClick={advance}>
+              {last ? "Done" : `${step.cta} \u2192`}
             </Button>
           )}
+
           <button
             onClick={tour.stop}
             className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
