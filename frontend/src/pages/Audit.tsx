@@ -93,13 +93,23 @@ export function Audit() {
 function EventRow({ event: e, open, onToggle }: { event: AuditEntry; open: boolean; onToggle: () => void }) {
   return (
     <div>
-      <button onClick={onToggle} className="row-hover flex w-full items-center gap-4 px-6 py-3.5 text-left">
+      {/* The fixed columns add up to more than a phone is wide, so below `sm`
+          the row wraps: sequence, time and actor on the first line, the event
+          name on its own line under them. Widths come back at `sm`, where the
+          five columns line up again. */}
+      <button
+        onClick={onToggle}
+        className="row-hover flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3.5
+                   text-left sm:flex-nowrap sm:gap-4 sm:px-6"
+      >
         <span className="tnum w-12 shrink-0 font-mono text-[11px] text-black/25">#{e.seq}</span>
-        <span className="tnum w-32 shrink-0 text-[11px] text-black/40">{dateTimeIST(e.at)}</span>
-        <span className="w-40 shrink-0">
+        <span className="tnum shrink-0 text-[11px] text-black/40 sm:w-32">{dateTimeIST(e.at)}</span>
+        <span className="shrink-0 sm:w-40">
           <Tag tone={ACTOR_TONE[e.actor] ?? "neutral"}>{e.actor}</Tag>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{titleise(e.event_type)}</span>
+        <span className="min-w-0 basis-full truncate text-sm font-medium sm:flex-1 sm:basis-auto">
+          {titleise(e.event_type)}
+        </span>
         <span className="hidden shrink-0 font-mono text-[10px] text-black/25 lg:block">
           {e.prev_hash}… → {e.entry_hash}…
         </span>

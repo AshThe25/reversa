@@ -134,12 +134,22 @@ export function Portfolio() {
           title="Suppressed by a compliance gate"
           hint="Named, not dropped. Each is a payment we could have worked and chose not to."
         >
+          {/* The payment id is one unbreakable token. Left to itself it set the
+              row's min-content width and pushed the whole page past a narrow
+              phone, so it is the element allowed to truncate. */}
           <div className="divide-y divide-black/10">
             {co.exception_sample.slice(0, 10).map((e) => (
-              <div key={e.payment_id} className="flex items-center gap-4 px-5 py-3">
+              <div
+                key={e.payment_id}
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 sm:flex-nowrap"
+              >
                 <Tag tone="bad">{titleise(e.reason)}</Tag>
-                <span className="font-mono text-[11px] text-black/30">{e.payment_id}</span>
-                <span className="tnum ml-auto text-sm text-black/50">{rupees(e.amount_paise)}</span>
+                <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-black/30">
+                  {e.payment_id}
+                </span>
+                <span className="tnum shrink-0 text-sm text-black/50 sm:ml-auto">
+                  {rupees(e.amount_paise)}
+                </span>
               </div>
             ))}
           </div>

@@ -46,7 +46,14 @@ export function Shell({
             </span>
           </NavLink>
 
-          <nav className="segment-track min-w-0 flex-1 overflow-x-auto">
+          {/* Until `lg` the nav takes its own full-width row under the wordmark
+              rather than competing with it for space: as an inline flex child it
+              shrank to about fifty pixels on a phone while still holding ten
+              links, which is a scroll track nobody can aim at. */}
+          <nav
+            className="segment-track order-last min-w-0 basis-full overflow-x-auto
+                       lg:order-none lg:basis-auto lg:flex-1"
+          >
             {NAV.map((item) => (
               <NavLink
                 key={item.to}

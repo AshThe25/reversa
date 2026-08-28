@@ -37,6 +37,17 @@
     background: theme("colors.paper");
   }
 
+  /* Grid items default to `min-width: auto`, which lets their content set a
+     floor. One unbreakable token - a payment id, a hash prefix - then makes its
+     column wider than the track and pushes the whole page sideways on a narrow
+     screen, which is how /portfolio came to scroll horizontally at 320px while
+     every element inside it looked innocent. Zero is the right default for a
+     layout built out of cards; anything that genuinely needs intrinsic width
+     can set min-w-min on itself. */
+  .grid > * {
+    min-width: 0;
+  }
+
   body {
     @apply font-sans text-black antialiased;
     font-feature-settings: "tnum", "ss01";
