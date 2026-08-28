@@ -29,7 +29,14 @@ class Settings(BaseSettings):
         # most of the build every documented environment variable was silently
         # ignored - keys, secrets, access codes, all of it. Nothing failed
         # loudly; the app just quietly ran with defaults forever.
-        env_file=".env", env_prefix="REVERSA_", extra="ignore"
+        # Both anchored to the repo, not the working directory, and both read
+        # so it does not matter which one you created - the backend/ copy wins
+        # if you have both. A relative ".env" here meant that running from the
+        # repo root silently ignored a configured session secret and demo access
+        # code, which looks exactly like a broken login rather than a path bug.
+        env_file=(REPO_ROOT / ".env", REPO_ROOT / "backend" / ".env"),
+        env_prefix="REVERSA_",
+        extra="ignore",
     )
 
     database_url: str = f"sqlite:///{REPO_ROOT / 'reversa.db'}"
@@ -48,6 +55,10 @@ class Settings(BaseSettings):
     # REVERSA_SESSION_SECRET in any real deployment.
     session_secret: str = ""
     session_ttl_seconds: int = 8 * 3600
+
+    # Set in get_settings() when no secret was configured. Not read from the
+    # environment; it describes what happened, not what was asked for.
+    session_secret_is_ephemeral: bool = False
 
     # Fit the estimator and scan the day on boot rather than on first request.
     warm_on_startup: bool = True
@@ -150,4 +161,10 @@ def get_settings() -> Settings:
     if not settings.session_secret:
         import secrets as _secrets
         object.__setattr__(settings, "session_secret", _secrets.token_urlsafe(48))
+        # Recorded so startup can say so out loud. A per-process secret is the
+        # right default on a laptop and silently wrong behind a load balancer:
+        # each replica signs with a different key, so sessions break on every
+        # request that lands on a different worker, and it looks like a flaky
+        # token bug rather than a configuration one.
+        object.__setattr__(settings, "session_secret_is_ephemeral", True)
     return settings

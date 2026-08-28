@@ -43,6 +43,13 @@ async def lifespan(app: FastAPI):
         settings.allow_demo_sessions,
     )
 
+    if settings.session_secret_is_ephemeral:
+        log.warning(
+            "session secret generated for this process - sessions will not "
+            "survive a restart and will not validate across replicas. Set "
+            "REVERSA_SESSION_SECRET before running more than one worker."
+        )
+
     if settings.warm_on_startup:
         # Fitting the estimator and scanning the day costs ~2.3s. Paying it on a
         # background thread means the first person to open the dashboard doesn't,
