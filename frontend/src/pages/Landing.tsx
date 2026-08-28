@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Label } from "../components/primitives";
 import { api } from "../lib/api";
 import { count, lakhs, pct } from "../lib/format";
-import { useTour } from "../lib/tour";
+import { STEPS, useTour } from "../lib/tour";
 import { useAsync } from "../hooks/useAsync";
 
 /**
@@ -247,7 +247,9 @@ export function Landing() {
               Take the walkthrough →
             </button>
             <span className="text-[12px] text-white/55">
-              Seven stops. Nothing to install. Leave at any point.
+              {/* Counted from the tour itself. It said "Seven" for a while after
+                  the walkthrough grew to eight. */}
+              {STEPS.length} stops. Nothing to install. Leave at any point.
             </span>
           </div>
         </div>
