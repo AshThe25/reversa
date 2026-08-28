@@ -54,7 +54,7 @@ export function Policies() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <Label>Natural language, deterministic enforcement</Label>
       <h1 className="mt-2 text-4xl font-bold tracking-tight">Policies</h1>
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
         Write what you want in plain English. It compiles into structured rules that
         deterministic code evaluates — the text is never executed, and the rule
         vocabulary has no way to express permitting anything.
@@ -84,7 +84,7 @@ export function Policies() {
                 Deploy
               </Button>
               {!can("execute") && (
-                <span className="text-[11px] text-black/30">
+                <span className="text-[11px] text-black/60">
                   demo session — compile and simulate only
                 </span>
               )}
@@ -101,7 +101,7 @@ export function Policies() {
                 <Label>Can</Label>
                 <ul className="mt-3 space-y-2">
                   {capabilities.data.can.map((c) => (
-                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/55">
+                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/60">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                       {c}
                     </li>
@@ -112,7 +112,7 @@ export function Policies() {
                 <Label>Cannot</Label>
                 <ul className="mt-3 space-y-2">
                   {capabilities.data.cannot.map((c) => (
-                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/40">
+                    <li key={c} className="flex gap-2.5 text-[12px] leading-relaxed text-black/60">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-signal-loss/60" />
                       {c}
                     </li>
@@ -155,14 +155,14 @@ export function Policies() {
                 <div key={rule.priority} className="px-6 py-4">
                   <code className="font-mono text-[13px] text-black">{rule.describe}</code>
                   {rule.source_span && (
-                    <p className="mt-2 text-[11px] italic text-black/30">
+                    <p className="mt-2 text-[11px] italic text-black/60">
                       from: “{rule.source_span}”
                     </p>
                   )}
                 </div>
               ))}
               {result.policy.rules.length === 0 && (
-                <div className="px-6 py-10 text-center text-sm text-black/40">
+                <div className="px-6 py-10 text-center text-sm text-black/60">
                   Nothing in that text compiled to a rule.
                 </div>
               )}
@@ -173,13 +173,13 @@ export function Policies() {
                 <Label>What the compiler could not do</Label>
                 <ul className="mt-3 space-y-2">
                   {result.validation.errors.map((e) => (
-                    <li key={e} className="flex gap-2.5 text-[12px] leading-relaxed text-signal-loss">
+                    <li key={e} className="flex gap-2.5 text-[12px] leading-relaxed text-signal-loss-ink">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-signal-loss" />
                       {e}
                     </li>
                   ))}
                   {result.policy.warnings.map((w) => (
-                    <li key={w} className="flex gap-2.5 text-[12px] leading-relaxed text-black/50">
+                    <li key={w} className="flex gap-2.5 text-[12px] leading-relaxed text-black/60">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-cyber" />
                       {w}
                     </li>
@@ -196,7 +196,7 @@ export function Policies() {
                     <Tag key={s} tone="bad">{s.replace(/_/g, " ")}</Tag>
                   ))}
                 </div>
-                <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-black/50">
+                <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-black/60">
                   The text was treated as data throughout — it went into a
                   nonce-delimited block and never into the instruction channel. It
                   could not have granted a permission regardless: every effect in
@@ -238,13 +238,13 @@ export function Policies() {
                           <td className="tnum px-6 py-4 text-sm text-black/60">
                             {count(s.action_count)}
                           </td>
-                          <td className="tnum px-6 py-4 text-sm text-black/50">
+                          <td className="tnum px-6 py-4 text-sm text-black/60">
                             {lakhs(s.cost_paise)}
                           </td>
                           <td className="tnum px-6 py-4 text-sm">
                             {lakhs(s.net_incremental_paise)}
                           </td>
-                          <td className="px-6 py-4 text-[11px] text-black/35">
+                          <td className="px-6 py-4 text-[11px] text-black/60">
                             {mine ? s.notes.join(" · ") : ""}
                           </td>
                         </tr>

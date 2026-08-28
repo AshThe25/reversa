@@ -121,10 +121,10 @@
   /* ----------------------------------------------------------- controls */
 
   .label {
-    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-black/55;
+    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-black/60;
   }
   .label-invert {
-    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-white/55;
+    @apply font-display text-[10px] font-extrabold uppercase tracking-label text-white/70;
   }
 
   .btn {
@@ -165,7 +165,7 @@
   }
   .segment {
     @apply rounded-neo px-3 py-1.5 font-display text-[11px] font-extrabold uppercase
-           tracking-tighter text-black/55;
+           tracking-tighter text-black/60;
     transition: all 0.15s theme("transitionTimingFunction.neo");
   }
   .segment:hover { @apply text-black; }

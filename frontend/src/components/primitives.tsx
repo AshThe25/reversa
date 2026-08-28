@@ -164,8 +164,8 @@ export function Money({
   const colour = {
     default: "text-black",
     yellow: "text-black",
-    muted: "text-black/55",
-    loss: "text-signal-loss",
+    muted: "text-black/60",
+    loss: "text-signal-loss-ink",
   }[tone];
   return (
     <span className={`tnum font-display font-extrabold tracking-tighter ${colour} ${className}`}>
@@ -198,8 +198,8 @@ export function Stat({
   const colour = {
     default: "text-black",
     yellow: "text-black",
-    muted: "text-black/55",
-    loss: "text-signal-loss",
+    muted: "text-black/60",
+    loss: "text-signal-loss-ink",
   }[tone];
   return (
     <div className="min-w-0" title={hint}>
@@ -209,7 +209,7 @@ export function Stat({
       >
         {value}
       </div>
-      {sub && <div className="mt-1 truncate text-xs text-black/50">{sub}</div>}
+      {sub && <div className="mt-1 truncate text-xs text-black/60">{sub}</div>}
     </div>
   );
 }
@@ -262,7 +262,7 @@ export function Empty({ title, body }: { title: string; body?: string }) {
   return (
     <div className="px-6 py-14 text-center">
       <p className="font-display text-sm font-extrabold uppercase tracking-tighter">{title}</p>
-      {body && <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/50">{body}</p>}
+      {body && <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/60">{body}</p>}
     </div>
   );
 }

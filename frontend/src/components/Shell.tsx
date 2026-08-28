@@ -76,7 +76,7 @@ export function Shell({
                 <button
                   onClick={onSignOut}
                   title="End this session"
-                  className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
+                  className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
                 >
                   Sign out
                 </button>
@@ -97,7 +97,11 @@ export function Shell({
           <p className="font-display text-[11px] font-extrabold uppercase tracking-label">
             Reversa · Counterfactual revenue recovery
           </p>
-          <p className="text-[11px] text-white/50">
+          <p className="text-[11px] text-white/70">
+            Built by <span className="font-semibold text-white">Aishwarya Tripathi</span> for the
+            Razorpay AI Buildathon 2026
+          </p>
+          <p className="text-[11px] text-white/70">
             Every figure on this site is computed by a backend engine. None are authored.
           </p>
         </div>
@@ -168,7 +172,7 @@ function TourBar() {
                 if (prevStep && prevStep.path !== location.pathname) navigate(prevStep.path);
               }}
               className="font-display text-[10px] font-extrabold uppercase tracking-label
-                         text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
+                         text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
             >
               &larr; Back
             </button>
@@ -186,7 +190,7 @@ function TourBar() {
 
           <button
             onClick={tour.stop}
-            className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/50 underline decoration-2 underline-offset-4 hover:text-black"
+            className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
           >
             Exit
           </button>

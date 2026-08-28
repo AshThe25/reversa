@@ -33,7 +33,7 @@ export function IncidentDetail() {
     <div className="mx-auto max-w-[1600px] px-6 py-8">
       <button
         onClick={() => navigate("/incidents")}
-        className="text-[12px] text-black/35 transition-colors hover:text-black/70"
+        className="text-[12px] text-black/60 transition-colors hover:text-black/70"
       >
         ← All incidents
       </button>
@@ -51,12 +51,12 @@ export function IncidentDetail() {
             <div>
               <div className="flex items-center gap-3">
                 <Severity level={inc.severity} />
-                <span className="font-mono text-[11px] uppercase tracking-label text-black/30">
+                <span className="font-mono text-[11px] uppercase tracking-label text-black/60">
                   {inc.id}
                 </span>
               </div>
               <h1 className="mt-3 text-4xl font-bold tracking-tight">{inc.slice}</h1>
-              <p className="mt-2 text-sm text-black/40">
+              <p className="mt-2 text-sm text-black/60">
                 {timeIST(inc.window_start)} → {timeIST(inc.window_end)} IST · detected{" "}
                 {timeIST(inc.detected_at)}
               </p>
@@ -73,9 +73,9 @@ export function IncidentDetail() {
                 label="Auth rate"
                 value={
                   <span>
-                    <span className="text-black/35">{pct(inc.baseline_success_rate)}</span>
-                    <span className="mx-2 text-black/20">→</span>
-                    <span className="text-signal-loss">{pct(inc.observed_success_rate)}</span>
+                    <span className="text-black/60">{pct(inc.baseline_success_rate)}</span>
+                    <span className="mx-2 text-black/60">→</span>
+                    <span className="text-signal-loss-ink">{pct(inc.observed_success_rate)}</span>
                   </span>
                 }
                 sub={`baseline is this slice at this hour, EWMA'd over prior days`}
@@ -97,7 +97,7 @@ export function IncidentDetail() {
                   tone="loss"
                 />
               </div>
-              <p className="mt-2 text-xs text-black/40">
+              <p className="mt-2 text-xs text-black/60">
                 {co ? `${count(co.member_count)} recoverable payments` : "peak window"}
               </p>
             </div>
@@ -106,7 +106,7 @@ export function IncidentDetail() {
               <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
                 {co ? <Money paise={co.natural_recovery_paise} tone="muted" /> : "—"}
               </div>
-              <p className="mt-2 text-xs text-black/40">
+              <p className="mt-2 text-xs text-black/60">
                 {co
                   ? `${pct(co.natural_recovery_paise / Math.max(co.revenue_exposed_paise, 1))} of exposure — lands with no treatment`
                   : ""}
@@ -117,7 +117,7 @@ export function IncidentDetail() {
               <div className="mt-2 text-[30px] font-bold leading-none tracking-tight">
                 {co ? <Money paise={co.addressable_paise} tone="yellow" /> : "—"}
               </div>
-              <p className="mt-2 text-xs text-black/40">the only part worth treating</p>
+              <p className="mt-2 text-xs text-black/60">the only part worth treating</p>
             </div>
           </div>
 
@@ -159,7 +159,7 @@ export function IncidentDetail() {
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="grid h-full place-items-center text-xs text-black/30">
+                  <div className="grid h-full place-items-center text-xs text-black/60">
                     Not enough ticks to plot.
                   </div>
                 )}
@@ -177,7 +177,7 @@ export function IncidentDetail() {
                         <span className="truncate font-mono text-[11px] text-black/70">
                           {row.reason ?? "unknown"}
                         </span>
-                        <span className="tnum shrink-0 text-[11px] text-black/40">
+                        <span className="tnum shrink-0 text-[11px] text-black/60">
                           {count(row.count)} · {pct(share, 0)}
                         </span>
                       </div>
@@ -222,7 +222,7 @@ export function IncidentDetail() {
                 {Object.entries(co.exceptions_by_reason).map(([reason, n]) => (
                   <div key={reason} className="surface px-5 py-3">
                     <div className="tnum text-xl font-bold">{n}</div>
-                    <div className="mt-0.5 text-[11px] text-black/40">{titleise(reason)}</div>
+                    <div className="mt-0.5 text-[11px] text-black/60">{titleise(reason)}</div>
                   </div>
                 ))}
               </div>
@@ -269,7 +269,7 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
 
           <h2
             className={`mt-3 text-2xl font-bold tracking-tight ${
-              finding.insufficient_evidence ? "text-signal-loss" : ""
+              finding.insufficient_evidence ? "text-signal-loss-ink" : ""
             }`}
           >
             {finding.insufficient_evidence
@@ -282,7 +282,7 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
               <Label>Confidence</Label>
               <div
                 className={`tnum mt-1 text-3xl font-bold ${
-                  finding.actionable ? "text-black" : "text-signal-loss"
+                  finding.actionable ? "text-black" : "text-signal-loss-ink"
                 }`}
               >
                 {pct(finding.confidence, 0)}
@@ -332,14 +332,14 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
                 >
                   <span
                     className={`mt-0.5 font-mono text-[11px] ${
-                      against ? "text-signal-loss" : cited ? "text-black" : "text-black/30"
+                      against ? "text-signal-loss-ink" : cited ? "text-black" : "text-black/60"
                     }`}
                   >
                     {against ? "−" : cited ? "+" : "·"}
                   </span>
                   <div className="min-w-0">
                     <p className="text-[12px] leading-relaxed text-black/70">{e.label}</p>
-                    <p className="mt-1 font-mono text-[10px] text-black/30">
+                    <p className="mt-1 font-mono text-[10px] text-black/60">
                       {e.id} · {e.source}
                       {e.sample_size ? ` · n=${e.sample_size.toLocaleString("en-IN")}` : ""}
                     </p>
@@ -352,7 +352,7 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
       </div>
 
       <div className="border-t border-black/15 px-6 py-4">
-        <p className="max-w-4xl text-[11px] leading-relaxed text-black/35">
+        <p className="max-w-4xl text-[11px] leading-relaxed text-black/60">
           The model may not invent a hypothesis — the label comes from a fixed
           vocabulary — and every evidence id it cites is checked against the facts
           actually collected. One fabricated citation rejects the whole response and

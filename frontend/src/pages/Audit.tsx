@@ -25,7 +25,7 @@ export function Audit() {
         <div>
           <Label>Tamper-evident record</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Audit Ledger</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
             Reversa moves money without a human in the loop, so "we logged it" is not
             enough — logs are editable. Each entry commits to the hash of the one before
             it, over a canonical JSON serialisation. Alter any row and verification breaks
@@ -48,7 +48,7 @@ export function Audit() {
           <div className="flex flex-wrap items-center gap-4">
             <span
               className={`grid h-10 w-10 place-items-center rounded-full text-lg ${
-                chain.data.valid ? "bg-signal-calm/20 text-black" : "bg-signal-loss/20 text-signal-loss"
+                chain.data.valid ? "bg-signal-calm/20 text-black" : "bg-signal-loss/20 text-signal-loss-ink"
               }`}
             >
               {chain.data.valid ? "✓" : "✕"}
@@ -59,12 +59,12 @@ export function Audit() {
                   ? `Chain verified across ${chain.data.entries_checked} entries`
                   : `Chain broken at entry ${chain.data.broken_at_seq}`}
               </p>
-              <p className="mt-0.5 font-mono text-[11px] text-black/35">
+              <p className="mt-0.5 font-mono text-[11px] text-black/60">
                 head {chain.data.head_hash.slice(0, 32)}…
               </p>
             </div>
             {chain.data.reason && (
-              <p className="text-[12px] text-signal-loss">{chain.data.reason}</p>
+              <p className="text-[12px] text-signal-loss-ink">{chain.data.reason}</p>
             )}
           </div>
         </div>
@@ -102,15 +102,15 @@ function EventRow({ event: e, open, onToggle }: { event: AuditEntry; open: boole
         className="row-hover flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3.5
                    text-left sm:flex-nowrap sm:gap-4 sm:px-6"
       >
-        <span className="tnum w-12 shrink-0 font-mono text-[11px] text-black/25">#{e.seq}</span>
-        <span className="tnum shrink-0 text-[11px] text-black/40 sm:w-32">{dateTimeIST(e.at)}</span>
+        <span className="tnum w-12 shrink-0 font-mono text-[11px] text-black/60">#{e.seq}</span>
+        <span className="tnum shrink-0 text-[11px] text-black/60 sm:w-32">{dateTimeIST(e.at)}</span>
         <span className="shrink-0 sm:w-40">
           <Tag tone={ACTOR_TONE[e.actor] ?? "neutral"}>{e.actor}</Tag>
         </span>
         <span className="min-w-0 basis-full truncate text-sm font-medium sm:flex-1 sm:basis-auto">
           {titleise(e.event_type)}
         </span>
-        <span className="hidden shrink-0 font-mono text-[10px] text-black/25 lg:block">
+        <span className="hidden shrink-0 font-mono text-[10px] text-black/60 lg:block">
           {e.prev_hash}… → {e.entry_hash}…
         </span>
       </button>
@@ -120,7 +120,7 @@ function EventRow({ event: e, open, onToggle }: { event: AuditEntry; open: boole
           <pre className="mt-3 overflow-x-auto rounded-[16px] bg-paper p-4 font-mono text-[11px] leading-relaxed text-black/60">
             {JSON.stringify(e.payload, null, 2)}
           </pre>
-          <div className="mt-3 grid gap-2 font-mono text-[10px] text-black/30 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 font-mono text-[10px] text-black/60 sm:grid-cols-2">
             <div>subject: {e.subject_type}/{e.subject_id}</div>
             <div>entry: {e.id}</div>
           </div>

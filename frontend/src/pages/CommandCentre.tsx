@@ -52,7 +52,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.revenue_at_risk_paise} tone="loss" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/40">
+          <p className="mt-2 text-xs text-black/60">
             {o ? `${count(o.live_failed_payments)} declined authorisations today` : ""}
           </p>
         </div>
@@ -65,7 +65,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.natural_recovery_paise} tone="muted" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/40">observed in the holdout arm</p>
+          <p className="mt-2 text-xs text-black/60">observed in the holdout arm</p>
         </div>
 
         <div
@@ -76,7 +76,7 @@ export function CommandCentre() {
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.incremental_recovery_paise} tone="yellow" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/40">
+          <p className="mt-2 text-xs text-black/60">
             {o && grossSoFar > 0
               ? `${pct(o.incremental_recovery_paise / grossSoFar)} of gross recovery`
               : "no concluded test yet"}
@@ -88,7 +88,7 @@ export function CommandCentre() {
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? o.active_incidents : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/40">
+          <p className="mt-2 text-xs text-black/60">
             {o ? `${o.total_incidents} detected today` : ""}
           </p>
         </div>
@@ -97,14 +97,14 @@ export function CommandCentre() {
           <Label>Treatment capacity</Label>
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? count(o.capacity.used) : "—"}
-            <span className="text-black/35">
+            <span className="text-black/60">
               {o ? ` / ${count(o.capacity.total)}` : ""}
             </span>
           </div>
           <div className="mt-3">
             <Bar value={o?.capacity.used ?? 0} max={o?.capacity.total ?? 1} />
           </div>
-          <p className="mt-2 text-xs text-black/40">consumed this session</p>
+          <p className="mt-2 text-xs text-black/60">consumed this session</p>
         </div>
       </div>
 
@@ -162,17 +162,17 @@ export function CommandCentre() {
                   <Severity level={inc.severity} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{inc.slice}</p>
-                    <p className="mt-0.5 text-[11px] text-black/35">
+                    <p className="mt-0.5 text-[11px] text-black/60">
                       {timeIST(inc.window_start)}–{timeIST(inc.window_end)} IST ·{" "}
                       {pct(inc.baseline_success_rate)} → {pct(inc.observed_success_rate)} ·{" "}
                       q={sci(inc.q_value)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="tnum text-sm font-bold text-signal-loss">
+                    <p className="tnum text-sm font-bold text-signal-loss-ink">
                       {lakhs(inc.revenue_exposed_paise)}
                     </p>
-                    <p className="text-[11px] text-black/30">
+                    <p className="text-[11px] text-black/60">
                       {count(inc.affected_payment_count)} payments
                     </p>
                   </div>
@@ -194,7 +194,7 @@ export function CommandCentre() {
                       {system.data.adapters.razorpay.mode}
                     </Tag>
                   </div>
-                  <p className="mt-3 text-[11px] leading-relaxed text-black/30">
+                  <p className="mt-3 text-[11px] leading-relaxed text-black/60">
                     {system.data.adapters.razorpay.note}
                   </p>
                 </div>
@@ -203,7 +203,7 @@ export function CommandCentre() {
                   <Label>Payment-link budget</Label>
                   <div className="tnum mt-2 text-2xl font-bold">
                     {system.data.adapters.razorpay.payment_link_budget.remaining}
-                    <span className="text-black/25">
+                    <span className="text-black/60">
                       {" "}/ {system.data.adapters.razorpay.payment_link_budget.limit}
                     </span>
                   </div>
@@ -262,7 +262,7 @@ function FlowBar({
       </div>
 
       {incremental < 0 && (
-        <p className="mt-3 text-[12px] leading-relaxed text-signal-loss">
+        <p className="mt-3 text-[12px] leading-relaxed text-signal-loss-ink">
           The measured incremental is negative: the treated group recovered less
           than the holdout. That is a real result, not a display error — most
           likely an underpowered run rather than a harmful intervention. The
@@ -308,7 +308,7 @@ function Legend({ swatch, label, value }: { swatch: string; label: string; value
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <span className="text-[11px] text-black/35">{label}</span>
+      <span className="text-[11px] text-black/60">{label}</span>
       <span className="tnum text-[12px] font-medium">{value}</span>
     </div>
   );

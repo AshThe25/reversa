@@ -73,17 +73,19 @@ export function Landing() {
           shows where `cover` runs out. `bg-plate` is sampled off the file so the
           two meet without a seam.
 
-          Below `md` there is no room beside the headline, so the plate stops
-          being a background and becomes a full-bleed band under the copy —
-          same artwork, stacked instead of alongside. Behind the text itself the
-          CSS dot field stands in.
+          The plate only becomes a background at `lg`, which is exactly where the
+          two-column grid opens the right-hand space it needs. Tying it to `md`
+          instead put the artwork behind the headline for the whole 768-1024
+          range, where the copy still spans the full width. Below `lg` it is a
+          full-bleed band under the copy - same artwork, stacked rather than
+          alongside - and the CSS dot field stands in behind the text.
         */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 hidden bg-[url('/hero-plate.png')]
-                     bg-contain bg-right bg-no-repeat md:block"
+                     bg-contain bg-right bg-no-repeat lg:block"
         />
-        <div aria-hidden className="dot-field pointer-events-none absolute inset-0 md:hidden" />
+        <div aria-hidden className="dot-field pointer-events-none absolute inset-0 lg:hidden" />
 
         <div className="relative z-10 mx-auto grid min-h-[560px] max-w-[1500px] items-center gap-10
                         px-6 py-16 sm:px-10 lg:min-h-[720px] lg:grid-cols-[1fr_0.8fr] lg:py-20">
@@ -119,7 +121,7 @@ export function Landing() {
             </div>
 
             {system && (
-              <p className="mt-6 font-display text-[11px] font-extrabold uppercase tracking-label text-black/50">
+              <p className="mt-6 font-display text-[11px] font-extrabold uppercase tracking-label text-black/60">
                 {system.adapters.razorpay.mode} ·{" "}
                 {system.adapters.razorpay.payment_link_budget.limit} payment-link ceiling ·{" "}
                 {Math.round(system.engine.scan_ms)}ms day scan
@@ -136,7 +138,7 @@ export function Landing() {
             alt=""
             aria-hidden
             className="-mx-6 -mb-16 mt-12 w-[calc(100%+3rem)] max-w-none border-t-2 border-black
-                       sm:-mx-10 sm:w-[calc(100%+5rem)] md:hidden"
+                       sm:-mx-10 sm:w-[calc(100%+5rem)] lg:hidden"
           />
           <div aria-hidden className="hidden lg:block" />
         </div>
@@ -256,7 +258,11 @@ export function Landing() {
           <p className="font-display text-[11px] font-extrabold uppercase tracking-label">
             Reversa · Counterfactual revenue recovery
           </p>
-          <p className="text-[11px] text-white/50">
+          <p className="text-[11px] text-white/70">
+            Built by <span className="font-semibold text-white">Aishwarya Tripathi</span> for the
+            Razorpay AI Buildathon 2026
+          </p>
+          <p className="text-[11px] text-white/70">
             Every figure on this site is computed by a backend engine. None are authored.
           </p>
         </div>
@@ -323,7 +329,7 @@ function Metric({ label, value, note }: { label: string; value: string; note: st
       <div className="tnum mt-2 font-display text-4xl font-extrabold tracking-tighter text-cyber">
         {value}
       </div>
-      <p className="mt-2 text-[12px] text-white/50">{note}</p>
+      <p className="mt-2 text-[12px] text-white/70">{note}</p>
     </div>
   );
 }

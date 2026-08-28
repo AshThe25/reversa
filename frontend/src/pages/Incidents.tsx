@@ -17,7 +17,7 @@ export function Incidents() {
         <div>
           <Label>Detection</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Incidents</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/40">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
             Each row is a slice of the authorisation stream whose success rate broke
             against a per-hour, seasonality-aware baseline — significant after
             Benjamini-Hochberg correction across every slice and window tested that
@@ -38,7 +38,7 @@ export function Incidents() {
       <Panel className="mt-8">
         {loading && <Skeleton rows={6} />}
         {data && data.length === 0 && (
-          <div className="px-6 py-16 text-center text-sm text-black/40">
+          <div className="px-6 py-16 text-center text-sm text-black/60">
             No slice cleared both the significance and the effect-size floor.
           </div>
         )}
@@ -62,16 +62,16 @@ export function Incidents() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold">{inc.slice}</p>
-                      <p className="mt-0.5 text-[11px] text-black/30">{inc.label}</p>
+                      <p className="mt-0.5 text-[11px] text-black/60">{inc.label}</p>
                     </td>
                     <td className="tnum px-6 py-4 text-sm text-black/60">
                       {timeIST(inc.window_start)}–{timeIST(inc.window_end)}
                     </td>
                     <td className="px-6 py-4">
                       <span className="tnum text-sm">
-                        <span className="text-black/40">{pct(inc.baseline_success_rate)}</span>
-                        <span className="mx-1.5 text-black/20">→</span>
-                        <span className="font-semibold text-signal-loss">
+                        <span className="text-black/60">{pct(inc.baseline_success_rate)}</span>
+                        <span className="mx-1.5 text-black/60">→</span>
+                        <span className="font-semibold text-signal-loss-ink">
                           {pct(inc.observed_success_rate)}
                         </span>
                       </span>
@@ -79,10 +79,10 @@ export function Incidents() {
                     <td className="tnum px-6 py-4 text-sm text-black/60">
                       {count(inc.affected_payment_count)}
                     </td>
-                    <td className="tnum px-6 py-4 text-sm font-bold text-signal-loss">
+                    <td className="tnum px-6 py-4 text-sm font-bold text-signal-loss-ink">
                       {lakhs(inc.revenue_exposed_paise)}
                     </td>
-                    <td className="tnum px-6 py-4 font-mono text-[11px] text-black/35">
+                    <td className="tnum px-6 py-4 font-mono text-[11px] text-black/60">
                       {sci(inc.q_value)}
                     </td>
                     <td className="px-6 py-4 text-right">

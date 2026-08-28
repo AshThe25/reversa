@@ -35,6 +35,9 @@ export default {
         paper: "#f4f4f5",
         signal: {
           loss: "#e5484d",
+          // The same red fails AA as text - 3.9:1 on the tinted card it usually
+          // sits on. `loss` stays the fill; `loss-ink` is the one you write in.
+          "loss-ink": "#b3252a",
           natural: "#8b8b8b",
           incremental: "#ffe17c",
           calm: "#30a46c",

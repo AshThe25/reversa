@@ -49,7 +49,7 @@ export function Portfolio() {
         <div>
           <Label>Constrained allocation</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Recovery Portfolio</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/45">
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
             Capacity is finite and the expensive channels are the scarce ones. Eligible
             payments ranked by expected incremental value — not by ticket size.
           </p>
@@ -144,10 +144,10 @@ export function Portfolio() {
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 sm:flex-nowrap"
               >
                 <Tag tone="bad">{titleise(e.reason)}</Tag>
-                <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-black/30">
+                <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-black/60">
                   {e.payment_id}
                 </span>
-                <span className="tnum shrink-0 text-sm text-black/50 sm:ml-auto">
+                <span className="tnum shrink-0 text-sm text-black/60 sm:ml-auto">
                   {rupees(e.amount_paise)}
                 </span>
               </div>
@@ -174,14 +174,14 @@ function CandidateRowView({
   return (
     <>
       <tr className={`row-hover ${row.would_recover_anyway ? "opacity-60" : ""}`}>
-        <td className="px-5 py-4 font-mono text-[11px] text-black/40">{row.payment_id}</td>
+        <td className="px-5 py-4 font-mono text-[11px] text-black/60">{row.payment_id}</td>
         <td className="tnum px-5 py-4 text-sm font-semibold">{rupees(row.amount_paise)}</td>
         <td className="px-5 py-4">
-          <span className="font-mono text-[11px] text-black/55">{row.failure_class}</span>
+          <span className="font-mono text-[11px] text-black/60">{row.failure_class}</span>
         </td>
         <td className="px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className={`tnum text-sm ${row.would_recover_anyway ? "text-black/35" : ""}`}>
+            <span className={`tnum text-sm ${row.would_recover_anyway ? "text-black/60" : ""}`}>
               {pct(row.p_natural)}
             </span>
             {row.would_recover_anyway && <Tag tone="neutral">likely anyway</Tag>}
@@ -191,7 +191,7 @@ function CandidateRowView({
           {bestEntry ? (
             <span className="text-sm font-medium">{titleise(bestEntry[0])}</span>
           ) : (
-            <span className="text-xs text-black/25">no legal action</span>
+            <span className="text-xs text-black/60">no legal action</span>
           )}
         </td>
         <td className="tnum px-5 py-4 text-sm font-bold text-black">
@@ -223,7 +223,7 @@ function CandidateRowView({
                       <div key={action} className="flex items-center gap-3">
                         <span
                           className={`w-36 shrink-0 text-[12px] ${
-                            isBest ? "font-semibold text-black" : eligible ? "text-black/70" : "text-black/25 line-through"
+                            isBest ? "font-semibold text-black" : eligible ? "text-black/70" : "text-black/60 line-through"
                           }`}
                         >
                           {titleise(action)}
@@ -236,16 +236,16 @@ function CandidateRowView({
                             style={{ width: `${(Math.abs(u.ev_paise) / maxEv) * 100}%` }}
                           />
                         </div>
-                        <span className="tnum w-24 shrink-0 text-right text-[11px] text-black/45">
+                        <span className="tnum w-24 shrink-0 text-right text-[11px] text-black/60">
                           {rupees(u.ev_paise)}
                         </span>
                         {!u.credible && (
-                          <span className="shrink-0 text-[10px] uppercase tracking-label text-black/25">
+                          <span className="shrink-0 text-[10px] uppercase tracking-label text-black/60">
                             not credible
                           </span>
                         )}
                         {!eligible && (
-                          <span className="shrink-0 text-[10px] uppercase tracking-label text-signal-loss/70">
+                          <span className="shrink-0 text-[10px] uppercase tracking-label text-signal-loss-ink/70">
                             gated
                           </span>
                         )}
@@ -258,7 +258,7 @@ function CandidateRowView({
               <div className="space-y-4">
                 <div>
                   <Label>Why this payment</Label>
-                  <p className="mt-2 text-[12px] leading-relaxed text-black/50">
+                  <p className="mt-2 text-[12px] leading-relaxed text-black/60">
                     Estimated {pct(row.p_natural)} chance of recovering with no treatment at
                     all, leaving {pct(1 - row.p_natural)} of headroom. A treatment can only
                     ever compete for that remainder — which is why a large payment already
@@ -267,7 +267,7 @@ function CandidateRowView({
                 </div>
                 <div>
                   <Label>Why not the others</Label>
-                  <p className="mt-2 text-[12px] leading-relaxed text-black/50">
+                  <p className="mt-2 text-[12px] leading-relaxed text-black/60">
                     Struck-through treatments were removed by a compliance gate before scoring.
                     Those marked <em className="not-italic text-black/70">not credible</em>{" "}
                     have uplift estimates whose interval spans zero — the optimiser will not

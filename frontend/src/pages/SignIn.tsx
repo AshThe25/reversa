@@ -65,7 +65,7 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
           <br />
           <span className="text-stroke">before reality.</span>
         </h1>
-        <p className="mt-4 text-[13px] leading-relaxed text-black/45">
+        <p className="mt-4 text-[13px] leading-relaxed text-black/60">
           Evaluate dunning strategies against the affected cohort before a
           single customer is contacted, then measure which one produced
           incremental revenue against a randomised holdout.
@@ -80,7 +80,7 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
             {busy === "demo" ? "Opening session…" : "Continue as guest"}
           </button>
 
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-black/35">
+          <p className="mt-3 text-center text-[11px] leading-relaxed text-black/60">
             Read and model. Every strategy is explorable; deploying one is
             refused server-side.
           </p>
@@ -113,7 +113,7 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Operator access code"
                 autoComplete="one-time-code"
-                className="mt-2 w-full rounded-neo border-2 border-black bg-white px-4 py-3 font-mono text-[14px] outline-none placeholder:text-black/30"
+                className="mt-2 w-full rounded-neo border-2 border-black bg-white px-4 py-3 font-mono text-[14px] outline-none placeholder:text-black/60"
               />
               <button
                 type="submit"
@@ -122,7 +122,7 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
               >
                 {busy === "operator" ? "Verifying…" : "Enter"}
               </button>
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-black/30">
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-black/60">
                 Operator sessions carry the execute scope and can move money in
                 Razorpay test mode. They are never restored automatically — this
                 code is asked for again after every reload.
@@ -143,10 +143,14 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
           <Tag tone="neutral">Hash-chained audit</Tag>
         </div>
 
-        <p className="mt-8 text-[11px] leading-relaxed text-black/50">
+        <p className="mt-8 text-[11px] leading-relaxed text-black/60">
           The session token is held in memory and never written to browser storage.
           Anything an injected script can read is a credential you have already
           given away, and this one authorises money movement.
+        </p>
+
+        <p className="mt-6 font-display text-[10px] font-extrabold uppercase tracking-label text-black/60">
+          Built by Aishwarya Tripathi · Razorpay AI Buildathon 2026
         </p>
       </div>
     </div>
