@@ -101,6 +101,50 @@ def test_security_headers_are_on_every_response(client, demo_headers):
         assert "frame-ancestors 'none'" in r.headers["Content-Security-Policy"]
 
 
+def test_every_route_needs_auth_except_the_two_that_cannot(client):
+    """Enumerated from the app rather than listed by hand.
+
+    A spot-check of three paths passes forever while a fourth is added
+    unprotected. /api/system was exactly that: it served the world seed and the
+    true incident count to anyone who asked, which is a strange thing to publish
+    for a system whose whole claim is that it never reads the answer key.
+    """
+    import re
+
+    public = {"/api/health", "/api/auth/session"}
+    spec = client.app.openapi()
+    unprotected = []
+    for path, ops in spec["paths"].items():
+        for method in ops:
+            if method.upper() not in ("GET", "POST"):
+                continue
+            url = re.sub(r"\{[^}]+\}", "x", path)
+            r = client.get(url) if method.upper() == "GET" else client.post(url, json={})
+            if path not in public and r.status_code != 401:
+                unprotected.append((method.upper(), path, r.status_code))
+    assert not unprotected, f"routes reachable without a token: {unprotected}"
+
+
+def test_docs_close_when_real_credentials_are_configured(monkeypatch):
+    """The interactive docs are a map of the attack surface.
+
+    Fine while this is a simulation someone is reading to judge it. Not fine
+    pointed at a live gateway, so credentials close them unless overridden.
+    """
+    from reversa.config import get_settings as _gs
+    from reversa.main import create_app as _ca
+
+    monkeypatch.setenv("REVERSA_RAZORPAY_KEY_ID", "rzp_test_abc123")
+    monkeypatch.setenv("REVERSA_RAZORPAY_KEY_SECRET", "shh")
+    _gs.cache_clear()
+    try:
+        with TestClient(_ca()) as c:
+            assert c.get("/api/docs").status_code == 404
+            assert c.get("/api/openapi.json").status_code == 404
+    finally:
+        _gs.cache_clear()
+
+
 def test_security_headers_survive_a_short_circuit(client):
     """The responses that never reach a route are the ones that most need the
     headers. A 413 from the body cap is produced by middleware sitting above the

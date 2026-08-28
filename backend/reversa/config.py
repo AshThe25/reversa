@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     # Generated per process when unset, which is right for a laptop and wrong
     # for more than one replica - every restart invalidates live sessions. Set
     # REVERSA_SESSION_SECRET in any real deployment.
+    # The interactive docs publish every route, schema and parameter to whoever
+    # asks. That is useful while the thing is a simulation and someone is
+    # reading it to judge it; it is reconnaissance once real keys are in play,
+    # so configuring Razorpay credentials turns it off unless you insist.
+    expose_docs: bool = True
+
     session_secret: str = ""
     session_ttl_seconds: int = 8 * 3600
 

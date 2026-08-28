@@ -113,7 +113,7 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Operator access code"
                 autoComplete="one-time-code"
-                className="mt-2 w-full rounded-neo border-2 border-black bg-white px-4 py-3 font-mono text-[14px] outline-none placeholder:text-black/60"
+                className="mt-2 w-full rounded-neo border-2 border-black bg-white px-4 py-3 font-mono text-[14px] placeholder:text-black/60"
               />
               <button
                 type="submit"

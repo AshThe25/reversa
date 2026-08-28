@@ -99,7 +99,7 @@ export function Futures() {
           <select
             value={selected ?? ""}
             onChange={(e) => setParams({ incident: e.target.value })}
-            className="rounded-neo border-2 border-black bg-white px-4 py-2 font-display text-[12px] font-extrabold uppercase tracking-tighter shadow-hard-sm outline-none"
+            className="rounded-neo border-2 border-black bg-white px-4 py-2 font-display text-[12px] font-extrabold uppercase tracking-tighter shadow-hard-sm"
           >
             {incidents.data?.map((i) => (
               <option key={i.id} value={i.id}>

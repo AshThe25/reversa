@@ -69,7 +69,7 @@ export function Policies() {
               onChange={(e) => setText(e.target.value)}
               spellCheck={false}
               rows={10}
-              className="w-full resize-y rounded-neo border-2 border-black bg-white p-4 font-mono text-[13px] leading-relaxed shadow-hard-inset outline-none"
+              className="w-full resize-y rounded-neo border-2 border-black bg-white p-4 font-mono text-[13px] leading-relaxed shadow-hard-inset"
             />
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button onClick={() => run("compile")} disabled={busy !== null || !text.trim()}

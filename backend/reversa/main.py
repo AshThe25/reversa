@@ -69,6 +69,19 @@ async def lifespan(app: FastAPI):
     yield
 
 
+def _docs_open(settings) -> bool:
+    """Whether to publish the interactive API docs.
+
+    Open on a simulation, because the point of this build is that someone can
+    read exactly what it does. Closed the moment real Razorpay credentials are
+    configured - at that point the same page is a map of the attack surface -
+    unless REVERSA_EXPOSE_DOCS says otherwise on purpose.
+    """
+    if settings.has_razorpay:
+        return settings.model_fields_set.__contains__("expose_docs") and settings.expose_docs
+    return settings.expose_docs
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
 
@@ -82,8 +95,8 @@ def create_app() -> FastAPI:
             "intervention capacity by expected incremental value, and measure "
             "what the intervention actually caused against a randomised holdout."
         ),
-        docs_url="/api/docs",
-        openapi_url="/api/openapi.json",
+        docs_url="/api/docs" if _docs_open(settings) else None,
+        openapi_url="/api/openapi.json" if _docs_open(settings) else None,
     )
 
     # Order matters, and it is the reverse of the reading order: the last one

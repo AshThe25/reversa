@@ -53,7 +53,8 @@ def health() -> dict:
 
 @router.get("/system")
 def system(db: DbSession = Depends(get_session),
-           settings: Settings = Depends(get_settings)) -> dict:
+           settings: Settings = Depends(get_settings),
+           _: Session = Depends(requires_read)) -> dict:
     """What mode everything is running in.
 
     Surfaced rather than buried: a payments demo that does not say out loud
