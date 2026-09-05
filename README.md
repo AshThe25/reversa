@@ -171,3 +171,37 @@ recover anyway loses to a small one that won't, and `test_policy.py` asserts tha
 no merchant sentence can widen what the system may do.
 
 CI runs both suites on every push and pull request. There is no scheduled job.
+
+## What this is not
+
+The measurement argument is the product and it holds up. The operational
+envelope around it is a demo, and overselling that would only make the argument
+look weaker.
+
+- **It calls the real Razorpay test API, and it has never moved a real rupee.**
+  The deployed service verifies the connection on boot and creates real Payment
+  Links; `/api/system` reports the mode and counts the calls. But no live money
+  has moved and none can: a key beginning `rzp_live_` is refused at startup,
+  enforced rather than documented.
+- **The recovery loop still runs on a seeded world.** Detection, allocation and
+  measurement operate on generated payments, not a merchant's traffic. The
+  figures are real arithmetic over a simulated stream, and every screen says so.
+- **Single process.** The rate limiter is an in-memory token bucket and the
+  session secret is generated per process when unset. Behind a load balancer the
+  limiter is N times looser than configured and sessions stop validating across
+  workers. Startup warns about the second. `_buckets` is the seam a Redis
+  backend replaces; the interface does not change.
+- **No migrations.** Schema comes from `Base.metadata.create_all`. Changing a
+  column against a database with data in it is manual work. SQLite is right for
+  a reproducible demo and wrong for concurrent writers.
+- **Auth is demo-grade.** A guest scope and an operator scope, an access code,
+  HMAC-signed sessions held in memory. No user store, no SSO, no MFA.
+- **The audit chain is only as trustworthy as the database.** Entries are
+  hash-chained over canonical JSON with a unique `prev_hash`, which detects
+  tampering by anything going through the application. Anyone with direct write
+  access to the file can recompute the whole chain. Real tamper-evidence needs
+  an anchor outside the system.
+- **Detection recall is 75%, not 100%.** One injected incident is missed - a
+  single bank at 2% of traffic. The evaluation page reports it rather than
+  hiding it, because a detector that claims everything is a detector nobody
+  should trust.
