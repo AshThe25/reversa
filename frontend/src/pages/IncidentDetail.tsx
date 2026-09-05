@@ -124,7 +124,7 @@ export function IncidentDetail() {
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
             {/* ------------------------------------------------- chart */}
-            <Panel title="Auth rate through the incident" hint="Each point is the most significant window ending at that tick.">
+            <Panel title="Auth rate through the incident" hint="Each point is the worst five-minute stretch ending there.">
               <div className="h-72 p-6">
                 {series.length > 1 ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -168,7 +168,7 @@ export function IncidentDetail() {
             </Panel>
 
             {/* --------------------------------------------- error mix */}
-            <Panel title="Decline-code mix" hint="Concentration in one reason code separates an infrastructure fault from ordinary noise.">
+            <Panel title="Decline-code mix" hint="One error code dominating means something is genuinely broken. Spread out, it is just a normal day.">
               <div className="space-y-3 p-6">
                 {inc.failure_mix.slice(0, 8).map((row) => {
                   const share = row.count / Math.max(inc.affected_payment_count, 1);

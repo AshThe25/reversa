@@ -77,6 +77,9 @@ class Settings(BaseSettings):
 
     # Browser origins allowed to call the API. Not "*" - a wildcard with
     # credentials is how a dashboard gets driven from someone else's tab.
+    # Deployment adds its own origin here via REVERSA_CORS_ORIGINS. Never "*":
+    # this API issues session tokens, and a wildcard origin on a credentialed
+    # API is how you hand them to whoever asks.
     cors_origins: list[str] = [
         "http://localhost:5173", "http://127.0.0.1:5173",
         "http://localhost:4173", "http://127.0.0.1:4173",

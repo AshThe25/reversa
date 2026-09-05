@@ -14,6 +14,19 @@
  * error bodies; this preserves that rather than guessing at detail.
  */
 
+/**
+ * Where the API lives.
+ *
+ * Empty in development, where Vite proxies /api to the local backend, and empty
+ * in any deployment that puts the two behind one origin. Set VITE_API_BASE when
+ * the frontend is served from somewhere the backend is not - a static host in
+ * front of a separate API - and remember the backend's CORS list has to name
+ * that origin back, or the browser will block every call and it will look like
+ * the API is down.
+ */
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
+
+
 import type {
   AuthResponse, ChainVerdict, ChaosResult, Cohort, ExecutionReport,
   ExperimentResult, Incident, IncidentDetail, Overview, SystemInfo, WindTunnel,
@@ -95,7 +108,7 @@ async function request<T>(
   if (init.body) headers.set("Content-Type", "application/json");
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(API_BASE + path, { ...init, headers });
   const requestId = res.headers.get("X-Request-Id") ?? undefined;
 
   if (res.status === 401 && attempt === 0 && role === "demo") {
@@ -145,7 +158,7 @@ function describe(status: number, code: string): string {
 }
 
 export async function openSession(accessCode?: string): Promise<AuthResponse> {
-  const res = await fetch("/api/auth/session", {
+  const res = await fetch(API_BASE + "/api/auth/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(accessCode ? { access_code: accessCode } : {}),

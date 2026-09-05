@@ -148,7 +148,7 @@ function AutopsyBody({
           </div>
         </Panel>
 
-        <Panel title="Read-out" hint="The system's own assessment of its result.">
+        <Panel title="Read-out" hint="How it scored itself.">
           <div className="p-6">
             {r.warnings.length > 0 ? (
               <ul className="space-y-3">

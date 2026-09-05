@@ -117,7 +117,7 @@ export function CommandCentre() {
         <Panel
           className="mt-6"
           title="Recovery attribution"
-          hint="Exposure decomposed into baseline recovery and incremental lift. Sourced from concluded tests, not projections."
+          hint="Where the money actually went. These come from tests that finished, not forecasts."
           action={
             <Button variant="ghost" onClick={() => navigate("/autopsy")}>
               Full autopsy →
@@ -147,7 +147,7 @@ export function CommandCentre() {
         {/* -------------------------------------------------- incidents */}
         <Panel
           title="Detected incidents"
-          hint="Auth-rate breaks by slice, after Benjamini-Hochberg correction across every slice and window tested."
+          hint="Success rates that broke. Corrected for the hundreds of slices we check at once, so we are not crying wolf."
           action={
             <Button variant="ghost" onClick={() => navigate("/incidents")}>
               All incidents →

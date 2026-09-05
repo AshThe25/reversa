@@ -38,7 +38,7 @@ export function Evaluation() {
 
       {data && (
         <>
-          <Panel className="mt-8" title="Incident detection" hint="Against the incidents the world actually injected.">
+          <Panel className="mt-8" title="Incident detection" hint="What we caught, against what really broke.">
             <div className="grid gap-6 p-6 sm:grid-cols-2 xl:grid-cols-5">
               <Stat label="Recall" value={pct(data.detection.recall, 0)}
                     sub={`${data.detection.matched} of ${data.detection.true_incidents} found`}
@@ -74,7 +74,7 @@ export function Evaluation() {
               {/* ------------------------------------------- measurement */}
               <Panel
                 title="Did the measurement work?"
-                hint="The estimate comes from a randomised holdout. The truth is computed exactly from potential outcomes. This compares them."
+                hint="What we measured, next to what really happened. The simulator knows the true answer and the system is never allowed to see it."
               >
                 <div className="grid gap-8 p-6 lg:grid-cols-[1.2fr_1fr]">
                   <div>

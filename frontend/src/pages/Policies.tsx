@@ -212,7 +212,7 @@ export function Policies() {
             <Panel
               className="mt-6"
               title="What your policy costs"
-              hint="The same cohort, solved with your rules in force. Compare before deploying."
+              hint="The same customers, re-planned under your rules. See what changes before you turn it on."
             >
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[820px] text-left">

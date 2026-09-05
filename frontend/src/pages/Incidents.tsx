@@ -18,10 +18,10 @@ export function Incidents() {
           <Label>Detection</Label>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">Incidents</h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
-            Each row is a slice of the authorisation stream whose success rate broke
-            against a per-hour, seasonality-aware baseline — significant after
-            Benjamini-Hochberg correction across every slice and window tested that
-            tick, and large enough to be worth an operator's attention.
+            Each row is a slice of your payment traffic whose success rate dropped
+            against what that slice normally does at this hour. We test hundreds of
+            slices every minute, so the bar is corrected for that — otherwise
+            something would look broken every single tick.
           </p>
         </div>
         <Button variant="ghost" onClick={reload}>

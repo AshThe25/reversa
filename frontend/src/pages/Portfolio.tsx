@@ -101,7 +101,7 @@ export function Portfolio() {
       <Panel
         className="mt-6"
         title="Eligible payments"
-        hint="Sorted by exposure. Expand a row for the full scored option set, including the actions that were rejected and the ones compliance removed."
+        hint="Biggest first. Open a row to see every option we scored, including the ones we ruled out and the ones compliance blocked."
       >
         {cohort.loading && <Skeleton rows={6} />}
         {co && (

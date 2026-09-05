@@ -547,7 +547,7 @@ function DeployedResult({ report }: { report: ExecutionReport }) {
     <Panel
       className="mt-6"
       title="Deployed · measured against holdout"
-      hint="Projected lift versus the lift the randomised holdout actually measured."
+      hint="What we predicted, against what the holdout actually showed."
     >
       <div className="grid gap-6 p-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-5">
