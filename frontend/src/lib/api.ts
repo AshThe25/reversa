@@ -182,6 +182,11 @@ export const api = {
     request<{ incidents: Incident[] }>("/api/incidents").then((r) => r.incidents),
   incident: (id: string) => request<IncidentDetail>(`/api/incidents/${id}`),
   cohort: (id: string) => request<Cohort>(`/api/incidents/${id}/cohort`),
+  review: (incidentId: string) =>
+    request<import("./types").ReviewQueue>(
+      `/api/review?incident=${encodeURIComponent(incidentId)}`,
+    ),
+
   investigation: (id: string) =>
     request<import("./types").Investigation>(`/api/incidents/${id}/investigation`),
   rescan: () =>

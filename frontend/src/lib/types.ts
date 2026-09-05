@@ -442,3 +442,35 @@ export interface AgentTrace {
   produced_by: string;
   latency_ms: number;
 }
+
+/** One proposed action awaiting - or not requiring - a human decision. */
+export interface ReviewCase {
+  payment_id: string;
+  customer_id: string;
+  action: string;
+  amount_paise: number;
+  expected_incremental_paise: number;
+  baseline_recovery_probability: number;
+  decision: "pending" | "approved" | "rejected" | "auto_approved";
+  decided_by: string | null;
+  note: string | null;
+  reason: string;
+  needs_human: boolean;
+  explanation: string;
+}
+
+export interface ReviewQueue {
+  incident_id: string;
+  cause_resolved: boolean;
+  root_cause: string;
+  summary: {
+    total: number;
+    pending: number;
+    auto_approved: number;
+    pending_value_paise: number;
+    auto_value_paise: number;
+    by_reason: Record<string, number>;
+  };
+  cases: ReviewCase[];
+  thresholds: { high_value_paise: number };
+}

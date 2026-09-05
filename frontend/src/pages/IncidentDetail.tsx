@@ -8,8 +8,8 @@ import {
 } from "../components/primitives";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
-import { count, pct, sci, timeIST, titleise } from "../lib/format";
-import type { AgentTrace, Investigation } from "../lib/types";
+import { count, lakhs, pct, rupees, sci, timeIST, titleise } from "../lib/format";
+import type { AgentTrace, Investigation, ReviewQueue } from "../lib/types";
 
 export function IncidentDetail() {
   const { id = "" } = useParams();
@@ -17,6 +17,7 @@ export function IncidentDetail() {
   const incident = useAsync(() => api.incident(id), [id]);
   const cohort = useAsync(() => api.cohort(id), [id]);
   const probe = useAsync(() => api.investigation(id), [id]);
+  const review = useAsync(() => api.review(id), [id]);
 
   const inc = incident.data;
   const co = cohort.data;
@@ -192,6 +193,8 @@ export function IncidentDetail() {
           </div>
 
           {probe.data && <InvestigationPanel finding={probe.data} />}
+
+          {review.data && <ReviewPanel queue={review.data} />}
 
           {/* ---------------------------------------------- why detected */}
           <Panel className="mt-6" title="Why this was called an incident" hint="The detector's own reasoning, not a summary of it.">
@@ -426,5 +429,91 @@ function TraceStrip({ trace }: { trace: AgentTrace }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * What a person has to sign off before it happens.
+ *
+ * The count that matters is the one on the right: most of the plan does not
+ * reach a human at all, and it says why. A queue holding every action is a
+ * rubber stamp, and a rubber stamp records an automated decision as a human
+ * one - which is a worse audit trail than admitting nobody looked.
+ */
+function ReviewPanel({ queue }: { queue: ReviewQueue }) {
+  const pending = queue.cases.filter((c) => c.decision === "pending");
+  const s = queue.summary;
+
+  return (
+    <Panel
+      className="mt-6"
+      title="Waiting on a human"
+      hint="Only the actions that warrant one. Every row states why it reached a person, or why it did not."
+    >
+      <div className="grid gap-4 border-b-2 border-black p-6 sm:grid-cols-3">
+        <Stat
+          label="Needs a decision"
+          value={count(s.pending)}
+          sub={`${lakhs(s.pending_value_paise)} of incremental value`}
+          tone={s.pending > 0 ? "loss" : "default"}
+        />
+        <Stat
+          label="Auto-approved"
+          value={count(s.auto_approved)}
+          sub="silent, reversible, nothing spent"
+          tone="muted"
+        />
+        <Stat
+          label="Cause"
+          value={queue.cause_resolved ? "Attributed" : "Unresolved"}
+          sub={
+            queue.cause_resolved
+              ? "the plan rests on a named cause"
+              : "every action escalates while the cause is unknown"
+          }
+          tone={queue.cause_resolved ? "default" : "loss"}
+        />
+      </div>
+
+      {pending.length === 0 ? (
+        <p className="p-6 text-sm text-black/60">
+          Nothing in this plan reaches a customer or crosses the value threshold, so
+          there is nothing for a person to approve.
+        </p>
+      ) : (
+        <div className="divide-y divide-black/10">
+          {pending.map((c) => (
+            <div key={c.payment_id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4">
+              <Tag tone={c.reason === "customer_contact" ? "bad" : "yellow"}>
+                {titleise(c.reason)}
+              </Tag>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{titleise(c.action)}</p>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-black/60">
+                  {c.explanation}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <div className="tnum text-sm font-bold">{rupees(c.amount_paise)}</div>
+                <div className="tnum text-[11px] text-black/60">
+                  {rupees(c.expected_incremental_paise)} incremental ·{" "}
+                  {pct(c.baseline_recovery_probability, 0)} would recover anyway
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="border-t border-black/15 px-6 py-4">
+        <p className="max-w-4xl text-[11px] leading-relaxed text-black/60">
+          The triage rule is deterministic and it is the same one every time: anything
+          the customer sees, anything above the value threshold, and everything at all
+          while the cause is unattributed. The rest is approved automatically and the
+          reason is written down, because &ldquo;nobody looked at this&rdquo; and
+          &ldquo;this did not require looking at&rdquo; are different claims.
+        </p>
+      </div>
+    </Panel>
   );
 }

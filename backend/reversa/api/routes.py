@@ -394,6 +394,46 @@ def wind_tunnel(body: WindTunnelRequest,
     }
 
 
+@router.get("/review")
+def review_queue(incident: str, db: DbSession = Depends(get_session),
+                 _: Session = Depends(requires_read)) -> dict:
+    """The actions a person has to see before they happen.
+
+    Not every action: a queue containing all of them is a rubber stamp, and a
+    rubber stamp launders an automated decision as a human one. The triage rule
+    is deterministic and travels with each row, so a reviewer can see not only
+    what they are approving but why this one reached them and the ones above it
+    did not.
+    """
+    from reversa.ai.investigator import investigate
+    from reversa.engines.evidence_engine import collect
+    from reversa.engines import review_engine as RV
+
+    try:
+        detected, build = engine_state.cohort_for(db, incident)
+    except KeyError:
+        raise HTTPException(status_code=404, detail={"error": "unknown_incident"})
+
+    st = engine_state.get(db)
+    plan = solve(list(build.candidates), P.DEFAULT_CAPACITY)
+
+    # An unattributed cause raises the bar for everything in the plan, so the
+    # finding has to be read here rather than assumed.
+    finding = investigate(collect(db, detected, now=st.clock.now))
+    cases = RV.build_queue(
+        plan.assignments, build.candidates, cause_resolved=finding.actionable,
+    )
+
+    return {
+        "incident_id": incident,
+        "cause_resolved": finding.actionable,
+        "root_cause": finding.root_cause,
+        "summary": RV.summarise(cases),
+        "cases": [c.as_dict() for c in cases],
+        "thresholds": {"high_value_paise": RV.HIGH_VALUE_PAISE},
+    }
+
+
 @router.post("/chaos")
 def chaos(body: ChaosRequest, db: DbSession = Depends(get_session),
           _: Session = Depends(requires_simulate)) -> dict:
