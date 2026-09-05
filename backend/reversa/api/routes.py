@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 # incident id -> agent trace. Bounded because it is keyed on a set of incidents
 # that is small by construction; a reseed changes the ids and the old entries
 # become unreachable rather than stale.
-_TRACE_CACHE: dict[str, object] = {}
+_TRACE_CACHE: dict[str, dict] = {}
 router = APIRouter(prefix="/api")
 
 
@@ -312,48 +312,47 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     from reversa.ai.investigator import investigate
     from reversa.engines.evidence_engine import collect
 
+    from reversa.ai.probes import Probes
+
     detected = engine_state.detected_by_id(db, incident_id)
     if detected is None:
         raise HTTPException(status_code=404, detail={"error": "unknown_incident"})
+
+    # The whole response is cached, not half of it.
+    #
+    # An earlier version cached only the agent trace, which missed the point:
+    # `investigate` makes a model call of its own, so every view still paid for
+    # one even when the answer was already known. The world is static between
+    # reseeds - same incident, same evidence, same finding - so the first reader
+    # pays for it and nobody after them does.
+    cached = _TRACE_CACHE.get(incident_id)
+    if cached is not None:
+        return cached
 
     st = engine_state.get(db)
     evidence = collect(db, detected, now=st.clock.now)
     finding = investigate(evidence)
 
     # The agent works the same evidence as a sequence of questions rather than
-    # one pile. The finding stays authoritative - it is what the rest of the
-    # system reads - and the trace is how the conclusion was reached, which is
-    # the part a reviewer needs in order to disagree with it.
-    # The agent gets live probes rather than the pre-computed slices: it writes
-    # its own query arguments and they run against the payment stream when it
-    # asks. Probes carry their own per-investigation budget, so the loop's step
-    # budget and the database's query budget are enforced independently.
-    from reversa.ai.probes import Probes
-
-    # The agent is an enhancement on top of a finding that already exists, so a
-    # failure inside it must not take the page down. Production 500'd on every
-    # investigation because the loop read the wrong attribute off the model
-    # result - a one-word bug that reached a live judge-facing screen because it
-    # only fires on the model path, which no local run exercises without a key.
-    # Cached per incident for the life of the process.
+    # one pile, writing its own query arguments. The finding stays
+    # authoritative; the trace is how the conclusion was reached, which is the
+    # part a reviewer needs in order to disagree with it.
     #
-    # The world is static between reseeds, so a second call returns the same
-    # trace - and each one costs up to five model calls. Without this, a reader
-    # clicking between incidents and back re-runs the whole loop every time and
-    # spends real money to recompute an identical answer.
-    cached = _TRACE_CACHE.get(incident_id)
-    if cached is not None:
-        trace = cached
-    else:
-        try:
-            trace, _conclusion = run_agent(
-                evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
-            )
-        except Exception:
-            log.exception("investigation agent failed; falling back to the rule-based trace")
-            trace = run_deterministic(evidence)
-        _TRACE_CACHE[incident_id] = trace
-    return {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
+    # It is an enhancement on top of a finding that already exists, so a failure
+    # inside it must not take the page down - production 500'd on every
+    # investigation once because the loop read the wrong attribute off the model
+    # result, on a path no local run exercises without a key.
+    try:
+        trace, _conclusion = run_agent(
+            evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
+        )
+    except Exception:
+        log.exception("investigation agent failed; falling back to the rule-based trace")
+        trace = run_deterministic(evidence)
+
+    payload = {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
+    _TRACE_CACHE[incident_id] = payload
+    return payload
 
 
 @router.get("/incidents/{incident_id}/cohort")
