@@ -35,9 +35,12 @@ export function Shell({
   const role = currentRole();
 
   return (
-    <div className="min-h-full bg-paper">
+    /* Column layout so the footer sits at the bottom of the viewport when a
+       page is short, instead of floating directly under the content with dead
+       space beneath it. main takes the slack. */
+    <div className="flex min-h-screen flex-col bg-paper">
       <header className="dot-field sticky top-0 z-50 border-b-2 border-black bg-cyber">
-        <div className="relative z-10 mx-auto flex max-w-[1600px] flex-wrap items-center gap-4 px-6 py-3">
+        <div className="relative z-10 mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 px-6 py-3">
           <NavLink to="/" className="flex shrink-0 items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center border-2 border-black bg-black font-display text-base font-extrabold text-cyber">
               R
@@ -53,7 +56,7 @@ export function Shell({
               links, which is a scroll track nobody can aim at. */}
           <nav
             className="segment-track order-last min-w-0 basis-full overflow-x-auto
-                       lg:order-none lg:basis-auto lg:flex-1"
+                       lg:order-none lg:mx-auto lg:w-auto lg:basis-auto lg:flex-none"
           >
             {NAV.map((item) => (
               <NavLink
@@ -92,13 +95,13 @@ export function Shell({
         </div>
       </header>
 
-      <main key={location.pathname} className="animate-rise">
+      <main key={location.pathname} className="animate-rise flex-1">
         {children}
       </main>
 
       <TourBar />
 
-      <footer className="border-t-2 border-black bg-charcoal px-6 py-10 text-white">
+      <footer className="mt-auto border-t-2 border-black bg-charcoal px-6 py-8 text-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
           <p className="font-display text-[11px] font-extrabold uppercase tracking-label">
             Reversa · Counterfactual revenue recovery
