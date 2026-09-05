@@ -18,8 +18,27 @@ import { splitAmount } from "../lib/format";
 
 /* ---------------------------------------------------------------- labels */
 
-export function Label({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
-  return <div className={dark ? "label-invert" : "label"}>{children}</div>;
+export function Label({
+  children,
+  dark = false,
+  htmlFor,
+}: {
+  children: ReactNode;
+  dark?: boolean;
+  htmlFor?: string;
+}) {
+  // Renders a real <label> when it is captioning a control, so a screen reader
+  // announces the field by name instead of "textbox". A div otherwise, because
+  // most uses here caption a figure rather than an input.
+  const className = dark ? "label-invert" : "label";
+  if (htmlFor) {
+    return (
+      <label htmlFor={htmlFor} className={className}>
+        {children}
+      </label>
+    );
+  }
+  return <div className={className}>{children}</div>;
 }
 
 /* -------------------------------------------------------------- surfaces */

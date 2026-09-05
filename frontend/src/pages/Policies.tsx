@@ -65,6 +65,7 @@ export function Policies() {
         <Panel title="Your policy" hint="One instruction per line.">
           <div className="p-6">
             <textarea
+              aria-label="Policy text"
               value={text}
               onChange={(e) => setText(e.target.value)}
               spellCheck={false}

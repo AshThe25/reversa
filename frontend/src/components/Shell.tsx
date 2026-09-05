@@ -76,7 +76,7 @@ export function Shell({
                 <button
                   onClick={onSignOut}
                   title="End this session"
-                  className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
+                  className="link-quiet"
                 >
                   Sign out
                 </button>
@@ -171,8 +171,7 @@ function TourBar() {
                 const prevStep = STEPS[prev];
                 if (prevStep && prevStep.path !== location.pathname) navigate(prevStep.path);
               }}
-              className="font-display text-[10px] font-extrabold uppercase tracking-label
-                         text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
+              className="link-quiet"
             >
               &larr; Back
             </button>
@@ -190,7 +189,7 @@ function TourBar() {
 
           <button
             onClick={tour.stop}
-            className="font-display text-[10px] font-extrabold uppercase tracking-label text-black/60 underline decoration-2 underline-offset-4 hover:text-black"
+            className="link-quiet"
           >
             Exit
           </button>

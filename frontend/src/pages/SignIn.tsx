@@ -105,13 +105,16 @@ export function SignIn({ onAuthenticated }: { onAuthenticated: () => void }) {
                 if (code.trim()) enter("operator");
               }}
             >
-              <Label>Access code</Label>
+              <Label htmlFor="access-code">Access code</Label>
               <input
+                id="access-code"
                 autoFocus
                 type="password"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="Operator access code"
+                // Repeating the label here told a sighted user nothing and told a
+                // screen reader nothing either. Say what shape the input is.
+                placeholder="Issued with the demo"
                 autoComplete="one-time-code"
                 className="mt-2 w-full rounded-neo border-2 border-black bg-white px-4 py-3 font-mono text-[14px] placeholder:text-black/60"
               />

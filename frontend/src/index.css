@@ -120,6 +120,16 @@
 
   /* ----------------------------------------------------------- controls */
 
+  /* A bare underlined word is a 15px-tall hit target, which is under every
+     platform's minimum and sits next to 28px controls in the same row. The
+     underline stays thin; the padding gives it a hit box you can actually
+     land on. */
+  .link-quiet {
+    @apply inline-flex items-center px-2 py-2 font-display text-[10px] font-extrabold
+           uppercase tracking-label text-black/60 underline decoration-2
+           underline-offset-4 hover:text-black;
+  }
+
   .label {
     @apply font-display text-[10px] font-extrabold uppercase tracking-label text-black/60;
   }

@@ -86,7 +86,7 @@ export function Futures() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Label>Counterfactual scenario analysis</Label>
-          <h1 className="mt-2 text-5xl font-bold tracking-tight">Revenue Wind Tunnel</h1>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight">Revenue Wind Tunnel</h1>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-black/60">
             Rewind the incident and evaluate every treatment strategy against the same
             cohort before a single customer is contacted. Branches differ only in the
@@ -97,6 +97,7 @@ export function Futures() {
 
         <div className="flex items-center gap-3">
           <select
+            aria-label="Incident"
             value={selected ?? ""}
             onChange={(e) => setParams({ incident: e.target.value })}
             className="rounded-neo border-2 border-black bg-white px-4 py-2 font-display text-[12px] font-extrabold uppercase tracking-tighter shadow-hard-sm"
