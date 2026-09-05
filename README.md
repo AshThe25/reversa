@@ -6,6 +6,30 @@ one actually created incremental revenue.
 
 Built for the Razorpay AI Buildathon 2026, Track 03.
 
+**Live:** [reversa-ai.vercel.app](https://reversa-ai.vercel.app) · **API:** [reversa-api.onrender.com](https://reversa-api.onrender.com)
+
+---
+
+## Razorpay APIs in use
+
+The deployed service runs against Razorpay's **real test-mode API**, not fixtures.
+`/api/system` reports which mode every adapter is in, so this is checkable rather
+than claimed.
+
+| API | Used for |
+|---|---|
+| `GET /payments/downtimes` | The platform's own downtime feed, used to corroborate an incident the detector found independently. Deliberately not the primary signal: Razorpay publishes downtime 4-11 minutes after onset and not for every event, so a detector that waits for it is late to its own incident. |
+| `POST /payment_links` | The recovery action that reaches a customer. Capped at 24 in the adapter, under test mode's ceiling of 30, so a demo can never wedge the account. |
+| `GET /payment_links/:id` | Resolving whether a link was paid, which is what closes the loop on a recovery. |
+| `POST /orders`, `GET /orders/:id` | Order creation and status for the retry path. |
+| Webhook receipt | HMAC-verified with a constant-time compare, logged, then enqueued - never trusted inline. |
+
+Two things the adapter enforces rather than documents. A key beginning `rzp_live_`
+is **refused at startup** - there is no override, because a demo that can reach
+production money is a demo that eventually does. And the Payment Link budget is a
+real counter: exhausting it raises a 429 the executor handles by falling back to a
+non-link action, rather than crashing a batch.
+
 ---
 
 ## The problem this exists for

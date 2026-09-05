@@ -1,142 +1,171 @@
-# DEMO_SCRIPT.md
+# Demo script
 
-Two things: the walkthrough built into the product, and the five-minute pitch.
+Five minutes. The order matters more than the words: the argument only lands if
+the uncomfortable number arrives before the impressive one.
 
-Both run against a deterministic world. Same seed, same numbers, every time — a
-live demo shows exactly what the pitch video showed.
+Have running before you start:
 
-```bash
-cd backend
-../.venv/bin/python -m scripts.run_demo --fresh --commit    # ~40s, prints the whole loop
-../.venv/bin/python -m uvicorn reversa.main:app --port 8000
-cd ../frontend && npm run dev
-```
+- the API (deployed, or `cd backend && python -m uvicorn reversa.main:app`)
+- the app at https://reversa-ai.vercel.app
+- one browser tab, nothing else visible
+- your Razorpay test dashboard open on Payment Links, in a second tab
 
----
-
-## The in-product walkthrough (90 seconds)
-
-Seven docked stops from the landing page. Non-modal, never covers the numbers it
-describes, escapable at any point.
-
-| Stop | The point |
-|---|---|
-| Command Centre | Revenue at risk is not the number. The number is how much comes back on its own. |
-| Incidents | Seven UPI handles broke together and report as one incident, not seven alerts. |
-| **Futures** | Rewind and run the alternative futures. Watch DO NOTHING. |
-| Portfolio | Why this customer, why this action, why not the others. 30 links, because test mode says 30. |
-| Experiments | A random slice was deliberately left alone. That difference is the only honest number. |
-| Audit | Every decision hash-chained. Edit one row and verification breaks from there on. |
-| Evaluation | Scored against an answer key the system cannot see — including where it was wrong. |
+Sign in as guest first so no credential appears on camera.
 
 ---
 
-## The five-minute pitch
+## 0:00 - 0:35 · The problem, before the product
 
-### 0:00 — the question
+**On screen:** the landing page.
 
-> Most payment recovery asks: what should we do when a payment fails?
+> "When an online payment fails, some of that money comes back on its own. The
+> customer retries. The bank recovers. The card works an hour later.
 >
-> We ask: **what would have happened if we did nothing?**
-
-### 0:30 — the incident
-
-Command Centre. UPI degraded at 18:02, detected at 18:05.
-
-> ₹23.77 lakh exposed across 828 recoverable payments. Caught three minutes after
-> onset — the platform's own downtime feed published four minutes after onset,
-> because it needs signal before it can call it.
-
-### 1:15 — the uncomfortable number
-
-Open Futures, press Simulate.
-
-> **₹12.34 lakh of that comes back on its own.** 51.9% of the exposure. Every
-> recovery tool on the market would retry this cohort and report twelve lakh
-> recovered. Only the remaining eleven lakh is worth spending anything on.
-
-### 2:00 — the futures
-
-> RETRY NOW places zero actions — a gate refuses immediate re-presentment within
-> 45 minutes of a rail clearing, because retrying into a rail that just broke is
-> worse than waiting. That is encoded, not learned: the harm is about three
-> percentage points, which no amount of merchant history can resolve.
+> Every recovery tool sends an SMS or a payment link, and then counts everything
+> that arrives as money it recovered.
 >
-> LINK EVERYONE stops at 30, because Razorpay test mode caps a business at 30
-> Payment Links and we enforce it rather than working around it.
->
-> OPTIMAL: ₹1.83 lakh across 500 actions. Not the most aggressive plan — the
-> aggressive plan spends capacity on people who were going to pay anyway.
+> Most of it was arriving anyway."
 
-Point at WASTED.
+Point at the three figures in the hero.
 
-> The optimiser solves an exact assignment, not a ranked list. Every variable sits
-> in one payment row and one action row, so the constraint matrix is totally
-> unimodular and the LP relaxation is integral — that is the true integer optimum,
-> and there is an assertion on it rather than a comment claiming it.
+> "This merchant is told they recovered seven lakh twenty-four thousand. Five
+> ninety-nine of that was coming back without anyone doing anything. The real
+> number is one twenty-six."
 
-### 3:00 — proving it
-
-Experiments.
-
-> A randomly assigned slice of the plan was deliberately withheld — stratified on
-> order value, because plain randomisation kept producing arms 35% apart on mean
-> ticket, enough to flip the sign of a result.
->
-> Projected ₹1.83 lakh. **Measured ₹1.90 lakh** against the holdout.
->
-> That is not gross recovery. It is the recovery attributable to intervention, and
-> the interval is on the page even when it contains zero.
-
-### 3:45 — when it should stop
-
-Futures, the `*/*` incident.
-
-> ₹10.40 lakh exposed and we are not going to guess.
->
-> This landed on six slices with no common parent. A PSP fault takes one method
-> down together. A single bad bank stays inside one instrument. This did neither,
-> so the evidence cannot attribute it — and interventions chosen from a wrong root
-> cause spend capacity on the wrong people.
->
-> Root-cause confidence: zero. Simulate is disabled. It goes to a human.
-
-### 4:20 — the honesty
-
-Evaluation.
-
-> The simulator knows every payment's true outcome under every action. Reversa
-> never reads them; an import-graph test fails the build if any engine tries.
->
-> Detection: 3 of 4, no false alarms, and the one it missed is named on the page.
-> The holdout estimate was ₹1.90 lakh; the truth was ₹1.35 lakh; the interval
-> contained it. The measurement works, and where the system was wrong is on the
-> same screen as where it was right.
-
-### 4:45 — close
-
-> Reversa doesn't just recover revenue. It lets a merchant test the future before
-> touching a customer, and then prove what actually worked.
+Do not explain the method yet. Let the gap sit.
 
 ---
 
-## If asked
+## 0:35 - 1:15 · It finds the break itself
 
-**"Isn't this just another AI agent?"** — Nothing on the money path touches a
-model. Detection, estimation, optimisation, gating, assignment and measurement are
-deterministic. The model writes narratives and compiles policy.
+**Click:** Skip to the console.
 
-**"How do you know your intervention caused it?"** — A randomised holdout, and the
-Evaluation page checks that estimate against the true value.
+> "This is today's payment stream. Twenty lakh at risk across eighteen thousand
+> declined authorisations."
 
-**"What if the AI is wrong?"** — Merchant policy compiles into a vocabulary with no
-effect that permits anything, so no sentence and no model output can widen what the
-system may do. And the ambiguous incident shows it refusing to act.
+**Click:** Incidents.
 
-**"Would this work with Razorpay?"** — Orders, Downtime and Payment Links use the
-real test-mode API when keys are present; the adapter enforces the 30-link cap and
-rejects `rzp_live_` keys outright. `/api/system` states which mode everything is in.
+> "It watches success rates per slice and flags the ones that broke against
+> their own baseline. Four incidents today. One PSP outage takes down every UPI
+> handle at once - that's one incident here, not seven alerts."
 
-**"What's genuinely new?"** — Optimising for *incremental* rather than gross
-recovery, simulating the alternatives before spending a customer interaction, and
-proving the result against a holdout instead of asserting it.
+---
+
+## 1:15 - 2:00 · The agent, and the part it refuses
+
+**Click:** Investigate on the UPI incident.
+
+> "The agent gets a set of questions it can ask about this incident and writes
+> its own queries. Here it asked three - is the drop real, does it cross
+> methods, does it cross instruments - and then stopped."
+
+Point at the skipped list.
+
+> "It didn't ask the other three. A method-wide degradation is upstream of any
+> single bank, so nothing left could change the answer. What it declined to ask
+> is on the record next to what it asked."
+
+If you have time, open the `*/*` incident.
+
+> "On this one it refuses. Insufficient evidence. It will not name a cause the
+> evidence can't carry."
+
+---
+
+## 2:00 - 2:50 · The whole argument, on one screen
+
+**Click:** Futures → Run analysis.
+
+> "Before contacting anyone, it replays the incident against every strategy on
+> the same customers."
+
+Point at the three figures on the left.
+
+> "Thirty lakh exposed. Eighteen point four six would come back with no
+> treatment at all - that line says it: *a conventional tool books this as
+> recovered*. Eleven sixty is the only part worth touching."
+
+Point at the bars.
+
+> "And the most aggressive strategy isn't the best one. Payment-link-everyone
+> costs more and adds less than the constrained optimum."
+
+---
+
+## 2:50 - 3:30 · Where the money goes, and who a human sees
+
+**Click:** Portfolio.
+
+> "Capacity is finite - twenty-four payment links, because that's under
+> Razorpay test mode's ceiling. So it ranks by what a treatment would actually
+> add."
+
+Point at a high-baseline row.
+
+> "This twenty-four thousand rupee payment was eighty-three percent likely to
+> recover on its own. Chasing it earns a hundred and sixty-four rupees. A
+> smaller one that was never coming back earns six thousand eight hundred."
+
+Scroll to the review panel.
+
+> "Four of these forty decisions need a person - anything a customer sees,
+> anything over the threshold. The other thirty-six are silent gateway retries
+> nobody notices, and it says why each one didn't need a human."
+
+---
+
+## 3:30 - 4:15 · The number is measured, not claimed
+
+**Click:** Tests.
+
+> "A randomly chosen slice of the plan was deliberately left untreated. Whatever
+> that group recovers is what the treated group would have recovered anyway."
+
+Point at the badge.
+
+> "One point two six lakh of lift - and it prints *revenue lift not
+> significant* next to its own headline number, because the interval crosses
+> zero. It will not oversell itself."
+
+**Click:** Eval.
+
+> "And it's graded against an answer key it is never allowed to read. Seventy-five
+> percent recall. It names the incident it missed - a single bank at two percent
+> of traffic."
+
+---
+
+## 4:15 - 4:45 · It's real
+
+**Switch tabs:** Razorpay dashboard, Payment Links.
+
+> "This isn't simulated end to end. That's a real Payment Link created through
+> the Razorpay API from this system."
+
+**Back to the app:** Command → System panel.
+
+> "The service reports which mode every adapter is in. Razorpay test mode, live
+> calls counted. A key starting rzp underscore live is refused at startup - no
+> override."
+
+---
+
+## 4:45 - 5:00 · Close
+
+> "Every recovery tool tells you how much money came back. This one tells you
+> how much came back *because of you* - and spends only on that."
+
+---
+
+## If you have thirty seconds spare
+
+Audit page: click a row, show the hash chain. "Every decision commits to the one
+before it."
+
+## Things to avoid
+
+- Don't say "simulation" while the Razorpay dashboard is on screen; it undercuts
+  the one moment that proves it isn't.
+- Don't apologise for the 75% recall. Reporting it is the point.
+- Don't read the statistics vocabulary aloud. "Corrected for testing hundreds of
+  slices at once" beats "Benjamini-Hochberg" for every audience that matters.
