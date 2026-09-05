@@ -83,22 +83,21 @@ export function Landing() {
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[url('/hero-plate.png')]
-                     bg-[length:74%_auto] bg-[position:right_top] bg-no-repeat sm:bg-[length:62%_auto]
+                     bg-[length:100%_auto] bg-[position:center_top] bg-no-repeat lg:bg-contain lg:bg-right
                      lg:bg-contain lg:bg-right"
         />
         <div aria-hidden className="dot-field pointer-events-none absolute inset-0 -z-10" />
 
         <div className="relative z-10 mx-auto grid min-h-[560px] max-w-[1500px] items-center gap-10
-                        px-6 pb-16 pt-24 sm:px-10 sm:pt-28 lg:min-h-[720px]
+                        px-6 pb-14 pt-[calc(100vw/1.6+2rem)] sm:px-10 lg:py-20 lg:pt-20 lg:min-h-[720px]
                         lg:grid-cols-[1fr_0.8fr] lg:py-20 lg:pt-20">
           <div>
-            <span className="chip max-w-[74%] gap-2 bg-white shadow-hard-sm sm:max-w-none">
+            <span className="chip gap-2 bg-white shadow-hard-sm">
               <span className="text-rzp">⚡</span> Counterfactual revenue recovery
             </span>
 
-            <h1 className="mt-7 max-w-[78%] font-display text-[clamp(2.6rem,6.4vw,4.9rem)]
-                           font-extrabold uppercase leading-[0.88] tracking-tighter
-                           sm:max-w-[66%] lg:max-w-none">
+            <h1 className="mt-6 font-display text-[clamp(2.4rem,6.4vw,4.9rem)] font-extrabold
+                           uppercase leading-[0.9] tracking-tighter">
               Recover only
               <br />
               <span className="text-stroke">what</span> wouldn&rsquo;t
