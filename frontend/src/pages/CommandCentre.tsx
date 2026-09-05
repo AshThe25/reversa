@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  Bar, Button, ErrorNote, Label, Money, Panel, Severity, Skeleton, Tag,
+  Bar, Button, ErrorNote, Label, Money, Panel, Severity, Skeleton, StatSkeleton, Tag,
 } from "../components/primitives";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
@@ -50,6 +50,14 @@ export function CommandCentre() {
       )}
 
       {/* ------------------------------------------------- headline tiles */}
+      {overview.loading ? (
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {["Revenue at risk", "Baseline recovery", "Incremental lift",
+            "Open incidents", "Treatment capacity"].map((l) => (
+            <StatSkeleton key={l} label={l} />
+          ))}
+        </div>
+      ) : (
       <div data-tour="overview-tiles" className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="card p-6">
           <Label>Revenue at risk</Label>
@@ -111,6 +119,7 @@ export function CommandCentre() {
           <p className="mt-2 text-xs text-black/60">consumed this session</p>
         </div>
       </div>
+      )}
 
       {/* --------------------------------------------------- revenue flow */}
       {o && grossSoFar > 0 && (

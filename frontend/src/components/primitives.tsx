@@ -268,14 +268,38 @@ export function Spinner({ label }: { label?: string }) {
   );
 }
 
+/**
+ * Placeholder rows while data is in flight.
+ *
+ * Soft, not bordered. A skeleton drawn in the same 2px black as real content
+ * reads as content that has arrived and is empty, which is worse than an
+ * obvious placeholder - the eye stops on it and waits for meaning. Grey bars of
+ * uneven width read as "not here yet" without anyone having to think about it.
+ */
 export function Skeleton({ rows = 3 }: { rows?: number }) {
+  // Uneven widths, deterministic per row. Equal bars look like a table with no
+  // data; ragged ones look like text that has not loaded.
+  const widths = ["82%", "64%", "91%", "73%", "58%", "86%"];
   return (
-    <div className="space-y-3 p-6">
+    <div className="space-y-3 p-6" role="status" aria-label="Loading">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="relative h-4 overflow-hidden border-2 border-black bg-white">
-          <div className="absolute inset-y-0 w-1/3 animate-sweep bg-sage/60" />
-        </div>
+        <div
+          key={i}
+          className="h-4 animate-pulse rounded-full bg-black/10"
+          style={{ width: widths[i % widths.length] }}
+        />
       ))}
+    </div>
+  );
+}
+
+/** A stat tile that has not arrived. Same box, no number. */
+export function StatSkeleton({ label }: { label?: string }) {
+  return (
+    <div className="card p-6" role="status" aria-label="Loading">
+      {label ? <Label>{label}</Label> : <div className="h-3 w-24 animate-pulse rounded-full bg-black/10" />}
+      <div className="mt-3 h-8 w-32 animate-pulse rounded-full bg-black/10" />
+      <div className="mt-3 h-3 w-40 animate-pulse rounded-full bg-black/10" />
     </div>
   );
 }
