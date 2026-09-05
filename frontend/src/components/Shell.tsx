@@ -69,6 +69,11 @@ export function Shell({
 
           {role && (
             <div className="flex shrink-0 items-center gap-2">
+              {/* The walkthrough was reachable only from the landing page, so
+                  anyone who skipped it once could not find it again. It is the
+                  difference between nine screens of dense numbers and knowing
+                  what they are for, so it stays one click away. */}
+              <GuideButton />
               <Tag tone={role === "operator" ? "info" : "neutral"}>
                 {role === "operator" ? "Operator" : "Guest"}
               </Tag>
@@ -114,6 +119,25 @@ export function Shell({
  * The walkthrough bar. Docked, never modal, escapable at every step — a tour
  * you cannot leave is worse than no tour.
  */
+function GuideButton() {
+  const tour = useTour();
+  const navigate = useNavigate();
+  if (tour.active) return null;
+  return (
+    <button
+      onClick={() => {
+        tour.start();
+        const first = STEPS[0];
+        if (first) navigate(first.path);
+      }}
+      title="Nine steps. Leave at any point."
+      className="btn btn-sm bg-white text-black"
+    >
+      Guide me
+    </button>
+  );
+}
+
 function TourBar() {
   const tour = useTour();
   const navigate = useNavigate();

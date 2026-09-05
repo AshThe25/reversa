@@ -1,3 +1,4 @@
+import os
 import pathlib
 import sys
 import uuid
@@ -8,6 +9,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
+# Pin the signing secret for the whole run, before anything can read settings.
+#
+# Unset, the secret is generated per process, so any test that clears the
+# settings cache to rebuild the app under different configuration silently
+# invalidates every token issued before it. That is invisible on a machine with
+# a .env pinning the secret and fails only where there is none - which is to say
+# it passed here and broke in CI, eleven tests at once, all of them 401.
+os.environ.setdefault("REVERSA_SESSION_SECRET", "test-only-secret-not-used-anywhere-real")
 
 from reversa.config import Settings  # noqa: E402
 from reversa.db import Base  # noqa: E402

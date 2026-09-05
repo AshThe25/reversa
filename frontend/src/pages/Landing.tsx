@@ -165,8 +165,12 @@ export function Landing() {
             src="/hero-plate.png"
             alt=""
             aria-hidden
-            className="-mx-6 -mb-16 mt-12 w-[calc(100%+3rem)] max-w-none border-t-2 border-black
-                       sm:-mx-10 sm:w-[calc(100%+5rem)] lg:hidden"
+            // Cropped to a banner rather than dropped in whole. At full height the
+            // plate is a 1586x992 slab that pushes everything below it off the
+            // screen; framed on the arrow it reads as art and stays in view.
+            className="-mx-6 -mb-16 mt-10 h-40 w-[calc(100%+3rem)] max-w-none border-t-2
+                       border-black object-cover object-[72%_50%] sm:-mx-10 sm:h-52
+                       sm:w-[calc(100%+5rem)] lg:hidden"
           />
           <div aria-hidden className="hidden lg:block" />
         </div>
