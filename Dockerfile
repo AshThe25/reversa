@@ -28,7 +28,14 @@ COPY .env.example ./.env.example
 # reversa.db lands at the repo root, which is where config.py anchors it - the
 # path is derived from the package location, not the working directory, so this
 # is the same file the app opens at runtime.
-RUN cd backend && PYTHONPATH=. python -m scripts.seed_world --scale demo
+# Render's free instance is 512MB of RAM and imports alone cost about 125MB
+# before a single row is read. `demo` is the scale the README's figures and the
+# test suite are pinned to, so it is the default. If the instance is OOM-killed
+# on boot, set WORLD_SCALE=test_live in the service's environment and redeploy -
+# 4,000 customers instead of 6,000, still enough traffic for the detector to
+# fire, smaller numbers on screen.
+ARG WORLD_SCALE=demo
+RUN cd backend && PYTHONPATH=. python -m scripts.seed_world --scale "${WORLD_SCALE}"
 
 # --- runtime ---------------------------------------------------------------
 FROM python:3.11-slim

@@ -7,6 +7,9 @@ services:
     name: reversa-api
     runtime: docker
     dockerfilePath: ./Dockerfile
+    # Drop to test_live if the free instance is OOM-killed while booting.
+    dockerBuildArgs:
+      WORLD_SCALE: demo
     plan: free
     region: singapore
     healthCheckPath: /api/health
