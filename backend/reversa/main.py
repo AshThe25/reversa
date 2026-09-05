@@ -64,6 +64,24 @@ async def lifespan(app: FastAPI):
             except Exception:
                 log.exception("startup warm-up failed; first request will be slow")
 
+            # Prove the Razorpay connection rather than asserting it.
+            #
+            # A read-only call to the downtime feed on boot means the System
+            # panel can show a live call count that came from the real API,
+            # without spending a Payment Link from a budget of twenty-four to
+            # do it. If credentials are absent the adapter is in simulation and
+            # this is skipped entirely.
+            try:
+                from reversa.adapters.razorpay_adapter import get_client
+
+                client = get_client()
+                if not client.offline:
+                    feed = client.fetch_downtimes()
+                    log.info("razorpay reachable: %d downtime records", len(feed))
+            except Exception:
+                log.warning("razorpay verification call failed; adapter still usable",
+                            exc_info=True)
+
         threading.Thread(target=_warm, name="reversa-warm", daemon=True).start()
 
     yield

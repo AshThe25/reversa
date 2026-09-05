@@ -222,6 +222,28 @@ export function CommandCentre() {
                   </div>
                 </div>
 
+                {/* Always present, so the integration is visible whether or not
+                    a Payment Link has been created yet. The live call count
+                    comes from the boot-time downtime fetch, so it is a fact
+                    about this process rather than a claim in a README. */}
+                <div className="border-t border-black/15 pt-5">
+                  <Label>Razorpay integration</Label>
+                  <div className="mt-2 flex flex-wrap items-baseline gap-2">
+                    <span className="tnum text-2xl font-bold">
+                      {system.data.adapters.razorpay.live_calls}
+                    </span>
+                    <span className="text-[11px] text-black/60">
+                      live API calls this session
+                    </span>
+                  </div>
+                  {!system.data.adapters.razorpay.last_payment_link?.short_url && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-black/60">
+                      No Payment Link created yet this session. Executing a plan creates
+                      one through the real API and the checkout page appears here.
+                    </p>
+                  )}
+                </div>
+
                 {system.data.adapters.razorpay.last_payment_link?.short_url && (
                   <div className="border-t border-black/15 pt-5">
                     <Label>Last Payment Link created</Label>
