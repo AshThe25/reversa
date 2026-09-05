@@ -4,9 +4,18 @@
 of the affected cohort *before* spending a customer interaction — then prove which
 one actually created incremental revenue.
 
-Built for the Razorpay AI Buildathon 2026, Track 03.
+### ▶ [Try it live — reversa-ai.vercel.app](https://reversa-ai.vercel.app)
 
-**Live:** [reversa-ai.vercel.app](https://reversa-ai.vercel.app) · **API:** [reversa-api.onrender.com](https://reversa-api.onrender.com)
+No sign-up. Choose **Continue as guest**, then **Take the walkthrough** — nine
+steps, about ninety seconds, and it dims the screen to point at whatever it is
+describing. Leave at any point.
+
+The deployed service runs against Razorpay's **real test-mode API**, not fixtures.
+The System panel on the Command screen names the mode and counts the live calls -
+it is behind the guest session rather than open, because that endpoint also
+reports the world seed and generation stats.
+
+Built for the Razorpay AI Buildathon 2026, Track 03.
 
 ---
 
@@ -147,7 +156,6 @@ estimate's interval contained the true incremental revenue.
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Services, boundaries, and why each one is separate |
 | [SIMULATION.md](docs/SIMULATION.md) | The potential-outcomes model and the ground-truth boundary |
 | [EVALUATION.md](docs/EVALUATION.md) | What is measured, how, and what the numbers currently are |
-| [DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | The 90-second walkthrough, and the 5-minute pitch |
 | [DECISIONS.md](docs/DECISIONS.md) | Bugs found, tradeoffs taken, things deliberately not built |
 
 ## Tests
