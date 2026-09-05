@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -6,6 +7,7 @@ import {
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
 import { count, dateTimeIST, lakhs, pct, sci, timeIST } from "../lib/format";
+import { STEPS, useTour } from "../lib/tour";
 
 export function CommandCentre() {
   const navigate = useNavigate();
@@ -18,6 +20,8 @@ export function CommandCentre() {
 
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-8">
+      <FirstRun />
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Label>Revenue recovery control system</Label>
@@ -311,5 +315,74 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       <span className="text-[11px] text-black/60">{label}</span>
       <span className="tnum text-[12px] font-medium">{value}</span>
     </div>
+  );
+}
+
+
+/**
+ * The first thing a stranger sees.
+ *
+ * Landing on five stat tiles and a list of degraded payment slices tells you
+ * nothing about what any of it is for. This says it in one sentence and offers
+ * the guided path, once. Dismissal is remembered - being told the same thing on
+ * every visit is its own kind of rude.
+ *
+ * localStorage is right for this and wrong for the session token, which is why
+ * the token is not in it: this is a preference, and losing it costs a reader one
+ * banner. Reads are wrapped because a private window can throw on access rather
+ * than return empty.
+ */
+const SEEN_KEY = "reversa.intro.dismissed";
+
+function FirstRun() {
+  const tour = useTour();
+  const navigate = useNavigate();
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(SEEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  if (dismissed || tour.active) return null;
+
+  const close = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(SEEN_KEY, "1");
+    } catch {
+      /* a viewer who blocks storage simply sees this again next time */
+    }
+  };
+
+  return (
+    <section className="surface-accent mb-8 flex flex-wrap items-center gap-x-6 gap-y-4 p-6">
+      <div className="min-w-0 flex-1">
+        <Label>New here</Label>
+        <p className="mt-2 max-w-3xl text-[15px] font-medium leading-relaxed">
+          When a payment fails, some of that money comes back on its own. Every
+          recovery tool counts all of it as money it recovered. Reversa measures the
+          difference against a held-out control, so the only number it reports is the
+          part your intervention actually caused.
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <Button
+          variant="dark"
+          onClick={() => {
+            close();
+            tour.start();
+            const first = STEPS[0];
+            if (first) navigate(first.path);
+          }}
+        >
+          Show me how &rarr;
+        </Button>
+        <button onClick={close} className="link-quiet">
+          Dismiss
+        </button>
+      </div>
+    </section>
   );
 }
