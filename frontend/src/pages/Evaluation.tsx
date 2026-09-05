@@ -38,7 +38,7 @@ export function Evaluation() {
 
       {data && (
         <>
-          <Panel className="mt-8" title="Incident detection" hint="What we caught, against what really broke.">
+          <Panel className="mt-8" anchor="detection-score" title="Incident detection" hint="What we caught, against what really broke.">
             <div className="grid gap-6 p-6 sm:grid-cols-2 xl:grid-cols-5">
               <Stat label="Recall" value={pct(data.detection.recall, 0)}
                     sub={`${data.detection.matched} of ${data.detection.true_incidents} found`}

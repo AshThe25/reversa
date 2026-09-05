@@ -177,7 +177,7 @@ export function Futures() {
         </Glass>
 
         <Panel
-          title="Candidate strategies"
+          anchor="strategy-chart" title="Candidate strategies"
           hint={
             run
               ? `${count(run.candidate_count)} candidates · solved in ${duration(run.total_ms)}`

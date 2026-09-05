@@ -47,10 +47,10 @@ export function Landing() {
           </div>
 
           <nav className="hidden items-center gap-9 lg:flex">
-            {["Problem", "How it works", "Evidence", "Stack"].map((item) => (
+            {["Who it's for", "Problem", "How it works", "Evidence"].map((item) => (
               <a
                 key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                href={`#${item.toLowerCase().replace(/[^a-z]+/g, "-").replace(/-$/, "")}`}
                 className="font-display text-[12px] font-extrabold uppercase tracking-label
                            decoration-2 underline-offset-4 hover:underline"
               >
@@ -82,19 +82,23 @@ export function Landing() {
         */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 hidden bg-[url('/hero-plate.png')]
-                     bg-contain bg-right bg-no-repeat lg:block"
+          className="pointer-events-none absolute inset-0 bg-[url('/hero-plate.png')]
+                     bg-[length:74%_auto] bg-[position:right_top] bg-no-repeat sm:bg-[length:62%_auto]
+                     lg:bg-contain lg:bg-right"
         />
-        <div aria-hidden className="dot-field pointer-events-none absolute inset-0 lg:hidden" />
+        <div aria-hidden className="dot-field pointer-events-none absolute inset-0 -z-10" />
 
         <div className="relative z-10 mx-auto grid min-h-[560px] max-w-[1500px] items-center gap-10
-                        px-6 py-16 sm:px-10 lg:min-h-[720px] lg:grid-cols-[1fr_0.8fr] lg:py-20">
+                        px-6 pb-16 pt-24 sm:px-10 sm:pt-28 lg:min-h-[720px]
+                        lg:grid-cols-[1fr_0.8fr] lg:py-20 lg:pt-20">
           <div>
-            <span className="chip gap-2 bg-white shadow-hard-sm">
+            <span className="chip max-w-[74%] gap-2 bg-white shadow-hard-sm sm:max-w-none">
               <span className="text-rzp">⚡</span> Counterfactual revenue recovery
             </span>
 
-            <h1 className="mt-7 font-display text-[clamp(2.6rem,6.4vw,4.9rem)] font-extrabold uppercase leading-[0.88] tracking-tighter">
+            <h1 className="mt-7 max-w-[78%] font-display text-[clamp(2.6rem,6.4vw,4.9rem)]
+                           font-extrabold uppercase leading-[0.88] tracking-tighter
+                           sm:max-w-[66%] lg:max-w-none">
               Recover only
               <br />
               <span className="text-stroke">what</span> wouldn&rsquo;t
@@ -114,16 +118,18 @@ export function Landing() {
                 that there is no measured figure and a placeholder here would be
                 the exact dishonesty the product exists to object to. */}
             {overview && gross > 0 && (
-              <dl className="mt-8 inline-flex w-fit max-w-full flex-wrap items-stretch gap-0 border-2 border-black bg-white/70 shadow-hard-sm">
-                <div className="border-r-2 border-black px-5 py-3">
+              <dl className="mt-8 flex w-full flex-col items-stretch gap-0 border-2 border-black
+                             bg-white shadow-hard sm:inline-flex sm:w-fit sm:max-w-full
+                             sm:flex-row">
+                <div className="border-b-2 border-black px-5 py-3 sm:border-b-0 sm:border-r-2">
                   <dt className="label">Booked as recovered</dt>
                   <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter">
                     {lakhs(gross)}
                   </dd>
                 </div>
-                <div className="border-r-2 border-black px-5 py-3">
+                <div className="border-b-2 border-black px-5 py-3 sm:border-b-0 sm:border-r-2">
                   <dt className="label">Was arriving anyway</dt>
-                  <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter text-black/60">
+                  <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter">
                     {lakhs(overview.natural_recovery_paise)}
                   </dd>
                 </div>
@@ -157,26 +163,74 @@ export function Landing() {
             )}
           </div>
 
-          {/* From `lg` the right half of the grid is deliberately empty: it is
-              where the background plate's artwork lands. Below `md` the plate
-              is a real element here instead, bled to the section edges so its
-              horizon meets the bottom border. */}
-          <img
-            src="/hero-plate.png"
-            alt=""
-            aria-hidden
-            // Cropped to a banner rather than dropped in whole. At full height the
-            // plate is a 1586x992 slab that pushes everything below it off the
-            // screen; framed on the arrow it reads as art and stays in view.
-            className="-mx-6 -mb-16 mt-10 h-40 w-[calc(100%+3rem)] max-w-none border-t-2
-                       border-black object-cover object-[72%_50%] sm:-mx-10 sm:h-52
-                       sm:w-[calc(100%+5rem)] lg:hidden"
-          />
           <div aria-hidden className="hidden lg:block" />
         </div>
       </section>
 
       {/* --------------------------------------------------- the problem */}
+      {/* Who this is for.
+          A judge and a merchant both ask the same question within ten seconds
+          of landing, and the page was answering neither: it explained the idea
+          and never said whose problem it is. Named plainly, including who it is
+          not for - a tool that claims everyone is its customer has not thought
+          about any of them. */}
+      <section id="who-it-s-for" className="border-b-2 border-black bg-plate">
+        <div className="mx-auto max-w-[1500px] px-6 py-16 sm:px-10">
+          <Label>Who this is for</Label>
+          <h2 className="mt-3 max-w-3xl font-display text-[clamp(1.7rem,3.4vw,2.6rem)]
+                         font-extrabold uppercase leading-[0.95] tracking-tighter">
+            Anyone paying to recover payments that were coming back anyway
+          </h2>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {[
+              {
+                who: "Payments and growth teams",
+                at: "D2C brands, subscriptions, marketplaces on Razorpay",
+                pain:
+                  "You run retries, links and reminders after a failure and report what "
+                  + "came back. Nobody has told you how much of it would have arrived on "
+                  + "its own, so the budget grows against a number that cannot fall.",
+              },
+              {
+                who: "Finance and RevOps",
+                at: "whoever signs off the recovery spend",
+                pain:
+                  "You are asked to approve spend against a recovery figure with no "
+                  + "counterfactual behind it. This gives you the holdout-measured number "
+                  + "and a confidence interval, which is the only version an auditor can "
+                  + "actually check.",
+              },
+              {
+                who: "Platform and payments infra",
+                at: "teams that own the checkout and the gateway relationship",
+                pain:
+                  "When auth rates break you need the cause and the blast radius before "
+                  + "you can act. This attributes the break, sizes the exposure, and says "
+                  + "when the evidence does not support naming a cause at all.",
+              },
+            ].map((r) => (
+              <div key={r.who} className="card bg-white p-6">
+                <p className="font-display text-[15px] font-extrabold uppercase tracking-tighter">
+                  {r.who}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-label text-black/60">
+                  {r.at}
+                </p>
+                <p className="mt-4 text-[14px] leading-relaxed text-black/75">{r.pain}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 max-w-3xl text-[13px] leading-relaxed text-black/60">
+            <span className="font-bold text-black">Not for you</span> if your failed-payment
+            volume is small enough that a holdout would never reach significance. The honest
+            answer there is that you cannot measure a lift this size, and a tool that claims
+            otherwise is selling you a number rather than a result.
+          </p>
+        </div>
+      </section>
+
       <section id="problem" className="border-b-2 border-black bg-cream">
         <div className="mx-auto max-w-[1500px] px-6 py-20 sm:px-10">
           <Label>The distinction the whole product rests on</Label>

@@ -27,7 +27,7 @@ export function Experiments() {
       {loading && <Skeleton rows={5} />}
 
       {data && concluded.length === 0 && (
-        <Panel className="mt-8">
+        <Panel anchor="lift-result" className="mt-8">
           <div className="px-6 py-16 text-center">
             <p className="text-sm text-black/60">No experiment has concluded yet.</p>
             <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-black/60">

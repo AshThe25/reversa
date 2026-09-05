@@ -35,7 +35,7 @@ export function Incidents() {
         </div>
       )}
 
-      <Panel className="mt-8">
+      <Panel anchor="incident-table" className="mt-8">
         {loading && <Skeleton rows={6} />}
         {data && data.length === 0 && (
           <div className="px-6 py-16 text-center text-sm text-black/60">

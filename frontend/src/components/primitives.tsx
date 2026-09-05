@@ -70,15 +70,18 @@ export function Panel({
   title,
   hint,
   action,
+  anchor,
 }: {
   children: ReactNode;
   className?: string;
   title?: string;
   hint?: string;
   action?: ReactNode;
+  /** Names this panel so the walkthrough can point at it. */
+  anchor?: string;
 }) {
   return (
-    <section className={`card ${className}`}>
+    <section className={`card ${className}`} data-tour={anchor}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-4 border-b-2 border-black bg-cyber px-6 py-4">
           <div>
@@ -183,15 +186,15 @@ export function Money({
   const colour = {
     default: "text-black",
     yellow: "text-black",
-    muted: "text-black/60",
+    muted: "text-black/70",
     loss: "text-signal-loss-ink",
   }[tone];
   return (
     <span className={`tnum font-display font-extrabold tracking-tighter ${colour} ${className}`}>
       {sign}
-      <span className="opacity-50">₹</span>
+      <span className="opacity-80">₹</span>
       {whole}
-      <span className="opacity-50">
+      <span className="opacity-80">
         {fraction}
         {unit}
       </span>
@@ -217,7 +220,7 @@ export function Stat({
   const colour = {
     default: "text-black",
     yellow: "text-black",
-    muted: "text-black/60",
+    muted: "text-black/70",
     loss: "text-signal-loss-ink",
   }[tone];
   return (

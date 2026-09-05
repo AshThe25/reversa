@@ -76,7 +76,7 @@ export function Audit() {
         </div>
       )}
 
-      <Panel className="mt-6" title="Events" hint="Newest first. Click any row for the full payload that was hashed.">
+      <Panel className="mt-6" anchor="audit-chain" title="Events" hint="Newest first. Click any row for the full payload that was hashed.">
         {events.loading && <Skeleton rows={8} />}
         {events.data && (
           <div className="divide-y divide-black/10">

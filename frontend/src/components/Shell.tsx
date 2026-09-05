@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import { currentRole } from "../lib/api";
@@ -119,6 +120,55 @@ export function Shell({
  * The walkthrough bar. Docked, never modal, escapable at every step — a tour
  * you cannot leave is worse than no tour.
  */
+/**
+ * Dims the screen and leaves one element lit.
+ *
+ * A paragraph describing a number on a screen full of numbers asks the reader
+ * to go find it. This points. The dimming is one element with an enormous
+ * spread shadow rather than four panels around a hole - fewer things to keep in
+ * sync when the target moves, and it cannot leave a seam.
+ *
+ * It never blocks the page. Pointer events pass through, so the reader can
+ * still click the thing being explained, which is usually what they want to do
+ * next. A tour that traps you is worse than no tour.
+ */
+function Spotlight({ selector }: { selector: string }) {
+  const [box, setBox] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      const el = document.querySelector(selector);
+      setBox(el ? el.getBoundingClientRect() : null);
+      frame = requestAnimationFrame(measure);
+    };
+    // Tracked per frame rather than on scroll and resize: the target moves for
+    // reasons neither event reports - a chart finishing its layout, an async
+    // panel arriving - and a highlight sitting where the element used to be is
+    // worse than none.
+    frame = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(frame);
+  }, [selector]);
+
+  if (!box || box.width === 0) return null;
+
+  const pad = 10;
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed z-40 rounded-neo border-2 border-black
+                 transition-all duration-300"
+      style={{
+        top: box.top - pad,
+        left: box.left - pad,
+        width: box.width + pad * 2,
+        height: box.height + pad * 2,
+        boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)",
+      }}
+    />
+  );
+}
+
 function GuideButton() {
   const tour = useTour();
   const navigate = useNavigate();
@@ -160,6 +210,8 @@ function TourBar() {
   };
 
   return (
+    <>
+    {step.spotlight && <Spotlight key={step.spotlight} selector={step.spotlight} />}
     <div className="sticky bottom-0 z-50 border-t-2 border-black bg-cyber">
       {/* Progress reads as a bar rather than only a fraction: "3 / 8" says where
           you are, the bar says how much is left. */}
@@ -222,5 +274,6 @@ function TourBar() {
         </div>
       </div>
     </div>
+    </>
   );
 }

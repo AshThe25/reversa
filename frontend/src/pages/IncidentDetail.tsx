@@ -386,7 +386,7 @@ function TraceStrip({ trace }: { trace: AgentTrace }) {
   };
 
   return (
-    <div className="border-t-2 border-black bg-white/60">
+    <div data-tour="agent-trace" className="border-t-2 border-black bg-white/60">
       <div className="flex flex-wrap items-center gap-3 px-6 pt-5">
         <Label>How it got there</Label>
         <Tag tone={trace.produced_by === "anthropic" ? "info" : "neutral"}>

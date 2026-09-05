@@ -100,7 +100,7 @@ export function Portfolio() {
 
       <Panel
         className="mt-6"
-        title="Eligible payments"
+        anchor="eligible-payments" title="Eligible payments"
         hint="Biggest first. Open a row to see every option we scored, including the ones we ruled out and the ones compliance blocked."
       >
         {cohort.loading && <Skeleton rows={6} />}

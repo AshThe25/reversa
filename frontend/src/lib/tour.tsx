@@ -27,29 +27,41 @@ export interface TourStep {
    * offer to take them back - to the redirect they just followed.
    */
   matches?: string;
+  /**
+   * CSS selector for the element this step is about.
+   *
+   * When it resolves, the rest of the screen dims and this stays lit. Nine
+   * screens of dense numbers with a paragraph underneath asks the reader to
+   * find what is being described; this points at it.
+   */
+  spotlight?: string;
 }
 
 export const STEPS: TourStep[] = [
   {
     path: "/command",
     title: "What you are looking at",
+    spotlight: '[data-tour="overview-tiles"]',
     body: "When a payment fails, some of that money comes back on its own - the customer retries, the bank recovers, the card works an hour later. Recovery tools take credit for all of it. Reversa separates the money that was coming back anyway from the money that only arrives because you did something, and spends effort only on the second kind.",
     cta: "Show me",
   },
   {
     path: "/command",
     title: "Start with what is bleeding",
+    spotlight: '[data-tour="overview-tiles"]',
     body: "This is today's payment stream, sliced by method and instrument, with the slices whose success rate broke against their own baseline. The number that matters is not revenue at risk - it is how much of it would come back with no help at all.",
     cta: "See the incidents",
   },
   {
     path: "/incidents",
+    spotlight: '[data-tour="incident-table"]',
     title: "One outage, not seven alerts",
     body: "When a payment processor degrades, every UPI handle on it fails at once. Most tools would page you seven times. The detector rolls those into a single incident and keeps the handles as evidence of scope, because 'all seven' and 'only one' mean completely different things.",
     cta: "Open the worst one",
   },
   {
     path: "/investigate",
+    spotlight: '[data-tour="agent-trace"]',
     matches: "/incidents/",
     title: "It decides what to ask next",
     body: "The agent is given a catalogue of questions it may ask about the incident and a budget of five. It asks one at a time and stops when the remaining questions cannot change the answer — here it stopped after three. What it declined to ask is on the record next to what it asked, and every citation is checked against the facts a question actually returned. On the unattributable incident it works the same way and refuses to name a cause.",
@@ -57,30 +69,35 @@ export const STEPS: TourStep[] = [
   },
   {
     path: "/futures",
+    spotlight: '[data-tour="strategy-chart"]',
     title: "This is the whole product",
     body: "Before contacting a single customer, rewind the incident and try every strategy against the same cohort. Watch NO TREATMENT: most of the exposed revenue lands regardless. Every other strategy is worth only the lift it adds on top of that, which is why the most aggressive one is rarely the best one.",
     cta: "Run the analysis",
   },
   {
     path: "/portfolio",
+    spotlight: '[data-tour="eligible-payments"]',
     title: "Why these customers and not the biggest ones",
     body: "You cannot contact everyone, so the question is where effort changes the outcome. A large payment that was 83% likely to recover anyway is worth less than a small one that was never coming back. Payment links are capped at 24, held under Razorpay's test-mode ceiling of 30 so a demo can never wedge the account.",
     cta: "Look at the decisions",
   },
   {
     path: "/experiments",
+    spotlight: '[data-tour="lift-result"]',
     title: "Measured, not claimed",
     body: "A randomly chosen slice of the plan was deliberately left untreated. Whatever that group recovers is what the treated group would have recovered anyway, so treatment minus holdout - with a confidence interval - is the only number here that can honestly be called incremental.",
     cta: "See the result",
   },
   {
     path: "/audit",
+    spotlight: '[data-tour="audit-chain"]',
     title: "Every decision, hash-chained",
     body: "The system contacts customers without a human approving each one, so the trail commits to itself: each entry carries the fingerprint of the one before it. Edit any row and verification breaks at that row and every row after it.",
     cta: "Verify the chain",
   },
   {
     path: "/evaluation",
+    spotlight: '[data-tour="detection-score"]',
     title: "Scored against a hidden answer key",
     body: "The simulator knows what would really have happened to every payment, and Reversa is never allowed to read it - a test fails the build if any engine tries. This page is the two compared, including the incident the detector missed.",
     cta: "Finish",

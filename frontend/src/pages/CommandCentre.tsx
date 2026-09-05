@@ -50,7 +50,7 @@ export function CommandCentre() {
       )}
 
       {/* ------------------------------------------------- headline tiles */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div data-tour="overview-tiles" className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div className="hero-loss p-6">
           <Label>Revenue at risk</Label>
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
