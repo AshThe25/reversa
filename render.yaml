@@ -10,7 +10,9 @@ services:
     # Drop to test_live if the free instance is OOM-killed while booting.
     dockerBuildArgs:
       WORLD_SCALE: demo
-    plan: free
+    # Starter, not free: same 512MB but it does not spin down, so a judge
+    # opening the link is not waiting fifty seconds for a container to wake.
+    plan: starter
     region: singapore
     healthCheckPath: /api/health
     envVars:
