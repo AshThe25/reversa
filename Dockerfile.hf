@@ -1,0 +1,36 @@
+# Hugging Face Spaces build.
+#
+# Same image as the Render/Railway one with two Spaces-specific changes: the app
+# listens on 7860, which is what Spaces routes to, and it runs as a non-root
+# user, which Spaces requires.
+FROM python:3.11-slim AS build
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+COPY backend ./backend
+
+# Seeded at build time. Spaces restarts on a cold wake and a thirty-second seed
+# on every one of those is thirty seconds of a judge staring at a spinner.
+RUN cd backend && PYTHONPATH=. python -m scripts.seed_world --scale demo
+
+FROM python:3.11-slim
+
+# Spaces runs containers as a non-root user and will not write to a root-owned
+# tree. The database is opened read-write - the audit chain appends - so the app
+# directory has to belong to that user.
+RUN useradd -m -u 1000 user
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+
+COPY --from=build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build --chown=user:user /app /app
+
+USER user
+EXPOSE 7860
+CMD ["sh", "-c", "cd backend && exec python -m uvicorn reversa.main:app --host 0.0.0.0 --port 7860 --workers 1"]
