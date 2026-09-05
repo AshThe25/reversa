@@ -108,6 +108,34 @@ export function Landing() {
               held-out control, and only spends on the part that moves.
             </p>
 
+            {/* The consequence, not the idea. The headline states a principle;
+                this states what it costs you to ignore it, in this merchant's
+                own numbers. Hidden until a test has concluded, because before
+                that there is no measured figure and a placeholder here would be
+                the exact dishonesty the product exists to object to. */}
+            {overview && gross > 0 && (
+              <dl className="mt-8 inline-flex w-fit max-w-full flex-wrap items-stretch gap-0 border-2 border-black bg-white/70 shadow-hard-sm">
+                <div className="border-r-2 border-black px-5 py-3">
+                  <dt className="label">Booked as recovered</dt>
+                  <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter">
+                    {lakhs(gross)}
+                  </dd>
+                </div>
+                <div className="border-r-2 border-black px-5 py-3">
+                  <dt className="label">Was arriving anyway</dt>
+                  <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter text-black/60">
+                    {lakhs(overview.natural_recovery_paise)}
+                  </dd>
+                </div>
+                <div className="bg-cyber px-5 py-3">
+                  <dt className="label">Actually caused</dt>
+                  <dd className="tnum mt-1 font-display text-xl font-extrabold tracking-tighter">
+                    {lakhs(overview.incremental_recovery_paise)}
+                  </dd>
+                </div>
+              </dl>
+            )}
+
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button onClick={begin} className="btn bg-black px-8 py-4 text-base text-white">
                 Take the walkthrough →
