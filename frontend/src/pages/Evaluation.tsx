@@ -38,6 +38,62 @@ export function Evaluation() {
 
       {data && (
         <>
+          {data.downtime_feed && data.downtime_feed.incidents_compared > 0 && (
+            <Panel
+              className="mt-8"
+              title="Against Razorpay's own downtime feed"
+              hint="The platform publishes downtime minutes after onset, and not for every event. This is whether detecting from the merchant's own stream actually buys time."
+            >
+              <div className="grid gap-4 border-b-2 border-black p-6 sm:grid-cols-3">
+                <Stat
+                  label="Median lead"
+                  value={
+                    data.downtime_feed.median_lead_minutes === null
+                      ? "—"
+                      : `${data.downtime_feed.median_lead_minutes > 0 ? "+" : ""}${data.downtime_feed.median_lead_minutes}m`
+                  }
+                  sub="ahead of the feed's own timestamp"
+                />
+                <Stat
+                  label="Ahead on"
+                  value={`${data.downtime_feed.ahead_of_feed} / ${data.downtime_feed.feed_published}`}
+                  sub="incidents the feed did publish"
+                  tone="muted"
+                />
+                <Stat
+                  label="Feed never published"
+                  value={String(data.downtime_feed.feed_never_published)}
+                  sub="no platform signal at all"
+                  tone={data.downtime_feed.feed_never_published > 0 ? "loss" : "muted"}
+                />
+              </div>
+
+              <div className="divide-y divide-black/10">
+                {data.downtime_feed.per_incident.map((r: { template: string; lead_minutes: number | null; feed_published: boolean }) => (
+                  <div key={r.template} className="flex flex-wrap items-center gap-3 px-6 py-3">
+                    <span className="min-w-0 flex-1 font-mono text-[12px]">{r.template}</span>
+                    {!r.feed_published ? (
+                      <Tag tone="bad">feed never published it</Tag>
+                    ) : r.lead_minutes !== null && r.lead_minutes > 0 ? (
+                      <Tag tone="good">{r.lead_minutes}m before the feed</Tag>
+                    ) : (
+                      <Tag tone="neutral">{Math.abs(r.lead_minutes ?? 0)}m after the feed</Tag>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <p className="border-t border-black/15 px-6 py-4 text-[11px] leading-relaxed text-black/60">
+                It does not win every time, and that is the honest result. A thin slice
+                takes longer to accumulate evidence than the platform takes to publish,
+                so on the issuer spike the feed was first. The case that matters is the
+                one the feed never reported at all - there, waiting for it means never
+                finding out. This is also why the detector treats the feed as
+                corroboration and never as a trigger.
+              </p>
+            </Panel>
+          )}
+
           <Panel className="mt-8" anchor="detection-score" title="Incident detection" hint="What we caught, against what really broke.">
             <div className="grid gap-6 p-6 sm:grid-cols-2 xl:grid-cols-5">
               <Stat label="Recall" value={pct(data.detection.recall, 0)}

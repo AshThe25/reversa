@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 
 from reversa.engines import incident_engine as IE
 from reversa.models import (
-    Arm, GroundTruth, Payment, RecoveryAction, RecoveryOutcome, WorldMeta,
+    Arm, DowntimeRecord, GroundTruth, Payment, RecoveryAction, RecoveryOutcome, WorldMeta,
 )
 
 # How close a detection has to be to a true onset to count as the same event.
@@ -218,6 +218,79 @@ def score_detection(
 
     score.false_alarms = len(unmatched)
     return score
+
+
+def score_lead_over_downtime_feed(
+    session: Session, detected: Sequence[IE.DetectedIncident], *, era: str = "live"
+) -> dict:
+    """How far ahead of the platform's own downtime feed the detector was.
+
+    This is the problem the feed cannot solve for a merchant: Razorpay publishes
+    downtime some minutes after onset, and not for every event. A merchant who
+    waits for it learns late, or never - and the payments lost in that window
+    are lost before anyone knows there is a window.
+
+    Detecting from the merchant's own authorisation stream removes the
+    dependency. This measures whether that actually buys time, per incident,
+    against the feed's own published begin time - which is why the detector
+    never reads the feed as a trigger, only as corroboration afterwards.
+
+    Incidents the feed never publishes are counted separately. For those the
+    lead is not a number of minutes, it is the difference between knowing and
+    not knowing.
+    """
+    meta = session.get(WorldMeta, "true_incidents")
+    truth = [i for i in (meta.value["incidents"] if meta else []) if i["era"] == era]
+
+    rows = session.execute(select(DowntimeRecord)).scalars().all()
+    leads: list[float] = []
+    never_published = 0
+    per_incident: list[dict] = []
+
+    for t in truth:
+        start = datetime.fromisoformat(t["start"])
+        end = datetime.fromisoformat(t["end"])
+
+        ours = [
+            d.first_seen for d in detected
+            if start - timedelta(minutes=5) <= d.first_seen <= end + MATCH_WINDOW
+        ]
+        if not ours:
+            continue                      # missed entirely; counted by score_detection
+        detected_at = min(ours)
+
+        method = t.get("method") or ""
+        published = [
+            r.begin for r in rows
+            if (not method or r.method == method) and start <= r.begin <= end + MATCH_WINDOW
+        ]
+        if not published:
+            never_published += 1
+            per_incident.append({
+                "template": t["template"],
+                "lead_minutes": None,
+                "feed_published": False,
+            })
+            continue
+
+        lead = (min(published) - detected_at).total_seconds() / 60
+        leads.append(lead)
+        per_incident.append({
+            "template": t["template"],
+            "lead_minutes": round(lead, 1),
+            "feed_published": True,
+        })
+
+    leads.sort()
+    median = leads[len(leads) // 2] if leads else None
+    return {
+        "incidents_compared": len(per_incident),
+        "feed_published": len(leads),
+        "feed_never_published": never_published,
+        "median_lead_minutes": round(median, 1) if median is not None else None,
+        "ahead_of_feed": sum(1 for x in leads if x > 0),
+        "per_incident": per_incident,
+    }
 
 
 def score_calibration(session: Session, experiment_id: str) -> CalibrationScore | None:
@@ -415,6 +488,7 @@ def evaluate(session: Session, *, detected: Sequence[IE.DetectedIncident]) -> di
     return {
         "generated_at": datetime.now().astimezone().isoformat(),
         "detection": detection.as_dict(),
+        "downtime_feed": score_lead_over_downtime_feed(session, detected),
         "experiments": per_experiment,
         "compute_ms": round((time.perf_counter() - started) * 1000, 1),
         "method_note": (

@@ -387,6 +387,7 @@ export interface EvaluationExperiment {
 export interface Evaluation {
   generated_at: string;
   detection: DetectionScore;
+  downtime_feed?: DowntimeFeedComparison;
   experiments: EvaluationExperiment[];
   compute_ms: number;
   method_note: string;
@@ -480,4 +481,18 @@ export interface ReviewQueue {
   };
   cases: ReviewCase[];
   thresholds: { high_value_paise: number };
+}
+
+/** How far ahead of the platform's downtime feed the detector was. */
+export interface DowntimeFeedComparison {
+  incidents_compared: number;
+  feed_published: number;
+  feed_never_published: number;
+  median_lead_minutes: number | null;
+  ahead_of_feed: number;
+  per_incident: {
+    template: string;
+    lead_minutes: number | null;
+    feed_published: boolean;
+  }[];
 }
