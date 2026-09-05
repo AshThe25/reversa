@@ -244,6 +244,13 @@ export interface SystemInfo {
       mode: string;
       live_calls: number;
       payment_link_budget: { limit: number; used: number; remaining: number };
+      /** The most recent Payment Link this process created, if any. */
+      last_payment_link?: {
+        id: string;
+        short_url: string;
+        amount_paise: number;
+        status: string;
+      } | null;
       note: string;
     };
     llm: { mode: string; model: string | null };

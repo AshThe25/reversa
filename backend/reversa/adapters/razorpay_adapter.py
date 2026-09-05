@@ -97,6 +97,10 @@ class RazorpayClient:
         self.settings = settings or get_settings()
         self.offline = not self.settings.has_razorpay
         self.link_budget = LinkBudget(limit=self.settings.payment_link_budget)
+        # The most recent Payment Link this process created, so the UI can link
+        # to a real Razorpay checkout instead of claiming one exists. Only ever
+        # set from a live response - there is no fixture path into it.
+        self.last_payment_link: dict | None = None
         self.calls: list[ApiCall] = []
         self._rng = random.Random(20260826)
         self._client: httpx.Client | None = None
@@ -312,10 +316,22 @@ class RazorpayClient:
             }
 
         try:
-            return self._request("POST", "/payment_links", json=payload)
+            link = self._request("POST", "/payment_links", json=payload)
         except RazorpayError:
             self.link_budget.release()
             raise
+
+        # Kept so the interface can offer the real checkout page. Only the
+        # fields needed to link to it - the rest of the response is Razorpay's
+        # and has no business being echoed to a browser.
+        if link.get("short_url"):
+            self.last_payment_link = {
+                "id": link.get("id"),
+                "short_url": link.get("short_url"),
+                "amount_paise": link.get("amount"),
+                "status": link.get("status"),
+            }
+        return link
 
     def cancel_payment_link(self, link_id: str) -> dict:
         if self.offline:
@@ -351,6 +367,7 @@ class RazorpayClient:
             "live_api_calls": real,
             "offline_calls": len(self.calls) - real,
             "link_budget": self.link_budget.as_dict(),
+            "last_payment_link": self.last_payment_link,
             "recent": [
                 {
                     "method": c.method,

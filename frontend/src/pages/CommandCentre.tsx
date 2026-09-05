@@ -213,6 +213,27 @@ export function CommandCentre() {
                   </div>
                 </div>
 
+                {system.data.adapters.razorpay.last_payment_link?.short_url && (
+                  <div className="border-t border-black/15 pt-5">
+                    <Label>Last Payment Link created</Label>
+                    <p className="mt-2 text-[11px] leading-relaxed text-black/60">
+                      Created through the Razorpay API by this service. Opens the real
+                      test-mode checkout.
+                    </p>
+                    <a
+                      href={system.data.adapters.razorpay.last_payment_link.short_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm mt-3 w-full bg-black text-white"
+                    >
+                      Open the payment page &rarr;
+                    </a>
+                    <p className="mt-2 break-all font-mono text-[10px] text-black/60">
+                      {system.data.adapters.razorpay.last_payment_link.id}
+                    </p>
+                  </div>
+                )}
+
                 <div className="border-t border-black/15 pt-5 space-y-2">
                   <MetaRow label="Estimator fit" value={`${Math.round(system.data.engine.fit_ms)}ms`} />
                   <MetaRow label="Day scan" value={`${Math.round(system.data.engine.scan_ms)}ms`} />

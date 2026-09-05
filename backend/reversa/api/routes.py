@@ -38,6 +38,11 @@ from reversa.world import params as P
 from reversa.world.generator import MERCHANT_ID
 
 log = logging.getLogger(__name__)
+
+# incident id -> agent trace. Bounded because it is keyed on a set of incidents
+# that is small by construction; a reseed changes the ids and the old entries
+# become unreachable rather than stale.
+_TRACE_CACHE: dict[str, object] = {}
 router = APIRouter(prefix="/api")
 
 
@@ -330,13 +335,24 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     # investigation because the loop read the wrong attribute off the model
     # result - a one-word bug that reached a live judge-facing screen because it
     # only fires on the model path, which no local run exercises without a key.
-    try:
-        trace, _conclusion = run_agent(
-            evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
-        )
-    except Exception:
-        log.exception("investigation agent failed; falling back to the rule-based trace")
-        trace = run_deterministic(evidence)
+    # Cached per incident for the life of the process.
+    #
+    # The world is static between reseeds, so a second call returns the same
+    # trace - and each one costs up to five model calls. Without this, a reader
+    # clicking between incidents and back re-runs the whole loop every time and
+    # spends real money to recompute an identical answer.
+    cached = _TRACE_CACHE.get(incident_id)
+    if cached is not None:
+        trace = cached
+    else:
+        try:
+            trace, _conclusion = run_agent(
+                evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
+            )
+        except Exception:
+            log.exception("investigation agent failed; falling back to the rule-based trace")
+            trace = run_deterministic(evidence)
+        _TRACE_CACHE[incident_id] = trace
     return {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
 
 

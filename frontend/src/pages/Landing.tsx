@@ -340,6 +340,57 @@ export function Landing() {
         </div>
       </section>
 
+      {/* The last thing before someone closes the tab. */}
+      <section className="border-b-2 border-black bg-plate">
+        <div className="mx-auto max-w-[1500px] px-6 py-16 sm:px-10">
+          <Label>Who built this</Label>
+          <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <h2 className="font-display text-[clamp(1.6rem,3vw,2.3rem)] font-extrabold
+                             uppercase leading-[0.95] tracking-tighter">
+                Aishwarya Tripathi
+              </h2>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-black/75">
+                Founder of <span className="font-bold text-black">LockedIn</span>, which I
+                built, scaled, and took through the{" "}
+                <span className="font-bold text-black">Sarvam Startup Accelerator</span>,
+                where it was funded.
+              </p>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-black/75">
+                Reversa came out of the same instinct: the number everyone reports for
+                payment recovery is the one that flatters the tool, and nobody was
+                measuring the one that decides whether the spend was worth it.
+              </p>
+            </div>
+
+            <div className="card bg-white p-6">
+              <Label>This project</Label>
+              <dl className="mt-4 space-y-3 text-[13px]">
+                {[
+                  ["Built for", "Razorpay AI Buildathon 2026 · Track 03"],
+                  ["Stack", "FastAPI · React · scikit-learn · Claude"],
+                  ["Razorpay APIs", "Payment Links, Downtimes, Orders, Webhooks"],
+                  ["Tests", "277, run on every push"],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex flex-wrap justify-between gap-2 border-b border-black/10 pb-2">
+                    <dt className="font-semibold uppercase tracking-label text-black/60">{k}</dt>
+                    <dd className="text-right font-medium">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <a
+                href="https://github.com/AshThe25/reversa"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-sm mt-5 w-full bg-black text-white"
+              >
+                View the source &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer className="bg-charcoal px-6 py-10 text-white sm:px-10">
         <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4">
           <p className="font-display text-[11px] font-extrabold uppercase tracking-label">

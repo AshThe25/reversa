@@ -48,9 +48,12 @@ if TYPE_CHECKING:
     from reversa.ai.probes import Probes
 
 # How many questions the agent may ask before it must conclude on what it has.
-# Five is not arbitrary: the catalogue has six tools, and an agent that calls
-# every one of them has not prioritised anything.
-DEFAULT_BUDGET = 5
+# Three, not because the loop cannot handle more, but because every step is a
+# paid model call and the deterministic agent reaches the same conclusion on
+# this world in three. An agent that asks six questions to arrive where it would
+# have arrived in three has not prioritised anything, and here it also spends
+# twice the money to do it.
+DEFAULT_BUDGET = 3
 
 
 # --- the question catalogue -------------------------------------------------
@@ -397,6 +400,9 @@ def run_agent(
             system=SYSTEM_PROMPT + f"\n\nFull catalogue:\n{catalogue}",
             user=user,
             validator=_step_validator,
+            # One small JSON object per step. The default ceiling is sized for
+            # prose and would be billed for whether or not it is used.
+            max_tokens=400,
         )
         if result is None:
             # The model failed the schema twice. Finish on rules rather than
