@@ -405,7 +405,7 @@ def run_agent(
             det.produced_by = "rules_after_model_error"
             return det, None
 
-        payload = result.payload
+        payload = result.parsed
         if payload["action"] == "conclude":
             conclusion = payload
             break

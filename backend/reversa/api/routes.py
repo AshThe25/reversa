@@ -303,7 +303,7 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     score reports. INSUFFICIENT_EVIDENCE is a first-class answer here, not an
     error path.
     """
-    from reversa.ai.agent import run_agent
+    from reversa.ai.agent import run_agent, run_deterministic
     from reversa.ai.investigator import investigate
     from reversa.engines.evidence_engine import collect
 
@@ -325,9 +325,18 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     # budget and the database's query budget are enforced independently.
     from reversa.ai.probes import Probes
 
-    trace, _conclusion = run_agent(
-        evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
-    )
+    # The agent is an enhancement on top of a finding that already exists, so a
+    # failure inside it must not take the page down. Production 500'd on every
+    # investigation because the loop read the wrong attribute off the model
+    # result - a one-word bug that reached a live judge-facing screen because it
+    # only fires on the model path, which no local run exercises without a key.
+    try:
+        trace, _conclusion = run_agent(
+            evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
+        )
+    except Exception:
+        log.exception("investigation agent failed; falling back to the rule-based trace")
+        trace = run_deterministic(evidence)
     return {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
 
 

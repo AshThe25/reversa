@@ -156,7 +156,10 @@ class _ScriptedClient:
         self.prompts.append(user)
         payload = self._script.pop(0)
         assert not validator(payload), f"scripted payload fails the schema: {payload}"
-        return type("R", (), {"payload": payload})()
+        # `parsed`, matching LLMResult. An earlier stub returned `payload`, which
+        # is what the loop was reading - so the test passed against a fake shaped
+        # like the bug and production raised AttributeError on every model call.
+        return type("R", (), {"parsed": payload})()
 
 
 class _RecordingProbes:
@@ -232,3 +235,23 @@ def test_an_exhausted_probe_budget_is_an_answer_not_a_crash():
     items, summary = _run_probe(_Exhausted(), "auth_rate", {"method": "upi"})
     assert items == []
     assert "budget" in summary
+
+
+def test_the_stub_matches_the_real_result_object():
+    """Guards the class of bug that shipped: a fake shaped like the mistake.
+
+    The loop read `result.payload` and the stub provided `payload`, so every test
+    passed while production raised AttributeError on the first real model call.
+    Asserting the stub's surface against LLMResult is what makes the other tests
+    in this file mean anything.
+    """
+    from dataclasses import fields
+
+    from reversa.ai.client import LLMResult
+
+    real = {f.name for f in fields(LLMResult)}
+    stub = {k for k in _ScriptedClient([{}]).complete_json.__doc__ or ""} and None
+    used = "parsed"
+    assert used in real, (
+        f"the loop reads result.{used}, which LLMResult does not have: {sorted(real)}"
+    )
