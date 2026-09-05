@@ -50,8 +50,8 @@ export function CommandCentre() {
       )}
 
       {/* ------------------------------------------------- headline tiles */}
-      <div data-tour="overview-tiles" className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="hero-loss p-6">
+      <div data-tour="overview-tiles" className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="card p-6">
           <Label>Revenue at risk</Label>
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.revenue_at_risk_paise} tone="loss" /> : "—"}
@@ -62,7 +62,7 @@ export function CommandCentre() {
         </div>
 
         <div
-          className="hero-neutral p-6"
+          className="card p-6"
           title="Revenue that lands with no treatment at all. Conventional dunning tools book this as recovered."
         >
           <Label>Baseline recovery</Label>
@@ -87,7 +87,7 @@ export function CommandCentre() {
           </p>
         </div>
 
-        <div className="hero-neutral p-6">
+        <div className="card p-6">
           <Label>Open incidents</Label>
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? o.active_incidents : "—"}
@@ -97,7 +97,7 @@ export function CommandCentre() {
           </p>
         </div>
 
-        <div className="hero-neutral p-6">
+        <div className="card p-6">
           <Label>Treatment capacity</Label>
           <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
             {o ? count(o.capacity.used) : "—"}

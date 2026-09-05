@@ -90,17 +90,24 @@
 
   /* ----------------------------------------------------------- surfaces */
 
+  /* Quieter by default.
+     Every surface carrying a 2px border *and* an offset shadow meant a screen of
+     twelve elements shouted twelve times and nothing read first. The border
+     stays - it is the design language - and the shadow is reserved for things
+     that are actually raised: buttons, and the one panel a step is about. */
   .card {
-    @apply rounded-neo border-2 border-black bg-white shadow-hard-sm;
+    @apply rounded-neo border-2 border-black bg-white;
   }
   .card-lg {
     @apply rounded-neo border-2 border-black bg-white shadow-hard-md;
   }
   .card-yellow {
-    @apply rounded-neo border-2 border-black bg-cyber shadow-hard-sm;
+    @apply rounded-neo border-2 border-black bg-cyber;
   }
+  /* Neutral tiles are white with a rule, not a fill. Three fills competing on
+     one row is three things claiming to be the headline. */
   .card-sage {
-    @apply rounded-neo border-2 border-black bg-sage shadow-hard-sm;
+    @apply rounded-neo border-2 border-black bg-white;
   }
   .card-dark {
     @apply rounded-neo border-2 border-black bg-charcoal text-white shadow-hard-sm;
@@ -214,8 +221,7 @@
   .surface-accent, .hero-accent { @apply card-yellow; }
   .hero-neutral { @apply card-sage; }
   .surface-alarm, .hero-loss {
-    @apply rounded-neo border-2 border-black shadow-hard-sm;
-    background-color: #ffd9d9;
+    @apply rounded-neo border-2 border-black bg-white;
   }
   .disc { @apply rounded-full border-2 border-black bg-white; }
   .orb { @apply rounded-neo border-2 border-black bg-black; }

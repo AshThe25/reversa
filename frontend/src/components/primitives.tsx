@@ -83,7 +83,7 @@ export function Panel({
   return (
     <section className={`card ${className}`} data-tour={anchor}>
       {(title || action) && (
-        <header className="flex items-start justify-between gap-4 border-b-2 border-black bg-cyber px-6 py-4">
+        <header className="flex items-start justify-between gap-4 border-b-2 border-black px-6 py-4">
           <div>
             {title && (
               <h3 className="font-display text-[13px] font-extrabold uppercase tracking-tighter">
