@@ -192,6 +192,27 @@ export function IncidentDetail() {
             </Panel>
           </div>
 
+          {/* The agent's first run on an incident takes a few seconds - it is
+              making real model calls and real queries. Saying so beats five
+              anonymous grey bars, which read as broken rather than as busy. */}
+          {probe.loading && (
+            <div className="card mt-6 p-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-black" />
+                <Label>The agent is investigating</Label>
+              </div>
+              <p className="mt-3 max-w-2xl text-sm text-black/70">
+                It is choosing which questions to ask about this incident and running
+                them against the payment stream. The first look at an incident takes a
+                few seconds; after that the answer is cached.
+              </p>
+              <div className="mt-5 space-y-3">
+                {["78%", "62%", "88%"].map((w) => (
+                  <div key={w} className="h-3 animate-pulse rounded-full bg-black/10" style={{ width: w }} />
+                ))}
+              </div>
+            </div>
+          )}
           {probe.data && <InvestigationPanel finding={probe.data} />}
 
           {review.data && <ReviewPanel queue={review.data} />}

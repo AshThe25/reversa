@@ -75,11 +75,26 @@ export default {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         sweep: { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(200%)" } },
+        // Staggered entry for lists and tile rows. Same curve as `rise`, just
+        // shorter - a row of eight cards arriving together reads as a flash,
+        // arriving in sequence reads as the page assembling itself.
+        "rise-in": {
+          from: { opacity: "0", transform: "translateY(10px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        // For a number that has just changed. Brief, and only on the value.
+        pop: {
+          "0%": { transform: "scale(0.94)", opacity: "0.4" },
+          "60%": { transform: "scale(1.02)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         marquee: "marquee 30s linear infinite",
         rise: "rise 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both",
         sweep: "sweep 1.4s linear infinite",
+        "rise-in": "rise-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+        pop: "pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both",
       },
     },
   },

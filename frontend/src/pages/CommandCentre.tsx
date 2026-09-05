@@ -58,7 +58,7 @@ export function CommandCentre() {
           ))}
         </div>
       ) : (
-      <div data-tour="overview-tiles" className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div data-tour="overview-tiles" className="stagger mt-8 grid gap-4 sm:grid-cols-3">
         <div className="card p-6">
           <Label>Revenue at risk</Label>
           <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">

@@ -171,33 +171,3 @@ recover anyway loses to a small one that won't, and `test_policy.py` asserts tha
 no merchant sentence can widen what the system may do.
 
 CI runs both suites on every push and pull request. There is no scheduled job.
-
-## What this is not
-
-The measurement argument is the product, and it is real. The operational
-envelope around it is a demo, and pretending otherwise would undercut the one
-claim worth making.
-
-- **It has never moved a real rupee.** The Razorpay adapter runs in simulation
-  or offline mode against recorded fixtures. No live key will start the process
-  — that is enforced, not documented. Every figure in the UI is computed from
-  the seeded world, and the world is labelled as such on every screen.
-- **Single process.** The rate limiter is an in-memory token bucket and the
-  session secret is generated per process when unset. Behind a load balancer the
-  limiter is N times looser than configured and sessions stop validating across
-  workers. Startup warns about the second one. The limiter's `_buckets` is the
-  seam a Redis backend would replace; the interface does not change.
-- **No migrations.** Schema comes from `Base.metadata.create_all`. Changing a
-  column against a database with data in it is manual work. SQLite is the right
-  call for a reproducible demo and the wrong one for concurrent writers.
-- **Auth is demo-grade.** A guest scope and an operator scope, an access code,
-  and HMAC-signed sessions held in memory. No user store, no SSO, no MFA.
-- **The audit chain is only as trustworthy as the database.** Entries are
-  hash-chained over canonical JSON with a unique `prev_hash`, which detects
-  tampering by anything that goes through the application. Anyone with direct
-  write access to the file can recompute the whole chain. Real tamper-evidence
-  needs an anchor outside the system.
-- **Detection recall is 75%, not 100%.** One injected incident is missed — a
-  single bank at 2% of traffic. The evaluation page reports this rather than
-  hiding it, because a detector that claims everything is a detector nobody
-  should trust.

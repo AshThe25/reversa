@@ -14,6 +14,7 @@ import { Futures } from "./pages/Futures";
 import { IncidentDetail } from "./pages/IncidentDetail";
 import { Incidents } from "./pages/Incidents";
 import { Investigate } from "./pages/Investigate";
+import { ExitPrompt } from "./components/ExitPrompt";
 import { Landing } from "./pages/Landing";
 import { SignIn } from "./pages/SignIn";
 import { Policies } from "./pages/Policies";
@@ -75,6 +76,7 @@ export function App() {
 
   return (
     <TourProvider>
+      <ExitPrompt />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route

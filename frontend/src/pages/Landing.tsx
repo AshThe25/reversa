@@ -181,7 +181,7 @@ export function Landing() {
             Anyone paying to recover payments that were coming back anyway
           </h2>
 
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          <div className="stagger mt-10 grid gap-5 lg:grid-cols-3">
             {[
               {
                 who: "Payments and growth teams",
