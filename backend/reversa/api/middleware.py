@@ -64,7 +64,20 @@ ROUTE_CLASSES: tuple[tuple[str, str], ...] = (
 MAX_BODY_BYTES = 512 * 1024
 
 
+# Some routes cannot be classified by prefix. /api/incidents is a cheap listing
+# and must stay in "read", but /api/incidents/{id}/investigation underneath it
+# runs a model loop issuing live queries, and inheriting a 120/min budget from
+# its parent would be the most expensive endpoint on the service wearing the
+# cheapest limit.
+ROUTE_SUFFIXES: tuple[tuple[str, str], ...] = (
+    ("/investigation", "ai"),
+)
+
+
 def route_class(path: str) -> str:
+    for suffix, cls in ROUTE_SUFFIXES:
+        if path.endswith(suffix):
+            return cls
     for prefix, cls in ROUTE_CLASSES:
         if path.startswith(prefix):
             return cls
