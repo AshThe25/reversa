@@ -222,3 +222,4 @@ def summarise(cases: list[ReviewCase]) -> dict:
         "auto_value_paise": sum(c.expected_incremental_paise for c in auto),
         "by_reason": by_reason,
     }
+
