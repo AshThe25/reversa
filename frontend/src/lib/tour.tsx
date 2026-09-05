@@ -19,6 +19,14 @@ export interface TourStep {
   title: string;
   body: string;
   cta: string;
+  /**
+   * Prefix that also counts as "on this step".
+   *
+   * /investigate resolves the worst incident and redirects to /incidents/:id,
+   * so an exact path comparison would decide the reader had wandered off and
+   * offer to take them back - to the redirect they just followed.
+   */
+  matches?: string;
 }
 
 export const STEPS: TourStep[] = [
@@ -39,6 +47,13 @@ export const STEPS: TourStep[] = [
     title: "One outage, not seven alerts",
     body: "When a payment processor degrades, every UPI handle on it fails at once. Most tools would page you seven times. The detector rolls those into a single incident and keeps the handles as evidence of scope, because 'all seven' and 'only one' mean completely different things.",
     cta: "Open the worst one",
+  },
+  {
+    path: "/investigate",
+    matches: "/incidents/",
+    title: "It decides what to ask next",
+    body: "The agent is given a catalogue of questions it may ask about the incident and a budget of five. It asks one at a time and stops when the remaining questions cannot change the answer — here it stopped after three. What it declined to ask is on the record next to what it asked, and every citation is checked against the facts a question actually returned. On the unattributable incident it works the same way and refuses to name a cause.",
+    cta: "See the counterfactual",
   },
   {
     path: "/futures",

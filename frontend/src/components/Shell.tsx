@@ -121,7 +121,9 @@ function TourBar() {
 
   if (!tour.active || !tour.step) return null;
   const step = tour.step;
-  const onStepPage = location.pathname === step.path;
+  const onStepPage =
+    location.pathname === step.path ||
+    (step.matches !== undefined && location.pathname.startsWith(step.matches));
   const last = tour.index + 1 === STEPS.length;
 
   const advance = () => {

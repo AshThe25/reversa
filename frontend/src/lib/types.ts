@@ -420,4 +420,25 @@ export interface Investigation {
   cost_micro_usd: number;
   validation_errors: string[];
   evidence: EvidenceItem[];
+  trace: AgentTrace;
+}
+
+/** One question the agent asked, and what came back. */
+export interface AgentStep {
+  n: number;
+  tool: string;
+  asks: string;
+  rationale: string;
+  returned: string[];
+  finding: string;
+}
+
+export interface AgentTrace {
+  steps: AgentStep[];
+  budget: number;
+  asked: number;
+  skipped: string[];
+  stopped_because: string;
+  produced_by: string;
+  latency_ms: number;
 }

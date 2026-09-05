@@ -303,6 +303,7 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     score reports. INSUFFICIENT_EVIDENCE is a first-class answer here, not an
     error path.
     """
+    from reversa.ai.agent import run_agent
     from reversa.ai.investigator import investigate
     from reversa.engines.evidence_engine import collect
 
@@ -313,7 +314,13 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     st = engine_state.get(db)
     evidence = collect(db, detected, now=st.clock.now)
     finding = investigate(evidence)
-    return {"incident_id": incident_id, **finding.as_dict()}
+
+    # The agent works the same evidence as a sequence of questions rather than
+    # one pile. The finding stays authoritative - it is what the rest of the
+    # system reads - and the trace is how the conclusion was reached, which is
+    # the part a reviewer needs in order to disagree with it.
+    trace, _conclusion = run_agent(evidence)
+    return {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
 
 
 @router.get("/incidents/{incident_id}/cohort")

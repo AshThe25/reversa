@@ -9,7 +9,7 @@ import {
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
 import { count, pct, sci, timeIST, titleise } from "../lib/format";
-import type { Investigation } from "../lib/types";
+import type { AgentTrace, Investigation } from "../lib/types";
 
 export function IncidentDetail() {
   const { id = "" } = useParams();
@@ -351,6 +351,8 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
         </div>
       </div>
 
+      {finding.trace && <TraceStrip trace={finding.trace} />}
+
       <div className="border-t border-black/15 px-6 py-4">
         <p className="max-w-4xl text-[11px] leading-relaxed text-black/60">
           The model may not invent a hypothesis — the label comes from a fixed
@@ -358,6 +360,69 @@ function InvestigationPanel({ finding }: { finding: Investigation }) {
           actually collected. One fabricated citation rejects the whole response and
           the rule-based investigator answers instead. No money path reads this
           finding; it gates whether a plan may be built at all.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How the conclusion was reached.
+ *
+ * The questions the agent declined to ask are as much a part of the record as
+ * the ones it asked: an investigator that checks three things out of six and
+ * says why is exercising judgement, and judgement is the thing a reviewer needs
+ * to be able to disagree with.
+ */
+function TraceStrip({ trace }: { trace: AgentTrace }) {
+  const stopLabel: Record<string, string> = {
+    sufficient: "stopped early — the remaining questions could not change the answer",
+    budget_exhausted: "used its full budget",
+    concluded: "concluded",
+    no_questions_left: "exhausted the catalogue",
+  };
+
+  return (
+    <div className="border-t-2 border-black bg-white/60">
+      <div className="flex flex-wrap items-center gap-3 px-6 pt-5">
+        <Label>How it got there</Label>
+        <Tag tone={trace.produced_by === "anthropic" ? "info" : "neutral"}>
+          {trace.produced_by === "anthropic" ? "agent · model" : "agent · rules"}
+        </Tag>
+        <span className="tnum text-[11px] text-black/60">
+          {trace.asked} of {trace.budget} questions asked
+        </span>
+      </div>
+
+      <ol className="mt-4 space-y-0 px-6">
+        {trace.steps.map((step) => (
+          <li key={step.n} className="flex gap-4 border-t border-black/10 py-3 first:border-t-0">
+            <span className="tnum mt-0.5 w-6 shrink-0 font-mono text-[11px] text-black/60">
+              {String(step.n).padStart(2, "0")}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold">{step.asks}</p>
+              <p className="mt-0.5 text-[11px] italic text-black/60">{step.rationale}</p>
+              <p className="mt-1 break-words font-mono text-[10px] leading-relaxed text-black/60">
+                {step.returned.length > 0 ? step.finding : "nothing on record"}
+              </p>
+            </div>
+            <span className="tnum shrink-0 text-[10px] text-black/60">
+              {step.returned.length} fact{step.returned.length === 1 ? "" : "s"}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-1 px-6 pb-5">
+        <p className="text-[11px] leading-relaxed text-black/60">
+          It {stopLabel[trace.stopped_because] ?? trace.stopped_because}.
+          {trace.skipped.length > 0 && (
+            <>
+              {" "}Never asked:{" "}
+              <span className="font-mono">{trace.skipped.join(", ")}</span>.
+            </>
+          )}
         </p>
       </div>
     </div>

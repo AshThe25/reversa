@@ -13,6 +13,7 @@ import { Experiments } from "./pages/Experiments";
 import { Futures } from "./pages/Futures";
 import { IncidentDetail } from "./pages/IncidentDetail";
 import { Incidents } from "./pages/Incidents";
+import { Investigate } from "./pages/Investigate";
 import { Landing } from "./pages/Landing";
 import { SignIn } from "./pages/SignIn";
 import { Policies } from "./pages/Policies";
@@ -84,6 +85,7 @@ export function App() {
                 <Route path="/command" element={<CommandCentre />} />
                 <Route path="/incidents" element={<Incidents />} />
                 <Route path="/incidents/:id" element={<IncidentDetail />} />
+                <Route path="/investigate" element={<Investigate />} />
                 <Route path="/futures" element={<Futures />} />
                 <Route path="/portfolio" element={<Portfolio />} />
                 <Route path="/experiments" element={<Experiments />} />
