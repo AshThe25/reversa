@@ -7,9 +7,9 @@ services:
     name: reversa-api
     runtime: docker
     dockerfilePath: ./Dockerfile
-    # Drop to test_live if the free instance is OOM-killed while booting.
-    dockerBuildArgs:
-      WORLD_SCALE: demo
+    # No dockerBuildArgs here - Render's blueprint schema has no such field and
+    # rejects the file outright. The scale is the ARG default in the Dockerfile;
+    # to change it, change that line.
     # Starter, not free: same 512MB but it does not spin down, so a judge
     # opening the link is not waiting fifty seconds for a container to wake.
     plan: starter
