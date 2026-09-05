@@ -89,6 +89,20 @@ export const STEPS: TourStep[] = [
     cta: "See the result",
   },
   {
+    path: "/autopsy",
+    spotlight: '[data-tour="autopsy-split"]',
+    title: "Where the money actually went",
+    body: "The exposure split three ways: what came back on its own, what the treatment caused, and what was never recovered at all. That last number is the biggest one on the page and it stays there - just over half of this incident's exposure is simply gone, and a tool that hides that is not worth trusting on the rest.",
+    cta: "See the rules it works under",
+  },
+  {
+    path: "/policies",
+    spotlight: '[data-tour="policy-editor"]',
+    title: "Rules in plain English",
+    body: "Write a constraint the way you would say it - no links over five thousand rupees, nothing before nine in the morning - and it compiles into gates the optimiser has to obey. Merchant rules can only ever tighten what the system may do, never widen it, so a typo cannot grant a permission nobody intended.",
+    cta: "Verify the trail",
+  },
+  {
     path: "/audit",
     spotlight: '[data-tour="audit-chain"]',
     title: "Every decision, hash-chained",

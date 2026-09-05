@@ -62,7 +62,7 @@ export function Policies() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
         {/* -------------------------------------------------- the editor */}
-        <Panel title="Your policy" hint="One instruction per line.">
+        <Panel anchor="policy-editor" title="Your policy" hint="One instruction per line.">
           <div className="p-6">
             <textarea
               aria-label="Policy text"

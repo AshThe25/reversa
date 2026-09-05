@@ -94,7 +94,7 @@ function AutopsyBody({
     <div className="mt-8 space-y-6">
       <Panel title={name} hint={r.experiment_id}>
         <div className="p-6">
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div data-tour="autopsy-split" className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {stages.map((s) => (
               <div key={s.label} className={
                 s.tone === "yellow"
