@@ -260,12 +260,20 @@ export function Futures() {
                   />
                   <RBar
                     dataKey="incremental"
-                    radius={[2, 2, 0, 0]}
+                    // No radius. A per-corner array here renders the bar group
+                    // empty - six <g> elements with nothing inside - so the
+                    // chart came up as bare axes on the one screen the whole
+                    // argument rests on. Square corners are the design language
+                    // anyway; two pixels of rounding was never worth a blank
+                    // chart.
                     maxBarSize={64}
                     stroke="#000000"
                     strokeWidth={2}
-                    animationDuration={420}
-                    animationEasing="ease-out"
+                    // Recharts renders the bar group empty when the enter
+                    // animation is left on here - six <g> elements with no
+                    // shape inside - so the chart came up as bare axes on the
+                    // one screen the whole argument rests on.
+                    isAnimationActive={false}
                   >
                     {run.scenarios.map((s) => (
                       <Cell
