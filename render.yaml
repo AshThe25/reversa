@@ -1,0 +1,27 @@
+# Render blueprint for the API. The frontend is on Vercel and talks to this
+# over CORS, which is why REVERSA_CORS_ORIGINS has to name the Vercel origin
+# exactly - scheme and host, no trailing slash. Get that wrong and every call
+# is blocked by the browser, which looks identical to the API being down.
+services:
+  - type: web
+    name: reversa-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    envVars:
+      # Set this to the Vercel URL once the frontend is deployed.
+      - key: REVERSA_CORS_ORIGINS
+        sync: false
+      # Generate one. Unset, the app makes a per-process secret and says so at
+      # startup - fine on a laptop, wrong anywhere a restart should not sign
+      # everyone out.
+      - key: REVERSA_SESSION_SECRET
+        generateValue: true
+      # Optional. Without it the investigation agent runs its deterministic
+      # path, which is real but is not a language model.
+      - key: REVERSA_ANTHROPIC_API_KEY
+        sync: false
+      - key: REVERSA_DEMO_ACCESS_CODE
+        sync: false

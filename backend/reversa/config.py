@@ -6,11 +6,12 @@ because whoever clones this repo won't have my keys.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from pydantic import field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -80,7 +81,9 @@ class Settings(BaseSettings):
     # Deployment adds its own origin here via REVERSA_CORS_ORIGINS. Never "*":
     # this API issues session tokens, and a wildcard origin on a credentialed
     # API is how you hand them to whoever asks.
-    cors_origins: list[str] = [
+    # NoDecode stops pydantic-settings JSON-decoding this before validation, so
+    # the validator below gets the raw string and can accept a plain URL.
+    cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173", "http://127.0.0.1:5173",
         "http://localhost:4173", "http://127.0.0.1:4173",
     ]
@@ -128,6 +131,28 @@ class Settings(BaseSettings):
     cost_email_paise: int = 3
     cost_voice_paise: int = 450
     cost_retry_paise: int = 0            # a gateway retry is free; it costs goodwill
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _accept_a_plain_list(cls, v):
+        """Take "a,b" as well as '["a","b"]'.
+
+        pydantic parses a list field from the environment as JSON, so setting
+        REVERSA_CORS_ORIGINS to a bare URL - which is what anyone typing into a
+        hosting dashboard will do - crashes the process at startup with a
+        parsing error that names the field and not the mistake. Splitting on
+        commas costs nothing and removes a deploy-day trap.
+        """
+        if isinstance(v, str):
+            text = v.strip()
+            if not text:
+                return []
+            if text.startswith("["):
+                # NoDecode means nothing else will parse this, so do it here.
+                import json
+                return json.loads(text)
+            return [part.strip() for part in text.split(",") if part.strip()]
+        return v
 
     @field_validator("razorpay_key_id")
     @classmethod
