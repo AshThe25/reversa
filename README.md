@@ -33,6 +33,23 @@ than claimed.
 | `POST /orders`, `GET /orders/:id` | Order creation and status for the retry path. |
 | Webhook receipt | HMAC-verified with a constant-time compare, logged, then enqueued - never trusted inline. |
 
+Verify it yourself, against your own test keys:
+
+```bash
+cd backend && PYTHONPATH=. python -m scripts.verify_razorpay
+```
+
+That creates an order, reads it back, and creates a Payment Link - three real
+calls - and prints the ids so you can find them in the Razorpay dashboard. A
+recent run:
+
+```
+order created   order_TYQZgSo5GEu0x4  created  2400000 paise
+order read back order_TYQZgSo5GEu0x4  created
+payment link    plink_TYQZhbORWKl5s5  created
+checkout page   https://rzp.io/rzp/CBelPwD
+```
+
 Two things the adapter enforces rather than documents. A key beginning `rzp_live_`
 is **refused at startup** - there is no override, because a demo that can reach
 production money is a demo that eventually does. And the Payment Link budget is a
