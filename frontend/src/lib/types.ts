@@ -165,6 +165,7 @@ export interface WindTunnel {
   total_ms: number;
   best_scenario: string;
   scenarios: Scenario[];
+  stages?: RunStage[];
 }
 
 export interface ArmResult {
@@ -495,4 +496,11 @@ export interface DowntimeFeedComparison {
     lead_minutes: number | null;
     feed_published: boolean;
   }[];
+}
+
+/** What the wind tunnel did, and how long each part actually took. */
+export interface RunStage {
+  label: string;
+  note: string;
+  ms: number;
 }

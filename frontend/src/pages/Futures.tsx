@@ -218,6 +218,26 @@ export function Futures() {
           )}
 
           {run && baseline && (
+            <>
+            {run.stages && run.stages.length > 0 && (
+              /* Measured, not scripted. A progress bar that advances on a timer
+                 tells a reader nothing about whether work happened; four stages
+                 with the milliseconds they actually took cannot drift out of
+                 sync with reality. */
+              <ol className="stagger divide-y divide-black/10 border-b-2 border-black">
+                {run.stages.map((st, i) => (
+                  <li key={st.label} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-6 py-3">
+                    <span className="tnum w-5 shrink-0 font-mono text-[11px] text-black/60">
+                      {i + 1}
+                    </span>
+                    <span className="text-[13px] font-semibold">{st.label}</span>
+                    <span className="min-w-0 flex-1 text-[11px] text-black/60">{st.note}</span>
+                    <span className="tnum shrink-0 text-[11px] font-bold">{st.ms}ms</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+
             <div className="h-[320px] p-6">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -285,6 +305,7 @@ export function Futures() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            </>
           )}
         </Panel>
       </div>

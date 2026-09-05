@@ -9,6 +9,7 @@ count.
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -402,8 +403,29 @@ def get_cohort(incident_id: str, db: DbSession = Depends(get_session),
 def wind_tunnel(body: WindTunnelRequest,
                 db: DbSession = Depends(get_session),
                 _: Session = Depends(requires_simulate)) -> dict:
+    # Timed per stage, and reported. A reader watching a spinner has no idea
+    # whether anything is happening; four stages with the milliseconds they
+    # actually took is the same information without the guesswork - and it
+    # cannot drift out of sync with reality the way a scripted progress bar
+    # does, because it is measured rather than assumed.
+    stages: list[dict] = []
+
+    def _timed(label: str, note: str, fn):
+        began = time.perf_counter()
+        value = fn()
+        stages.append({
+            "label": label,
+            "note": note,
+            "ms": round((time.perf_counter() - began) * 1000, 1),
+        })
+        return value
+
     try:
-        _, build = engine_state.cohort_for(db, body.incident_id)
+        _, build = _timed(
+            "Rebuild the cohort",
+            "every payment the incident could have caused, with its counterfactuals",
+            lambda: engine_state.cohort_for(db, body.incident_id),
+        )
     except KeyError:
         raise HTTPException(status_code=404, detail={"error": "unknown_incident"})
     if not build.candidates:
@@ -411,17 +433,30 @@ def wind_tunnel(body: WindTunnelRequest,
                             detail={"error": "cohort_has_no_actionable_candidates"})
 
     capacity = {**P.DEFAULT_CAPACITY, **(body.capacity or {})}
-    run = SIM.run(build.candidates, capacity)
+    run = _timed(
+        "Solve every strategy",
+        "each branch allocated over the same cohort under the same constraints",
+        lambda: SIM.run(build.candidates, capacity),
+    )
 
     st = engine_state.get(db)
     incident = db.get(Incident, body.incident_id)
-    cohort = PL.persist_cohort(db, incident, build, now=st.clock.now)
-    PL.persist_simulation(db, cohort, run, now=st.clock.now, seed=20260826)
-    db.commit()
+    cohort = _timed(
+        "Persist the cohort",
+        "so the plan and the measurement refer to the same population",
+        lambda: PL.persist_cohort(db, incident, build, now=st.clock.now),
+    )
+    _timed(
+        "Record the run",
+        "written to the audit chain before anything acts on it",
+        lambda: (PL.persist_simulation(db, cohort, run, now=st.clock.now, seed=20260826),
+                 db.commit()),
+    )
 
     return {
         "incident_id": body.incident_id,
         "cohort": build.as_dict(),
+        "stages": stages,
         **run.as_dict(),
     }
 
