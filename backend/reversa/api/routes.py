@@ -319,7 +319,15 @@ def investigation(incident_id: str, db: DbSession = Depends(get_session),
     # one pile. The finding stays authoritative - it is what the rest of the
     # system reads - and the trace is how the conclusion was reached, which is
     # the part a reviewer needs in order to disagree with it.
-    trace, _conclusion = run_agent(evidence)
+    # The agent gets live probes rather than the pre-computed slices: it writes
+    # its own query arguments and they run against the payment stream when it
+    # asks. Probes carry their own per-investigation budget, so the loop's step
+    # budget and the database's query budget are enforced independently.
+    from reversa.ai.probes import Probes
+
+    trace, _conclusion = run_agent(
+        evidence, probes=Probes(db, now=st.clock.now, prefix=incident_id[-6:]),
+    )
     return {"incident_id": incident_id, **finding.as_dict(), "trace": trace.as_dict()}
 
 

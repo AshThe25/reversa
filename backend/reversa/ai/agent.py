@@ -37,8 +37,15 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
+from typing import TYPE_CHECKING
+
 from reversa.ai.client import LLMClient, get_client
+from reversa.ai.probes import CATALOGUE as PROBE_CATALOGUE
+from reversa.ai.probes import ProbeBudgetExceeded
 from reversa.engines.evidence_engine import HYPOTHESES, Evidence
+
+if TYPE_CHECKING:
+    from reversa.ai.probes import Probes
 
 # How many questions the agent may ask before it must conclude on what it has.
 # Five is not arbitrary: the catalogue has six tools, and an agent that calls
@@ -145,6 +152,48 @@ def _summarise(items: Sequence[Evidence]) -> str:
     return "; ".join(e.as_prompt_line() for e in items)
 
 
+# Arguments a model may pass. Anything else is dropped rather than forwarded:
+# a probe signature is not a place to discover what a model invented.
+_PROBE_ARGS: dict[str, frozenset[str]] = {
+    name: frozenset(spec["params"]) for name, spec in PROBE_CATALOGUE.items()
+}
+
+
+def _run_probe(probes: "Probes", name: str, args: dict) -> tuple[list[Evidence], str]:
+    """Execute one probe with the arguments the model chose.
+
+    Unknown keys are dropped and bad types are refused here rather than at the
+    query, so a malformed argument costs the agent a step and an explanation
+    instead of raising out of the loop. Budget exhaustion is the same: it is an
+    answer the agent can act on, not a crash.
+    """
+    if name not in _PROBE_ARGS:
+        return [], f"{name} is not a probe"
+
+    clean: dict = {}
+    for key, value in args.items():
+        if key not in _PROBE_ARGS[name]:
+            continue
+        if key in ("window_minutes", "lookback_days"):
+            try:
+                clean[key] = int(value)
+            except (TypeError, ValueError):
+                continue
+        else:
+            clean[key] = str(value)
+
+    try:
+        result = getattr(probes, name)(**clean)
+    except ProbeBudgetExceeded as exc:
+        return [], str(exc)
+    except TypeError as exc:
+        # A required parameter the model did not supply - sibling_instruments
+        # needs a method, for instance.
+        return [], f"{name} needs different arguments: {exc}"
+
+    return result.evidence, result.summary
+
+
 # --- the deterministic agent ------------------------------------------------
 
 
@@ -230,7 +279,12 @@ cannot change your answer, and say so.
 Return ONLY a JSON object, one of these two shapes.
 
 To ask:
-{{"action": "ask", "tool": "<name from the catalogue>", "why": "<one sentence>"}}
+{{"action": "ask", "tool": "<name from the catalogue>",
+  "args": {{...}}, "why": "<one sentence>"}}
+
+`args` are the parameters for that tool. Choose them - narrow a window, name a
+specific instrument, look further back - rather than accepting defaults, because
+choosing them is the point of asking.
 
 To finish:
 {{"action": "conclude", "root_cause": "<one of: {', '.join(HYPOTHESES)}>",
@@ -255,8 +309,11 @@ def _step_validator(payload: Any) -> list[str]:
         errs.append("action must be 'ask' or 'conclude'")
         return errs
     if action == "ask":
-        if payload.get("tool") not in TOOLS:
-            errs.append(f"tool must be one of: {', '.join(TOOLS)}")
+        known = set(TOOLS) | set(PROBE_CATALOGUE)
+        if payload.get("tool") not in known:
+            errs.append(f"tool must be one of: {', '.join(sorted(known))}")
+        if "args" in payload and not isinstance(payload["args"], dict):
+            errs.append("args must be an object")
         if not str(payload.get("why", "")).strip():
             errs.append("why is required")
     else:
@@ -278,8 +335,14 @@ def run_agent(
     *,
     client: LLMClient | None = None,
     budget: int = DEFAULT_BUDGET,
+    probes: "Probes | None" = None,
 ) -> tuple[Trace, dict | None]:
     """Drive the loop with a model, falling back to rules with no key.
+
+    With `probes`, the agent writes its own query arguments and they run against
+    the payment stream when asked. Without them it reads the pre-computed
+    evidence slices, which is what the deterministic path uses and what any
+    caller without a database session gets.
 
     Returns the trace and the concluding payload. A None payload means the agent
     never concluded - it ran out of budget - and the caller should treat that
@@ -290,7 +353,16 @@ def run_agent(
         return run_deterministic(evidence, budget=budget), None
 
     started = time.perf_counter()
-    catalogue = "\n".join(f"- {name}: {spec['asks']}" for name, spec in TOOLS.items())
+    if probes is not None:
+        catalogue = "\n".join(
+            f"- {name}: {spec['asks']}\n    args: "
+            + ", ".join(f"{k} ({v})" for k, v in spec["params"].items())
+            for name, spec in PROBE_CATALOGUE.items()
+        )
+        available = list(PROBE_CATALOGUE)
+    else:
+        catalogue = "\n".join(f"- {name}: {spec['asks']}" for name, spec in TOOLS.items())
+        available = list(TOOLS)
     steps: list[Step] = []
     transcript: list[str] = []
     stopped = "concluded"
@@ -301,14 +373,23 @@ def run_agent(
             stopped = "budget_exhausted"
             break
 
-        remaining = [t for t in TOOLS if t not in {s.tool for s in steps}]
+        # With probes, a tool stays available - asking auth_rate again with a
+        # tighter window is the whole point. Without them each slice is read
+        # once, because reading it twice returns the same rows.
+        if probes is not None:
+            remaining = available
+        else:
+            remaining = [t for t in available if t not in {s.tool for s in steps}]
         if not remaining:
             stopped = "no_questions_left"
             break
 
         user = (
             f"Questions still available:\n"
-            + "\n".join(f"- {t}: {TOOLS[t]['asks']}" for t in remaining)
+            + "\n".join(
+                f"- {t}: {(PROBE_CATALOGUE if probes is not None else TOOLS)[t]['asks']}"
+                for t in remaining
+            )
             + f"\n\nAnswers so far ({len(steps)} of {budget} questions used):\n"
             + ("\n".join(transcript) if transcript else "none yet")
         )
@@ -330,8 +411,11 @@ def run_agent(
             break
 
         name = payload["tool"]
-        items = _by_kind(evidence, TOOLS[name]["kinds"])
-        summary = _summarise(items)
+        if probes is not None:
+            items, summary = _run_probe(probes, name, payload.get("args") or {})
+        else:
+            items = _by_kind(evidence, TOOLS[name]["kinds"])
+            summary = _summarise(items)
         steps.append(Step(
             n=len(steps) + 1,
             tool=name,

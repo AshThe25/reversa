@@ -135,3 +135,100 @@ def test_the_trace_serialises_for_the_api():
     }
     for step in payload["steps"]:
         assert set(step) >= {"n", "tool", "asks", "rationale", "returned", "finding"}
+
+
+# --- the probe path ---------------------------------------------------------
+
+class _ScriptedClient:
+    """A model that asks for specific probes with specific arguments.
+
+    Standing in for a real one so the probe path is covered without a key. What
+    matters is that the arguments the model writes actually reach the query.
+    """
+
+    available = True
+
+    def __init__(self, script):
+        self._script = list(script)
+        self.prompts = []
+
+    def complete_json(self, *, system, user, validator, max_tokens=None):
+        self.prompts.append(user)
+        payload = self._script.pop(0)
+        assert not validator(payload), f"scripted payload fails the schema: {payload}"
+        return type("R", (), {"payload": payload})()
+
+
+class _RecordingProbes:
+    """Captures the arguments the loop forwarded."""
+
+    def __init__(self):
+        self.calls = []
+
+    def auth_rate(self, **kw):
+        self.calls.append(("auth_rate", kw))
+        return type("P", (), {
+            "evidence": [ev("pb_001", "probe_auth_rate")],
+            "summary": "43.7% of 446 payments captured",
+        })()
+
+
+def test_the_arguments_the_model_writes_reach_the_query():
+    """The point of the probe path.
+
+    A model that can only pick a tool name is choosing a reading order. One that
+    picks the window and the slice is investigating, and this asserts the
+    numbers it chose are the numbers the query ran with.
+    """
+    from reversa.ai.agent import run_agent
+
+    client = _ScriptedClient([
+        {"action": "ask", "tool": "auth_rate",
+         "args": {"method": "upi", "instrument": "ybl", "window_minutes": 5},
+         "why": "narrow to the worst handle"},
+        {"action": "conclude", "root_cause": "psp_switch_degradation",
+         "confidence": 0.8, "rationale": "one handle carries it", "cites": ["pb_001"]},
+    ])
+    probes = _RecordingProbes()
+    trace, conclusion = run_agent([], client=client, probes=probes)
+
+    assert probes.calls, "the probe was never executed"
+    name, kwargs = probes.calls[0]
+    assert name == "auth_rate"
+    assert kwargs == {"method": "upi", "instrument": "ybl", "window_minutes": 5}
+    assert conclusion["root_cause"] == "psp_switch_degradation"
+    assert trace.steps[0].returned == ("pb_001",)
+
+
+def test_arguments_the_probe_does_not_accept_are_dropped_not_forwarded():
+    """A probe signature is not where a model's inventions should be discovered."""
+    from reversa.ai.agent import _run_probe
+
+    probes = _RecordingProbes()
+    _run_probe(probes, "auth_rate", {
+        "method": "upi", "window_minutes": 5, "drop_table": "payments", "limit": 99999,
+    })
+    _, kwargs = probes.calls[0]
+    assert set(kwargs) == {"method", "window_minutes"}
+
+
+def test_a_string_where_a_number_belongs_is_refused_rather_than_passed_on():
+    from reversa.ai.agent import _run_probe
+
+    probes = _RecordingProbes()
+    _run_probe(probes, "auth_rate", {"method": "upi", "window_minutes": "; DROP TABLE"})
+    _, kwargs = probes.calls[0]
+    assert "window_minutes" not in kwargs
+
+
+def test_an_exhausted_probe_budget_is_an_answer_not_a_crash():
+    from reversa.ai.agent import _run_probe
+    from reversa.ai.probes import ProbeBudgetExceeded
+
+    class _Exhausted:
+        def auth_rate(self, **kw):
+            raise ProbeBudgetExceeded("budget is 10")
+
+    items, summary = _run_probe(_Exhausted(), "auth_rate", {"method": "upi"})
+    assert items == []
+    assert "budget" in summary
