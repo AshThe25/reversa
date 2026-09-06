@@ -140,8 +140,17 @@ function Spotlight({ selector }: { selector: string }) {
 
   useEffect(() => {
     let frame = 0;
+    let scrolled = false;
     const measure = () => {
       const el = document.querySelector(selector);
+      // Bring the target into view once, when it first appears. Highlighting
+      // something off-screen is worse than not highlighting it: the reader is
+      // told what to look at and shown something else, which is exactly how a
+      // walkthrough loses someone.
+      if (el && !scrolled) {
+        scrolled = true;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       setBox(el ? el.getBoundingClientRect() : null);
       frame = requestAnimationFrame(measure);
     };

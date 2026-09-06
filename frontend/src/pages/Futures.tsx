@@ -10,6 +10,7 @@ import {
 import { useAsync } from "../hooks/useAsync";
 import { ApiError, api, can } from "../lib/api";
 import { count, duration, lakhs, pct, rupees, titleise } from "../lib/format";
+import { useTour } from "../lib/tour";
 import type { ExecutionReport, Scenario, WindTunnel } from "../lib/types";
 
 /**
@@ -24,6 +25,7 @@ export function Futures() {
   const incidents = useAsync(() => api.incidents(), []);
   const selected = params.get("incident");
 
+  const tour = useTour();
   const [run, setRun] = useState<WindTunnel | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
@@ -34,6 +36,18 @@ export function Futures() {
   // diffuse cluster may well be the most expensive thing on the board, but it
   // is the case where automation should stop - opening the tunnel on it would
   // invite exactly the decision the system is built to refuse.
+  // The walkthrough step here says "watch NO TREATMENT" and used to land the
+  // reader on an empty panel with a button, so the sentence described something
+  // that was not on screen. On the tour it runs itself once; off the tour the
+  // button is still the way in, because someone exploring should decide when to
+  // spend the compute.
+  useEffect(() => {
+    if (tour.active && tour.step?.path === "/futures" && selected && !run && !running) {
+      void simulate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour.active, tour.step?.path, selected, run, running]);
+
   useEffect(() => {
     if (!selected && incidents.data && incidents.data.length > 0) {
       const attributable = incidents.data.filter((i) => !i.ambiguous);

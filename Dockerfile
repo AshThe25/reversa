@@ -37,6 +37,20 @@ COPY .env.example ./.env.example
 ARG WORLD_SCALE=demo
 RUN cd backend && PYTHONPATH=. python -m scripts.seed_world --scale "${WORLD_SCALE}"
 
+# Then run the loop once and keep it.
+#
+# A guest session can model but not execute, which is correct - a visitor should
+# not be able to move money. But it left every page that reads a concluded run
+# empty: the autopsy said "no concluded run to dissect", the landing figures had
+# nothing to show, and the measured lift did not exist. A reader was being asked
+# to take the whole argument on trust because the only person who could produce
+# the evidence was an operator.
+#
+# So the image ships with one run already concluded. The numbers on screen are
+# then a real execution with a real holdout, not a placeholder, and a guest sees
+# what the product actually produced.
+RUN cd backend && PYTHONPATH=. python -m scripts.run_demo --commit
+
 # --- runtime ---------------------------------------------------------------
 FROM python:3.11-slim
 
