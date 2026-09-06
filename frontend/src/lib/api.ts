@@ -28,7 +28,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 
 
 import type {
-  AuthResponse, ChainVerdict, ChaosResult, Cohort, ExecutionReport,
+  Attention, AuthResponse, ChainVerdict, ChaosResult, Cohort, ExecutionReport,
   ExperimentResult, Incident, IncidentDetail, Overview, SystemInfo, WindTunnel,
 } from "./types";
 
@@ -190,6 +190,7 @@ export const api = {
   health: () => request<{ status: string }>("/api/health"),
   system: () => request<SystemInfo>("/api/system"),
   overview: () => request<Overview>("/api/overview"),
+  attention: () => request<Attention>("/api/attention"),
 
   incidents: () =>
     request<{ incidents: Incident[] }>("/api/incidents").then((r) => r.incidents),

@@ -26,6 +26,7 @@ from reversa.api.deps import requires_execute, requires_read, requires_simulate
 from reversa.config import Settings, get_settings
 from reversa.db import get_session
 from reversa.engines import experiment_engine as EX
+from reversa.engines import attention_engine
 from reversa.engines import pipeline as PL
 from reversa.engines import simulation_engine as SIM
 from reversa.engines.audit_engine import verify_chain
@@ -191,6 +192,17 @@ def overview(db: DbSession = Depends(get_session),
 # ---------------------------------------------------------------------------
 # incidents
 # ---------------------------------------------------------------------------
+
+
+@router.get("/attention")
+def attention(db: DbSession = Depends(get_session),
+              _: Session = Depends(requires_read)) -> dict:
+    """What deserves the next ten minutes, ranked.
+
+    Deliberately cheap - deterministic queries, no model call - so the dashboard
+    can ask for it on every load without anyone having to think about budget.
+    """
+    return attention_engine.summarise(attention_engine.assess(db))
 
 
 def _incident_dict(row: Incident) -> dict:

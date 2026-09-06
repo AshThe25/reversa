@@ -302,3 +302,40 @@ def test_a_live_razorpay_key_is_refused(monkeypatch):
 
     with _pytest.raises(Exception, match="live Razorpay key"):
         Settings(razorpay_key_id="rzp_live_ABC123", _env_file=None)
+
+
+# --- the triage list --------------------------------------------------------
+
+def test_attention_needs_a_session_like_every_other_read(client):
+    """It reports where the money is going, so it is not public."""
+    assert client.get("/api/attention").status_code == 401
+
+
+def test_attention_returns_a_renderable_shape(client, demo_headers):
+    r = client.get("/api/attention", headers=demo_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) >= {"items", "total", "act", "money_at_stake_paise", "all_clear"}
+    for row in body["items"]:
+        assert row["action_path"].startswith("/")
+        assert row["headline"].strip()
+
+
+def test_the_triage_list_never_shows_one_incident_twice(client, demo_headers):
+    """The whole point of the panel is that it is shorter than the page below it.
+
+    Several rules can fire on the same broken slice at once, and listing each
+    one separately is how it turns back into the wall of numbers it replaced.
+    """
+    rows = client.get("/api/attention", headers=demo_headers).json()["items"]
+    seen = [
+        r["evidence"]["incident_id"]
+        for r in rows
+        if r["evidence"].get("incident_id")
+    ]
+    assert len(seen) == len(set(seen))
+
+
+def test_the_triage_list_stays_short_enough_to_finish(client, demo_headers):
+    body = client.get("/api/attention", headers=demo_headers).json()
+    assert body["total"] <= 5

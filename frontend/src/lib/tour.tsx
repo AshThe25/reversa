@@ -48,8 +48,8 @@ export const STEPS: TourStep[] = [
   {
     path: "/command",
     title: "Start with what is bleeding",
-    spotlight: '[data-tour="overview-tiles"]',
-    body: "This is today's payment stream, sliced by method and instrument, with the slices whose success rate broke against their own baseline. The number that matters is not revenue at risk - it is how much of it would come back with no help at all.",
+    spotlight: '[data-tour="needs-you"]',
+    body: "Numbers on their own do not tell you what to do with your afternoon. This is the ranked answer: every row is something costing money right now that one person can act on, ordered by what it costs to keep ignoring it. When several things are true about the same broken slice, they collapse into one row rather than three.",
     cta: "See the incidents",
   },
   {

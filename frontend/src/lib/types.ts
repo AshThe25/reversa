@@ -15,6 +15,25 @@ export interface AuthResponse {
   role: "demo" | "operator";
 }
 
+export interface AttentionItem {
+  kind: string;
+  urgency: "act" | "review" | "watch";
+  headline: string;
+  detail: string;
+  money_paise: number;
+  action_label: string;
+  action_path: string;
+  evidence: { also?: string[]; [k: string]: unknown };
+}
+
+export interface Attention {
+  items: AttentionItem[];
+  total: number;
+  act: number;
+  money_at_stake_paise: number;
+  all_clear: boolean;
+}
+
 export interface Overview {
   as_of: string;
   revenue_at_risk_paise: number;

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Bar, Button, ErrorNote, Label, Money, Panel, Severity, Skeleton, StatSkeleton, Tag,
 } from "../components/primitives";
+import { NeedsYou } from "../components/NeedsYou";
 import { useAsync } from "../hooks/useAsync";
 import { api } from "../lib/api";
 import { count, dateTimeIST, lakhs, pct, sci, timeIST } from "../lib/format";
@@ -14,6 +15,7 @@ export function CommandCentre() {
   const overview = useAsync(() => api.overview(), []);
   const incidents = useAsync(() => api.incidents(), []);
   const system = useAsync(() => api.system(), []);
+  const attention = useAsync(() => api.attention(), []);
 
   const o = overview.data;
   const grossSoFar = o ? o.natural_recovery_paise + o.incremental_recovery_paise : 0;
@@ -49,65 +51,73 @@ export function CommandCentre() {
         </div>
       )}
 
+      <div className="mt-8">
+        <NeedsYou state={attention} />
+      </div>
+
       {/* ------------------------------------------------- headline tiles */}
+      <div className="mt-2 flex items-baseline justify-between gap-4">
+        <Label>Today</Label>
+      </div>
+
       {overview.loading ? (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="mt-3 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
           {["Revenue at risk", "Baseline recovery", "Incremental lift",
             "Open incidents", "Treatment capacity"].map((l) => (
             <StatSkeleton key={l} label={l} />
           ))}
         </div>
       ) : (
-      <div data-tour="overview-tiles" className="stagger mt-8 grid gap-4 sm:grid-cols-3">
-        <div className="card p-6">
+      <div data-tour="overview-tiles" className="stagger mt-3 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="card p-4">
           <Label>Revenue at risk</Label>
-          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+          <div className="mt-1.5 text-[22px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.revenue_at_risk_paise} tone="loss" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/60">
+          <p className="mt-1.5 text-[11px] text-black/60">
             {o ? `${count(o.live_failed_payments)} declined authorisations today` : ""}
           </p>
         </div>
 
         <div
-          className="card p-6"
+          className="card p-4"
           title="Revenue that lands with no treatment at all. Conventional dunning tools book this as recovered."
         >
           <Label>Baseline recovery</Label>
-          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+          <div className="mt-1.5 text-[22px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.natural_recovery_paise} tone="muted" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/60">observed in the holdout arm</p>
+          <p className="mt-1.5 text-[11px] text-black/60">observed in the holdout arm</p>
         </div>
 
         <div
-          className="hero-accent p-6"
+          className="card p-4"
           title="Treatment minus holdout. The only figure attributable to the intervention."
         >
           <Label>Incremental lift</Label>
-          <div className="mt-2 text-[34px] font-bold leading-none tracking-tight">
+          <div className="mt-1.5 text-[22px] font-bold leading-none tracking-tight">
             {o ? <Money paise={o.incremental_recovery_paise} tone="yellow" /> : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/60">
+          <p className="mt-1.5 text-[11px] text-black/60">
             {o && grossSoFar > 0
               ? `${pct(o.incremental_recovery_paise / grossSoFar)} of gross recovery`
               : "no concluded test yet"}
           </p>
         </div>
 
-        <div className="card p-6">
+        <div className="card p-4">
           <Label>Open incidents</Label>
-          <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
+          <div className="tnum mt-1.5 text-[22px] font-bold leading-none tracking-tight">
             {o ? o.active_incidents : "—"}
           </div>
-          <p className="mt-2 text-xs text-black/60">
+          <p className="mt-1.5 text-[11px] text-black/60">
             {o ? `${o.total_incidents} detected today` : ""}
           </p>
         </div>
 
-        <div className="card p-6">
+        <div className="card p-4">
           <Label>Treatment capacity</Label>
-          <div className="tnum mt-2 text-[34px] font-bold leading-none tracking-tight">
+          <div className="tnum mt-1.5 text-[22px] font-bold leading-none tracking-tight">
             {o ? count(o.capacity.used) : "—"}
             <span className="text-black/60">
               {o ? ` / ${count(o.capacity.total)}` : ""}
@@ -116,7 +126,7 @@ export function CommandCentre() {
           <div className="mt-3">
             <Bar value={o?.capacity.used ?? 0} max={o?.capacity.total ?? 1} />
           </div>
-          <p className="mt-2 text-xs text-black/60">consumed this session</p>
+          <p className="mt-1.5 text-[11px] text-black/60">consumed this session</p>
         </div>
       </div>
       )}
