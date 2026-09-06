@@ -111,14 +111,32 @@ def test_wide_posterior_means_low_confidence(fitted):
 # --- uplift -----------------------------------------------------------------
 
 def test_uplift_is_bounded_by_remaining_headroom(fitted):
-    """You cannot add 20 points to someone already at 0.90. Modelling absolute
-    uplift lets the optimiser believe you can."""
+    """You cannot add 20 points to someone already at 0.90.
+
+    Uplift is modelled on the headroom scale - a fraction of what is left to
+    win - so the bound is structural: delta is a share of (1 - p_natural), and
+    the two can never sum past one.
+
+    This used to also assert that a high-baseline cell shows *less* absolute
+    uplift than a low-baseline one, and that is not guaranteed and eventually
+    failed. It conflates two different things. Headroom caps how much an action
+    can add; it says nothing about how much of that headroom a given action
+    actually captures. A payment link takes about a third of the remaining
+    headroom on a transient infrastructure failure and about a sixteenth of it
+    on an invalid instrument - because a link fixes a payment that was going to
+    work anyway and does nothing whatsoever for a dead card. The well-matched
+    action on the smaller headroom legitimately wins.
+    """
     model, _ = fitted
-    high = model.estimate(_f("infra_transient"))       # p_nat ~ .77
-    low = model.estimate(_f("instrument_invalid"))     # p_nat ~ .05
-    for action in ("payment_link",):
-        assert high.uplift[action].delta < low.uplift[action].delta
-        assert high.p_natural + high.uplift[action].delta <= 1.0
+    for failure_class in ("infra_transient", "instrument_invalid"):
+        est = model.estimate(_f(failure_class))
+        for action in ("payment_link",):
+            delta = est.uplift[action].delta
+            assert 0.0 <= delta <= est.headroom, (
+                f"{failure_class}: uplift {delta:.4f} exceeds the headroom "
+                f"{est.headroom:.4f} it is supposed to be a fraction of"
+            )
+            assert est.p_natural + delta <= 1.0
 
 
 def test_an_untried_action_is_worthless_not_average(fitted):
