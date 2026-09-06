@@ -159,3 +159,57 @@ def test_the_payload_carries_what_the_dashboard_needs_to_render_a_row():
         "money_paise", "action_label", "action_path",
     }
     assert row["action_path"].startswith("/")
+
+
+# --- where the button goes --------------------------------------------------
+
+class _Incident:
+    """An incident with enough on it to route from."""
+
+    def __init__(self, *, ambiguous, exposed=90_000_00):
+        self.id = "inc_x"
+        self.slice_method = "upi"
+        self.slice_instrument = None
+        self.rca_is_ambiguous = ambiguous
+        self.revenue_exposed_paise = exposed
+        self.baseline_success_rate = 0.88
+        self.observed_success_rate = 0.44
+        self.affected_payment_count = 251
+        self.q_value = 1e-9
+
+
+class _NoExperiments:
+    """A session where nothing has been planned against anything."""
+
+    def execute(self, *_a, **_k):
+        return self
+
+    def all(self):
+        return []
+
+
+def test_an_attributable_break_goes_straight_to_the_optimiser():
+    """One click, not a page whose only content is another button.
+
+    The auto flag is what makes this end-to-end rather than a link to the place
+    the work could be started.
+    """
+    from reversa.engines.attention_engine import _unattended
+
+    [item] = _unattended(_NoExperiments(), [_Incident(ambiguous=False)])
+    assert item.action_path.startswith("/futures?")
+    assert "auto=1" in item.action_path
+
+
+def test_a_diffuse_break_is_never_sent_to_a_control_it_cannot_use():
+    """The optimiser refuses an unattributable cohort on purpose.
+
+    Routing someone there would hand them a disabled button and no reason, so
+    the unattributable case goes to the investigation instead. This is the one
+    branch where the more automated path is the wrong one.
+    """
+    from reversa.engines.attention_engine import _unattended
+
+    [item] = _unattended(_NoExperiments(), [_Incident(ambiguous=True)])
+    assert item.action_path == "/incidents/inc_x"
+    assert "auto=1" not in item.action_path

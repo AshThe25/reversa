@@ -145,6 +145,14 @@ def _unattended(db: Session, open_incidents: list[Incident]) -> list[Item]:
         # incident's cohort is the signal that somebody has already acted.
         if any(inc.id in str(c) for c in attended):
             continue
+        # Where the button goes depends on whether the plan can actually be
+        # built. An attributable break goes straight to the optimiser and runs
+        # it - one click, no intermediate page whose only content is another
+        # button. A diffuse one cannot be planned against and the optimiser
+        # refuses it by design, so sending someone there would hand them a
+        # disabled control and no explanation; they go and read the
+        # investigation instead.
+        planable = not inc.rca_is_ambiguous
         items.append(Item(
             kind="unattended_incident",
             urgency=Urgency.ACT,
@@ -156,8 +164,11 @@ def _unattended(db: Session, open_incidents: list[Incident]) -> list[Item]:
                 "been built for it yet."
             ),
             money_paise=inc.revenue_exposed_paise,
-            action_label="Investigate and build a plan",
-            action_path=f"/incidents/{inc.id}",
+            action_label="Build the plan" if planable else "Read the investigation first",
+            action_path=(
+                f"/futures?incident={inc.id}&auto=1" if planable
+                else f"/incidents/{inc.id}"
+            ),
             evidence={"incident_id": inc.id, "q_value": inc.q_value},
         ))
     return items

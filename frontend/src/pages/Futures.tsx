@@ -41,12 +41,28 @@ export function Futures() {
   // that was not on screen. On the tour it runs itself once; off the tour the
   // button is still the way in, because someone exploring should decide when to
   // spend the compute.
+  // `auto=1` is set by the triage panel, which has already decided this
+  // incident is worth planning against and that it is attributable enough to
+  // plan. Landing someone on a page whose only content is the button they
+  // obviously came to press is the kind of step that makes a product feel like
+  // a demo, so it presses it for them.
+  //
+  // The flag is stripped before the run starts, not after. Leaving it on the
+  // URL would mean a refresh - or a back-navigation - silently spending the
+  // compute again, and stripping it afterwards races the run.
+  const auto = params.get("auto") === "1";
+
   useEffect(() => {
-    if (tour.active && tour.step?.path === "/futures" && selected && !run && !running) {
-      void simulate();
+    const wanted = auto || (tour.active && tour.step?.path === "/futures");
+    if (!wanted || !selected || run || running) return;
+    if (auto) {
+      const next = new URLSearchParams(params);
+      next.delete("auto");
+      setParams(next, { replace: true });
     }
+    void simulate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tour.active, tour.step?.path, selected, run, running]);
+  }, [auto, tour.active, tour.step?.path, selected, run, running]);
 
   useEffect(() => {
     if (!selected && incidents.data && incidents.data.length > 0) {
